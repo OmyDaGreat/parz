@@ -1,8 +1,7 @@
+@file:Suppress("unused")
+
 package xyz.malefic.parz.idl
 
-import xyz.malefic.parz.idl.Ty.Overflowable.Overflow
-
-@Suppress("unused")
 sealed interface Ty {
     data object Unit : Ty
 
@@ -10,10 +9,24 @@ sealed interface Ty {
 
     data object Bool : Ty
 
+    sealed interface Bounded : Ty {
+        val overflow: Overflow
+
+        val lower: Bound
+        val upper: Bound
+        val boundType: Pair<BoundType, BoundType>
+
+        data class Bound(
+            val pos: Boolean,
+            val scale: Int,
+            val power: Int,
+        )
+    }
+
     data class BoundedInt(
         override val lower: Bounded.Bound,
         override val upper: Bounded.Bound,
-        override val boundType: Bounded.BoundType = Bounded.BoundType.Inclusive,
+        override val boundType: Pair<BoundType, BoundType> = BoundType.EXCLUSIVE to BoundType.EXCLUSIVE,
         override val overflow: Overflow = Overflow.ERROR,
     ) : Ty,
         Bounded
@@ -23,9 +36,9 @@ sealed interface Ty {
         val scale: Int,
         val rounding: Rounding = Rounding.TRUNCATE,
         override val overflow: Overflow = Overflow.ERROR,
-        override val boundType: Bounded.BoundType = Bounded.BoundType.Inclusive,
-        override val lower: Bounded.Bound = Bounded.Bound(false, 10, precision),
-        override val upper: Bounded.Bound = Bounded.Bound(true, 10, precision),
+        override val boundType: Pair<BoundType, BoundType> = BoundType.EXCLUSIVE to BoundType.EXCLUSIVE,
+        override val lower: Bounded.Bound = Bounded.Bound(false, 10, precision - scale),
+        override val upper: Bounded.Bound = Bounded.Bound(true, 10, precision - scale),
     ) : Ty,
         Bounded {
         enum class Rounding {
@@ -39,32 +52,15 @@ sealed interface Ty {
             PROHIBITED,
         }
     }
+}
 
-    interface Overflowable {
-        val overflow: Overflow
+enum class Overflow {
+    ERROR,
+    WRAP,
+    SATURATE,
+}
 
-        enum class Overflow {
-            ERROR,
-            WRAP,
-            SATURATE,
-        }
-    }
-
-    interface Bounded : Overflowable {
-        sealed class BoundType {
-            data object Inclusive : BoundType()
-
-            data object Exclusive : BoundType()
-        }
-
-        data class Bound(
-            val pos: Boolean,
-            val scale: Int,
-            val power: Int,
-        )
-
-        val lower: Bound
-        val upper: Bound
-        val boundType: BoundType
-    }
+enum class BoundType {
+    INCLUSIVE,
+    EXCLUSIVE,
 }
