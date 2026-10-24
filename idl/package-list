@@ -1,0 +1,5 @@
+$dokka.format:html-v1
+$dokka.linkExtension:html
+$dokka.location:xyz.malefic.parz.idl////PointingToDeclaration/idl/xyz.malefic.parz.idl/index.html
+$dokka.location:xyz.malefic.parz.idl//generateFibi/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/generate-fibi.html
+xyz.malefic.parz.idl
