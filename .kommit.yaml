@@ -1,0 +1,29 @@
+types:
+  - feat: A new feature
+  - fix: A bug fix
+  - docs: Documentation only changes
+  - refactor: A code change that deals with style, structure, or organization of code
+  - chore: Changes dealing with configuration and other non-code files
+  - test: Adding missing tests or correcting existing tests
+
+scopes:
+  all:
+    - core
+    - ui
+    - docs
+
+options:
+  autoStage: true
+  autoPush: true
+  allowBreakingChanges:
+    - feat
+    - fix
+    - chore
+  allowIssues:
+    - feat
+    - fix
+    - chore
+    - refactor
+    - test
+  allowCustomScopes: false
+  allowEmptyScopes: true
