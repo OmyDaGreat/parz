@@ -6,6 +6,10 @@ pluginManagement {
     }
 }
 
+plugins {
+    id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
+}
+
 dependencyResolutionManagement {
     repositories {
         google()
@@ -13,5 +17,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "fibonacci"
-include(":library")
+rootProject.name = "parz"
+include(":idl")
