@@ -99,31 +99,31 @@ fun Type.check(v: Value): List<Mismatch> =
             is Value.Str -> {
                 when (this) {
                     Type.Empty -> {
-                        add(Mismatch(listOf(), WrongKind("empty", "some")))
+                        add(Mismatch(listOf(), WrongKind("empty", "string")))
                     }
 
                     Type.Bool -> {
-                        add(Mismatch(listOf(), WrongKind("bool", "some")))
+                        add(Mismatch(listOf(), WrongKind("bool", "string")))
                     }
 
                     is Type.Decimal -> {
-                        add(Mismatch(listOf(), WrongKind("decimal", "some")))
+                        add(Mismatch(listOf(), WrongKind("decimal", "string")))
                     }
 
                     is Type.Enum -> {
-                        add(Mismatch(listOf(), WrongKind("enum", "some")))
+                        add(Mismatch(listOf(), WrongKind("enum", "string")))
                     }
 
                     is Type.Option -> {
-                        add(Mismatch(listOf(), WrongKind("option", "some")))
+                        add(Mismatch(listOf(), WrongKind("option", "string")))
                     }
 
                     is Type.Record -> {
-                        add(Mismatch(listOf(), WrongKind("record", "some")))
+                        add(Mismatch(listOf(), WrongKind("record", "string")))
                     }
 
                     is Type.Seq -> {
-                        add(Mismatch(listOf(), WrongKind("seq", "some")))
+                        add(Mismatch(listOf(), WrongKind("seq", "string")))
                     }
 
                     is Type.Str -> {
@@ -207,8 +207,8 @@ fun Type.check(v: Value): List<Mismatch> =
                     }
 
                     is Type.Option -> {
-                        if (!inner.accepts(v.v)) {
-                            add(Mismatch(listOf(Segment.Inner), WrongKind("option", "some")))
+                        inner.check(v.v).forEach {
+                            add(Mismatch(listOf(Segment.Inner) + it.path, it.reason))
                         }
                     }
 
