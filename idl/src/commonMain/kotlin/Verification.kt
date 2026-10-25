@@ -9,11 +9,20 @@ import xyz.malefic.parz.idl.Reason.TooLong
 import xyz.malefic.parz.idl.Reason.UnknownMember
 import xyz.malefic.parz.idl.Reason.WrongKind
 
+/**
+ * A mismatch between a type and a value.
+ *
+ * @param path the path to the mismatch
+ * @param reason the reason for the mismatch
+ */
 data class Mismatch(
     val path: List<Segment>,
     val reason: Reason,
 )
 
+/**
+ * A segment of a path, used to locate mismatches.
+ */
 sealed interface Segment {
     /**
      * A field in a [Type.Record].
@@ -35,53 +44,89 @@ sealed interface Segment {
     data object Inner : Segment
 }
 
+/**
+ * A reason for a mismatch.
+ */
 sealed interface Reason {
+    /**
+     * The value has a kind differing from the type.
+     */
     data class WrongKind(
         val expected: String,
         val actual: String,
     ) : Reason
 
+    /**
+     * The value is out of the range of the type.
+     */
     data class OutOfRange(
         val min: BigInteger,
         val max: BigInteger,
     ) : Reason
 
+    /**
+     * The value is longer than the maximum length of the type.
+     */
     data class TooLong(
         val maxLen: Long,
         val actual: Long,
     ) : Reason
 
+    /**
+     * The value has a different scale than the type.
+     */
     data class InexactScale(
         val expected: Int,
         val actual: Int,
     ) : Reason
 
+    /**
+     * The value has a member not reflected in the type.
+     */
     data class UnknownMember(
         val name: String,
     ) : Reason
 
+    /**
+     * The value is missing a field from the type.
+     */
     data class MissingField(
         val name: String,
     ) : Reason
 
+    /**
+     * The value has a field not reflected in the type.
+     */
     data class ExtraField(
         val name: String,
     ) : Reason
 }
 
+/**
+ * Expect a value to be of a certain type.
+ */
 private inline fun <reified V : Value> Type.expect(
     v: Value,
     f: context(MutableList<Mismatch>) (V) -> Unit = {},
 ): List<Mismatch> = if (v is V) buildList { f(v) } else wrongKind(v)
 
+/**
+ * Convenience method to return a mismatch of type wrong kind.
+ */
 private fun Type.wrongKind(v: Value) = listOf(Mismatch(listOf(), WrongKind(this.kind, v.kind)))
 
+/**
+ * Convenience method to add a mismatch to a list.
+ */
 context(m: MutableList<Mismatch>)
 private fun add(
     path: List<Segment>,
     reason: Reason,
 ) = m.add(Mismatch(path, reason))
 
+/**
+ * Check a value against a type.
+ */
 fun Type.check(v: Value): List<Mismatch> =
     when (this) {
         Type.Void -> {
@@ -185,4 +230,7 @@ fun Type.check(v: Value): List<Mismatch> =
         }
     }
 
+/**
+ * Convenience method to check a value against a type, ignoring the specifications of mismatches.
+ */
 fun Type.accepts(v: Value) = check(v).isEmpty()
