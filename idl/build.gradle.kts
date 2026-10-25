@@ -1,4 +1,4 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_26
 
 val user = project.property("user") as String
 val dev = project.property("dev") as String
@@ -41,7 +41,7 @@ kotlin {
         withDeviceTest {}
 
         compilerOptions {
-            jvmTarget.set(JVM_21)
+            jvmTarget.set(JVM_26)
         }
     }
 
@@ -55,7 +55,6 @@ kotlin {
 
     applyDefaultHierarchyTemplate()
 
-    @Suppress("unused")
     sourceSets {
         commonMain.dependencies {
             api(libs.bignum)
