@@ -30,7 +30,7 @@ sealed interface Type {
     data class Option(
         val inner: Type,
     ) : Type {
-        override val kind = "option{${inner.kind}}"
+        override val kind = "option"
     }
 
     /**
@@ -39,7 +39,7 @@ sealed interface Type {
     data class Seq(
         val inner: Type,
     ) : Type {
-        override val kind = "seq{${inner.kind}}"
+        override val kind = "seq"
     }
 
     /**
@@ -65,7 +65,7 @@ sealed interface Type {
         val rounding: Rounding = Rounding.TOWARDS_ZERO,
         val overflow: Overflow = Overflow.ERROR,
     ) : Type {
-        override val kind = "decimal{min=$min, max=$max, scale=$scale, rounding=$rounding, overflow=$overflow}"
+        override val kind = "decimal"
 
         init {
             require(min <= max) { "min must be less than or equal to max" }
@@ -156,7 +156,7 @@ sealed interface Type {
     data class Record(
         val fields: List<Field>,
     ) : Type {
-        override val kind = "record{${fields.joinToString("; ") { "${it.name}, ${it.type.kind}" }}}"
+        override val kind = "record"
 
         init {
             require(fields.isNotEmpty()) { "Record must have at least one field" }
@@ -181,7 +181,7 @@ sealed interface Type {
     data class Enum(
         val members: List<Member>,
     ) : Type {
-        override val kind = "enum{${members.joinToString("; ") { "${it.name}, ${it.tag}" }}}"
+        override val kind = "enum"
 
         init {
             require(members.isNotEmpty()) { "Enum must have at least one member" }

@@ -77,7 +77,7 @@ private inline fun <reified V : Value> Type.expect(
 private fun Type.wrongKind(v: Value) = listOf(Mismatch(listOf(), WrongKind(this.kind, v.kind)))
 
 context(m: MutableList<Mismatch>)
-fun add(
+private fun add(
     path: List<Segment>,
     reason: Reason,
 ) = m.add(Mismatch(path, reason))
