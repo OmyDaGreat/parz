@@ -8,7 +8,7 @@ import kotlin.test.assertTrue
 
 class Seq {
     @Test
-    fun nonOption() {
+    fun nonSeq() {
         assertFalse { Type.Seq(Type.Bool) accepts Value.Void }
         assertFalse { Type.Seq(Type.Bool) accepts Value.Dec(BigInteger.ZERO, 0) }
         assertFalse { Type.Seq(Type.Bool) accepts Value.Str("") }
@@ -20,7 +20,7 @@ class Seq {
     }
 
     @Test
-    fun isOption() {
+    fun isSeq() {
         assertTrue { Type.Seq(Type.Bool) accepts Value.Seq(listOf()) }
         assertTrue { Type.Seq(Type.Bool) accepts Value.Seq(listOf()) }
         assertTrue { Type.Seq(Type.Bool) accepts Value.Seq(listOf(Value.Bool(true))) }
