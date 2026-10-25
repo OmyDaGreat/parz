@@ -74,7 +74,7 @@ private inline fun <reified V : Value> Type.expect(
     f: context(MutableList<Mismatch>) (V) -> Unit = {},
 ): List<Mismatch> = if (v is V) buildList { f(v) } else wrongKind(v)
 
-private inline fun <reified V : Value> Type.wrongKind(v: V) = listOf(Mismatch(listOf(), WrongKind(this.kind, v.kind)))
+private fun Type.wrongKind(v: Value) = listOf(Mismatch(listOf(), WrongKind(this.kind, v.kind)))
 
 context(m: MutableList<Mismatch>)
 fun add(

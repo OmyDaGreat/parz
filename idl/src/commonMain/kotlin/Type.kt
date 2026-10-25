@@ -62,7 +62,7 @@ sealed interface Type {
         val min: BigInteger,
         val max: BigInteger,
         val scale: Int,
-        val rounding: Rounding = Rounding.TRUNCATE,
+        val rounding: Rounding = Rounding.TOWARDS_ZERO,
         val overflow: Overflow = Overflow.ERROR,
     ) : Type {
         override val kind = "decimal{min=$min, max=$max, scale=$scale, rounding=$rounding, overflow=$overflow}"
@@ -72,37 +72,67 @@ sealed interface Type {
         }
 
         /**
-         * Rounding modes for [Type.Decimal].
-         *
-         * [Rounding.CEILING] - Round towards positive infinity.
-         *
-         * [Rounding.FLOOR] - Round towards negative infinity.
-         *
-         * [Rounding.TRUNCATE] - Round towards zero.
-         *
-         * [Rounding.AWAY_FROM_ZERO] - Round away from zero.
-         *
-         * [Rounding.HALF_UP] - Round half towards positive infinity.
-         *
-         * [Rounding.HALF_DOWN] - Round half towards negative infinity.
-         *
-         * [Rounding.HALF_EVEN] - Round half to nearest even integer.
-         *
-         * [Rounding.PROHIBITED] - Prohibit rounding.
+         * [Decimal]'s rounding modes, inspired by [com.ionspin.kotlin.bignum.decimal.RoundingMode].
          */
         enum class Rounding {
-            CEILING,
+            /**
+             * Rounds towards negative infinity.
+             */
             FLOOR,
-            TRUNCATE,
+
+            /**
+             * Rounds towards positive infinity.
+             */
+            CEILING,
+
+            /**
+             * Rounds away from zero.
+             */
             AWAY_FROM_ZERO,
-            HALF_UP,
-            HALF_DOWN,
-            HALF_EVEN,
+
+            /**
+             * Rounds towards zero (truncation).
+             */
+            TOWARDS_ZERO,
+
+            /**
+             * Rounds towards nearest integer, using away from zero as tiebreaker.
+             */
+            ROUND_HALF_AWAY_FROM_ZERO,
+
+            /**
+             * Rounds towards nearest integer, using towards zero as a tiebreaker.
+             */
+            ROUND_HALF_TOWARDS_ZERO,
+
+            /**
+             * Rounds towards nearest integer, using towards infinity as tiebreaker.
+             */
+            ROUND_HALF_CEILING,
+
+            /**
+             * Rounds towards the nearest integer, using towards negative infinity as a tiebreaker.
+             */
+            ROUND_HALF_FLOOR,
+
+            /**
+             * Rounds towards the nearest even integer.
+             */
+            ROUND_HALF_TO_EVEN,
+
+            /**
+             * Rounds towards the nearest odd integer.
+             */
+            ROUND_HALF_TO_ODD,
+
+            /**
+             * Prohibits rounding.
+             */
             PROHIBITED,
         }
 
         /**
-         * Overflow modes for [Type.Decimal].
+         * [Decimal]'s overflow modes.
          *
          * [Overflow.ERROR] - Throw an error.
          *
