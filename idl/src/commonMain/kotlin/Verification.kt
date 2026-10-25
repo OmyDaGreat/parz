@@ -336,12 +336,9 @@ fun Type.check(v: Value): List<Mismatch> =
                                 add(listOf(Segment.Field(it.name)), MissingField(it.name))
                             }
                         }
-                        if (!v.fields.keys.containsAll(fields.names)) {
-                            add(listOf(), MissingField(fields.names.first { !v.fields.keys.contains(it) }))
-                        }
-                        if (!fields.names.containsAll(v.fields.keys)) {
-                            add(listOf(), ExtraField(v.fields.keys.first { !fields.names.contains(it) }))
-                        }
+                        v.fields.keys
+                            .filter { !fields.names.contains(it) }
+                            .forEach { add(listOf(Segment.Field(it)), ExtraField(it)) }
                         combined
                             .forEach { field ->
                                 val (type, value) = field.value
