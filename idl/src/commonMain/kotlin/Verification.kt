@@ -164,9 +164,9 @@ fun Type.check(v: Value): List<Mismatch> =
 
         is Type.Seq -> {
             expect<Value.Seq>(v) { seq ->
-                seq.items.forEach {
-                    inner.check(it).forEachIndexed { index, mismatch ->
-                        add(listOf(Segment.Index(index)) + mismatch.path, mismatch.reason)
+                seq.items.forEachIndexed { i, item ->
+                    inner.check(item).forEach {
+                        add(listOf(Segment.Index(i)) + it.path, it.reason)
                     }
                 }
             }
