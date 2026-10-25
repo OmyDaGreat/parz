@@ -65,70 +65,71 @@ sealed interface Reason {
 
 fun Type.check(v: Value): List<Mismatch> =
     context(mutableListOf<Mismatch>()) {
-        fun add(mismatch: Mismatch) = contextOf<MutableList<Mismatch>>().add(mismatch)
-
-        fun addAll(mismatches: List<Mismatch>) = contextOf<MutableList<Mismatch>>().addAll(mismatches)
+        fun add(
+            path: List<Segment>,
+            reason: Reason,
+        ) = contextOf<MutableList<Mismatch>>().add(Mismatch(path, reason))
 
         when (v) {
             Value.Empty -> {
                 when (this) {
                     Type.Empty -> Unit
-                    Type.Bool -> add(Mismatch(listOf(), WrongKind("bool", "empty")))
-                    is Type.Decimal -> add(Mismatch(listOf(), WrongKind("decimal", "empty")))
-                    is Type.Enum -> add(Mismatch(listOf(), WrongKind("enum", "empty")))
-                    is Type.Option -> add(Mismatch(listOf(), WrongKind("option", "empty")))
-                    is Type.Record -> add(Mismatch(listOf(), WrongKind("record", "empty")))
-                    is Type.Seq -> add(Mismatch(listOf(), WrongKind("seq", "empty")))
-                    is Type.Str -> add(Mismatch(listOf(), WrongKind("string", "empty")))
+                    Type.Bool -> add(listOf(), WrongKind("bool", "empty"))
+                    is Type.Decimal -> add(listOf(), WrongKind("decimal", "empty"))
+                    is Type.Enum -> add(listOf(), WrongKind("enum", "empty"))
+                    is Type.Option -> add(listOf(), WrongKind("option", "empty"))
+                    is Type.Record -> add(listOf(), WrongKind("record", "empty"))
+                    is Type.Seq -> add(listOf(), WrongKind("seq", "empty"))
+                    is Type.Str -> add(listOf(), WrongKind("string", "empty"))
                 }
             }
 
             is Value.Bool -> {
                 when (this) {
-                    Type.Empty -> add(Mismatch(listOf(), WrongKind("empty", "bool")))
+                    Type.Empty -> add(listOf(), WrongKind("empty", "bool"))
                     Type.Bool -> Unit
-                    is Type.Decimal -> add(Mismatch(listOf(), WrongKind("decimal", "bool")))
-                    is Type.Enum -> add(Mismatch(listOf(), WrongKind("enum", "bool")))
-                    is Type.Option -> add(Mismatch(listOf(), WrongKind("option", "bool")))
-                    is Type.Record -> add(Mismatch(listOf(), WrongKind("record", "bool")))
-                    is Type.Seq -> add(Mismatch(listOf(), WrongKind("seq", "bool")))
-                    is Type.Str -> add(Mismatch(listOf(), WrongKind("string", "bool")))
+                    is Type.Decimal -> add(listOf(), WrongKind("decimal", "bool"))
+                    is Type.Enum -> add(listOf(), WrongKind("enum", "bool"))
+                    is Type.Option -> add(listOf(), WrongKind("option", "bool"))
+                    is Type.Record -> add(listOf(), WrongKind("record", "bool"))
+                    is Type.Seq -> add(listOf(), WrongKind("seq", "bool"))
+                    is Type.Str -> add(listOf(), WrongKind("string", "bool"))
                 }
             }
 
             is Value.Str -> {
                 when (this) {
                     Type.Empty -> {
-                        add(Mismatch(listOf(), WrongKind("empty", "string")))
+                        add(listOf(), WrongKind("empty", "string"))
                     }
 
                     Type.Bool -> {
-                        add(Mismatch(listOf(), WrongKind("bool", "string")))
+                        add(listOf(), WrongKind("bool", "string"))
                     }
 
                     is Type.Decimal -> {
-                        add(Mismatch(listOf(), WrongKind("decimal", "string")))
+                        add(listOf(), WrongKind("decimal", "string"))
                     }
 
                     is Type.Enum -> {
-                        add(Mismatch(listOf(), WrongKind("enum", "string")))
+                        add(listOf(), WrongKind("enum", "string"))
                     }
 
                     is Type.Option -> {
-                        add(Mismatch(listOf(), WrongKind("option", "string")))
+                        add(listOf(), WrongKind("option", "string"))
                     }
 
                     is Type.Record -> {
-                        add(Mismatch(listOf(), WrongKind("record", "string")))
+                        add(listOf(), WrongKind("record", "string"))
                     }
 
                     is Type.Seq -> {
-                        add(Mismatch(listOf(), WrongKind("seq", "string")))
+                        add(listOf(), WrongKind("seq", "string"))
                     }
 
                     is Type.Str -> {
                         if (v.v.length > this.maxLen) {
-                            add(Mismatch(listOf(), TooLong(this.maxLen, v.v.length.toLong())))
+                            add(listOf(), TooLong(this.maxLen, v.v.length.toLong()))
                         }
                     }
                 }
@@ -137,91 +138,91 @@ fun Type.check(v: Value): List<Mismatch> =
             is Value.Dec -> {
                 when (this) {
                     Type.Empty -> {
-                        add(Mismatch(listOf(), WrongKind("empty", "decimal")))
+                        add(listOf(), WrongKind("empty", "decimal"))
                     }
 
                     Type.Bool -> {
-                        add(Mismatch(listOf(), WrongKind("bool", "decimal")))
+                        add(listOf(), WrongKind("bool", "decimal"))
                     }
 
                     is Type.Decimal -> {
                         if (v.unscaled !in min..max) {
-                            add(Mismatch(listOf(), OutOfRange(min, max)))
+                            add(listOf(), OutOfRange(min, max))
                         }
                         if (v.scale != scale) {
-                            add(Mismatch(listOf(), InexactScale(scale, v.scale)))
+                            add(listOf(), InexactScale(scale, v.scale))
                         }
                     }
 
                     is Type.Enum -> {
-                        add(Mismatch(listOf(), WrongKind("enum", "decimal")))
+                        add(listOf(), WrongKind("enum", "decimal"))
                     }
 
                     is Type.Option -> {
-                        add(Mismatch(listOf(), WrongKind("option", "decimal")))
+                        add(listOf(), WrongKind("option", "decimal"))
                     }
 
                     is Type.Record -> {
-                        add(Mismatch(listOf(), WrongKind("record", "decimal")))
+                        add(listOf(), WrongKind("record", "decimal"))
                     }
 
                     is Type.Seq -> {
-                        add(Mismatch(listOf(), WrongKind("seq", "decimal")))
+                        add(listOf(), WrongKind("seq", "decimal"))
                     }
 
                     is Type.Str -> {
-                        add(Mismatch(listOf(), WrongKind("string", "decimal")))
+                        add(listOf(), WrongKind("string", "decimal"))
                     }
                 }
             }
 
             Value.None -> {
                 when (this) {
-                    Type.Empty -> add(Mismatch(listOf(), WrongKind("empty", "none")))
-                    Type.Bool -> add(Mismatch(listOf(), WrongKind("bool", "none")))
-                    is Type.Decimal -> add(Mismatch(listOf(), WrongKind("decimal", "none")))
-                    is Type.Enum -> add(Mismatch(listOf(), WrongKind("enum", "none")))
+                    Type.Empty -> add(listOf(), WrongKind("empty", "none"))
+                    Type.Bool -> add(listOf(), WrongKind("bool", "none"))
+                    is Type.Decimal -> add(listOf(), WrongKind("decimal", "none"))
+                    is Type.Enum -> add(listOf(), WrongKind("enum", "none"))
                     is Type.Option -> Unit
-                    is Type.Record -> add(Mismatch(listOf(), WrongKind("record", "none")))
-                    is Type.Seq -> add(Mismatch(listOf(), WrongKind("seq", "none")))
-                    is Type.Str -> add(Mismatch(listOf(), WrongKind("string", "none")))
+                    is Type.Record -> add(listOf(), WrongKind("record", "none"))
+                    is Type.Seq -> add(listOf(), WrongKind("seq", "none"))
+                    is Type.Str -> add(listOf(), WrongKind("string", "none"))
                 }
             }
 
             is Value.Some -> {
                 when (this) {
                     Type.Empty -> {
-                        add(Mismatch(listOf(), WrongKind("empty", "some")))
+                        add(listOf(), WrongKind("empty", "some"))
                     }
 
                     Type.Bool -> {
-                        add(Mismatch(listOf(), WrongKind("bool", "some")))
+                        add(listOf(), WrongKind("bool", "some"))
                     }
 
                     is Type.Decimal -> {
-                        add(Mismatch(listOf(), WrongKind("decimal", "some")))
+                        add(listOf(), WrongKind("decimal", "some"))
                     }
 
                     is Type.Enum -> {
-                        add(Mismatch(listOf(), WrongKind("enum", "some")))
+                        add(listOf(), WrongKind("enum", "some"))
                     }
 
                     is Type.Option -> {
                         inner.check(v.v).forEach {
-                            add(Mismatch(listOf(Segment.Inner) + it.path, it.reason))
+                            add(listOf(Segment.Inner) + it.path, it.reason)
                         }
                     }
 
                     is Type.Record -> {
-                        add(Mismatch(listOf(), WrongKind("record", "some")))
+                        add(listOf(), WrongKind("record", "some"))
                     }
 
                     is Type.Seq -> {
-                        add(Mismatch(listOf(), WrongKind("seq", "some")))
+                        add(listOf(), WrongKind("seq", "some"))
                     }
 
                     is Type.Str -> {
-                        add(Mismatch(listOf(), WrongKind("string", "some")))
+                        add(listOf(), WrongKind("string", "some"))
                     }
                 }
             }
@@ -229,37 +230,37 @@ fun Type.check(v: Value): List<Mismatch> =
             is Value.Enum -> {
                 when (this) {
                     Type.Empty -> {
-                        add(Mismatch(listOf(), WrongKind("empty", "enum")))
+                        add(listOf(), WrongKind("empty", "enum"))
                     }
 
                     Type.Bool -> {
-                        add(Mismatch(listOf(), WrongKind("bool", "enum")))
+                        add(listOf(), WrongKind("bool", "enum"))
                     }
 
                     is Type.Decimal -> {
-                        add(Mismatch(listOf(), WrongKind("decimal", "enum")))
+                        add(listOf(), WrongKind("decimal", "enum"))
                     }
 
                     is Type.Enum -> {
                         if (!members.map { it.name }.contains(v.name)) {
-                            add(Mismatch(listOf(), UnknownMember(v.name)))
+                            add(listOf(), UnknownMember(v.name))
                         }
                     }
 
                     is Type.Option -> {
-                        add(Mismatch(listOf(), WrongKind("option", "enum")))
+                        add(listOf(), WrongKind("option", "enum"))
                     }
 
                     is Type.Record -> {
-                        add(Mismatch(listOf(), WrongKind("record", "enum")))
+                        add(listOf(), WrongKind("record", "enum"))
                     }
 
                     is Type.Seq -> {
-                        add(Mismatch(listOf(), WrongKind("seq", "enum")))
+                        add(listOf(), WrongKind("seq", "enum"))
                     }
 
                     is Type.Str -> {
-                        add(Mismatch(listOf(), WrongKind("string", "enum")))
+                        add(listOf(), WrongKind("string", "enum"))
                     }
                 }
             }
@@ -267,41 +268,39 @@ fun Type.check(v: Value): List<Mismatch> =
             is Value.Seq -> {
                 when (this) {
                     Type.Empty -> {
-                        add(Mismatch(listOf(), WrongKind("empty", "seq")))
+                        add(listOf(), WrongKind("empty", "seq"))
                     }
 
                     Type.Bool -> {
-                        add(Mismatch(listOf(), WrongKind("bool", "seq")))
+                        add(listOf(), WrongKind("bool", "seq"))
                     }
 
                     is Type.Decimal -> {
-                        add(Mismatch(listOf(), WrongKind("decimal", "seq")))
+                        add(listOf(), WrongKind("decimal", "seq"))
                     }
 
                     is Type.Enum -> {
-                        add(Mismatch(listOf(), WrongKind("enum", "seq")))
+                        add(listOf(), WrongKind("enum", "seq"))
                     }
 
                     is Type.Option -> {
-                        add(Mismatch(listOf(), WrongKind("option", "seq")))
+                        add(listOf(), WrongKind("option", "seq"))
                     }
 
                     is Type.Record -> {
-                        add(Mismatch(listOf(), WrongKind("record", "seq")))
+                        add(listOf(), WrongKind("record", "seq"))
                     }
 
                     is Type.Seq -> {
                         v.items.forEach {
-                            addAll(
-                                inner.check(it).map { mismatch ->
-                                    Mismatch(listOf(Segment.Index(v.items.indexOf(it))) + mismatch.path, mismatch.reason)
-                                },
-                            )
+                            inner.check(it).forEachIndexed { index, mismatch ->
+                                add(listOf(Segment.Index(index)) + mismatch.path, mismatch.reason)
+                            }
                         }
                     }
 
                     is Type.Str -> {
-                        add(Mismatch(listOf(), WrongKind("string", "seq")))
+                        add(listOf(), WrongKind("string", "seq"))
                     }
                 }
             }
@@ -309,23 +308,23 @@ fun Type.check(v: Value): List<Mismatch> =
             is Value.Record -> {
                 when (this) {
                     Type.Empty -> {
-                        add(Mismatch(listOf(), WrongKind("empty", "record")))
+                        add(listOf(), WrongKind("empty", "record"))
                     }
 
                     Type.Bool -> {
-                        add(Mismatch(listOf(), WrongKind("bool", "record")))
+                        add(listOf(), WrongKind("bool", "record"))
                     }
 
                     is Type.Decimal -> {
-                        add(Mismatch(listOf(), WrongKind("decimal", "record")))
+                        add(listOf(), WrongKind("decimal", "record"))
                     }
 
                     is Type.Enum -> {
-                        add(Mismatch(listOf(), WrongKind("enum", "record")))
+                        add(listOf(), WrongKind("enum", "record"))
                     }
 
                     is Type.Option -> {
-                        add(Mismatch(listOf(), WrongKind("option", "record")))
+                        add(listOf(), WrongKind("option", "record"))
                     }
 
                     is Type.Record -> {
@@ -334,30 +333,30 @@ fun Type.check(v: Value): List<Mismatch> =
                             if (v.fields.containsKey(it.name)) {
                                 combined[it.name] = it.type to v.fields[it.name]!!
                             } else {
-                                add(Mismatch(listOf(Segment.Field(it.name)), MissingField(it.name)))
+                                add(listOf(Segment.Field(it.name)), MissingField(it.name))
                             }
                         }
                         if (!v.fields.keys.containsAll(fields.names)) {
-                            add(Mismatch(listOf(), MissingField(fields.names.first { !v.fields.keys.contains(it) })))
+                            add(listOf(), MissingField(fields.names.first { !v.fields.keys.contains(it) }))
                         }
                         if (!fields.names.containsAll(v.fields.keys)) {
-                            add(Mismatch(listOf(), ExtraField(v.fields.keys.first { !fields.names.contains(it) })))
+                            add(listOf(), ExtraField(v.fields.keys.first { !fields.names.contains(it) }))
                         }
                         combined
                             .forEach { field ->
                                 val (type, value) = field.value
                                 type.check(value).forEach { mismatch ->
-                                    add(Mismatch(listOf(Segment.Field(field.key)) + mismatch.path, mismatch.reason))
+                                    add(listOf(Segment.Field(field.key)) + mismatch.path, mismatch.reason)
                                 }
                             }
                     }
 
                     is Type.Seq -> {
-                        add(Mismatch(listOf(), WrongKind("seq", "record")))
+                        add(listOf(), WrongKind("seq", "record"))
                     }
 
                     is Type.Str -> {
-                        add(Mismatch(listOf(), WrongKind("string", "record")))
+                        add(listOf(), WrongKind("string", "record"))
                     }
                 }
             }
