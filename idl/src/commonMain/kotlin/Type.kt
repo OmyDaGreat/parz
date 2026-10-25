@@ -96,32 +96,32 @@ sealed interface Type {
             TOWARDS_ZERO,
 
             /**
-             * Rounds towards nearest integer, using away from zero as tiebreaker.
+             * Rounds towards nearest value at the target's scale, using away from zero as tiebreaker.
              */
             ROUND_HALF_AWAY_FROM_ZERO,
 
             /**
-             * Rounds towards nearest integer, using towards zero as a tiebreaker.
+             * Rounds towards nearest value at the target's scale, using towards zero as a tiebreaker.
              */
             ROUND_HALF_TOWARDS_ZERO,
 
             /**
-             * Rounds towards nearest integer, using towards infinity as tiebreaker.
+             * Rounds towards nearest value at the target's scale, using towards infinity as tiebreaker.
              */
             ROUND_HALF_CEILING,
 
             /**
-             * Rounds towards the nearest integer, using towards negative infinity as a tiebreaker.
+             * Rounds towards the nearest value at the target's scale, using towards negative infinity as a tiebreaker.
              */
             ROUND_HALF_FLOOR,
 
             /**
-             * Rounds towards the nearest even integer.
+             * Rounds towards the nearest even value at the target's scale.
              */
             ROUND_HALF_TO_EVEN,
 
             /**
-             * Rounds towards the nearest odd integer.
+             * Rounds towards the nearest odd value at the target's scale.
              */
             ROUND_HALF_TO_ODD,
 
