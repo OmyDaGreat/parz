@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_26
-
 val user = project.property("user") as String
 val dev = project.property("dev") as String
 val mail = project.property("mail") as String
@@ -23,7 +21,13 @@ group = g
 version = v
 
 kotlin {
-    jvm()
+    jvmToolchain(26)
+
+    jvm {
+        testRuns["test"].executionTask.configure {
+            useJUnitPlatform()
+        }
+    }
 
     android {
         namespace = "$g.$artifact"
@@ -39,10 +43,6 @@ kotlin {
         withJava()
         withHostTest {}
         withDeviceTest {}
-
-        compilerOptions {
-            jvmTarget.set(JVM_26)
-        }
     }
 
     iosX64()
