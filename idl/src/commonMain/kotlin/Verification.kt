@@ -127,7 +127,7 @@ private fun add(
 /**
  * Check a value against a type.
  */
-fun Type.check(v: Value): List<Mismatch> =
+infix fun Type.check(v: Value): List<Mismatch> =
     when (this) {
         Type.Void -> {
             expect<Value.Void>(v)
@@ -233,4 +233,4 @@ fun Type.check(v: Value): List<Mismatch> =
 /**
  * Convenience method to check a value against a type, ignoring the specifications of mismatches.
  */
-fun Type.accepts(v: Value) = check(v).isEmpty()
+infix fun Type.accepts(v: Value) = check(v).isEmpty()
