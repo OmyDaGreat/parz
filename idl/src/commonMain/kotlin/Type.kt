@@ -5,32 +5,42 @@ package xyz.malefic.parz.idl
 import com.ionspin.kotlin.bignum.integer.BigInteger
 
 /**
- * A basic type system for the IDL, implemented in Kotlin for testing before setting up the external schema.
+ * The type system for the IDL.
  */
 sealed interface Type {
+    val kind: String
+
     /**
-     * An empty type. Analogous to [Unit].
+     * A void type. Analogous to [Unit].
      */
-    data object Empty : Type
+    data object Void : Type {
+        override val kind = "void"
+    }
 
     /**
      * A boolean type.
      */
-    data object Bool : Type
+    data object Bool : Type {
+        override val kind = "bool"
+    }
 
     /**
      * An option type (nullability). Allows for nested nullability.
      */
     data class Option(
         val inner: Type,
-    ) : Type
+    ) : Type {
+        override val kind = "option{${inner.kind}}"
+    }
 
     /**
      * A sequence type. Analogous to [List].
      */
     data class Seq(
         val inner: Type,
-    ) : Type
+    ) : Type {
+        override val kind = "seq{${inner.kind}}"
+    }
 
     /**
      * A string type. Max length is defined, as the JVM defines it, through UTF-16 length.
@@ -38,6 +48,8 @@ sealed interface Type {
     data class Str(
         val maxLen: Long = Long.MAX_VALUE,
     ) : Type {
+        override val kind = "string"
+
         init {
             require(maxLen > 0) { "maxLen must be positive" }
         }
@@ -53,6 +65,8 @@ sealed interface Type {
         val rounding: Rounding = Rounding.TRUNCATE,
         val overflow: Overflow = Overflow.ERROR,
     ) : Type {
+        override val kind = "decimal{min=$min, max=$max, scale=$scale, rounding=$rounding, overflow=$overflow}"
+
         init {
             require(min <= max) { "min must be less than or equal to max" }
         }
@@ -90,9 +104,9 @@ sealed interface Type {
         /**
          * Overflow modes for [Type.Decimal].
          *
-         * [Overflow.ERROR] - Throw an exception.
+         * [Overflow.ERROR] - Throw an error.
          *
-         * [Overflow.TRUNCATE_HIGH] - Truncate the high bits.
+         * [Overflow.TRUNCATE_HIGH] - Truncate the higher-order digits.
          *
          * [Overflow.WRAP] - Wrap around.
          *
@@ -112,6 +126,8 @@ sealed interface Type {
     data class Record(
         val fields: List<Field>,
     ) : Type {
+        override val kind = "record{${fields.joinToString("; ") { "${it.name}, ${it.type.kind}" }}}"
+
         init {
             require(fields.isNotEmpty()) { "Record must have at least one field" }
             require(fields.distinctBy { it.name }.size == fields.size) { "Record fields must have unique names" }
@@ -130,11 +146,13 @@ sealed interface Type {
     }
 
     /**
-     * An enum type. Analogous to [kotlin.Enum].
+     * An enum type. Similar to [kotlin.Enum].
      */
     data class Enum(
         val members: List<Member>,
     ) : Type {
+        override val kind = "enum{${members.joinToString("; ") { "${it.name}, ${it.tag}" }}}"
+
         init {
             require(members.isNotEmpty()) { "Enum must have at least one member" }
             require(members.distinctBy { it.name }.size == members.size) { "Enum members must have unique names" }
