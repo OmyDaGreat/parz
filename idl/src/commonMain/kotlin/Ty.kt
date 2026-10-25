@@ -12,21 +12,15 @@ sealed interface Ty {
     sealed interface Bounded : Ty {
         val overflow: Overflow
 
-        val lower: Bound
-        val upper: Bound
-        val boundType: Pair<BoundType, BoundType>
-
-        data class Bound(
-            val pos: Boolean,
-            val scale: Int,
-            val power: Int,
-        )
+        val lower: BoundValue
+        val upper: BoundValue
+        val inclusivity: Pair<Inclusivity, Inclusivity>
     }
 
     data class BoundedInt(
-        override val lower: Bounded.Bound,
-        override val upper: Bounded.Bound,
-        override val boundType: Pair<BoundType, BoundType> = BoundType.EXCLUSIVE to BoundType.EXCLUSIVE,
+        override val lower: BoundValue,
+        override val upper: BoundValue,
+        override val inclusivity: Pair<Inclusivity, Inclusivity> = Inclusivity.EXCLUSIVE to Inclusivity.EXCLUSIVE,
         override val overflow: Overflow = Overflow.ERROR,
     ) : Ty,
         Bounded
@@ -36,9 +30,9 @@ sealed interface Ty {
         val scale: Int,
         val rounding: Rounding = Rounding.TRUNCATE,
         override val overflow: Overflow = Overflow.ERROR,
-        override val boundType: Pair<BoundType, BoundType> = BoundType.EXCLUSIVE to BoundType.EXCLUSIVE,
-        override val lower: Bounded.Bound = Bounded.Bound(false, 10, precision - scale),
-        override val upper: Bounded.Bound = Bounded.Bound(true, 10, precision - scale),
+        override val inclusivity: Pair<Inclusivity, Inclusivity> = Inclusivity.EXCLUSIVE to Inclusivity.EXCLUSIVE,
+        override val lower: BoundValue = BoundValue.Bound(false, 10, precision - scale),
+        override val upper: BoundValue = BoundValue.Bound(true, 10, precision - scale),
     ) : Ty,
         Bounded {
         enum class Rounding {
@@ -60,7 +54,17 @@ enum class Overflow {
     SATURATE,
 }
 
-enum class BoundType {
+enum class Inclusivity {
     INCLUSIVE,
     EXCLUSIVE,
+}
+
+sealed interface BoundValue {
+    data class Bound(
+        val pos: Boolean,
+        val base: Int,
+        val power: Int,
+    ) : BoundValue
+
+    data object Zero : BoundValue
 }

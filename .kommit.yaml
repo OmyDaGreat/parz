@@ -16,15 +16,7 @@ scopes:
 options:
   autoStage: true
   autoPush: true
-  allowBreakingChanges:
-    - feat
-    - fix
-    - chore
-  allowIssues:
-    - feat
-    - fix
-    - chore
-    - refactor
-    - test
-  allowCustomScopes: false
+  allowBreakingChanges: false # Stability isn't important rn
+  allowIssues: false # Not set up yet
+  allowCustomScopes: false # Just add a scope
   allowEmptyScopes: true # Implies project-wide scope
