@@ -4,13 +4,13 @@ kotlin = "2.4.21"
 android-minSdk = "24"
 android-compileSdk = "37"
 kotlinter = "5.7.0"
-kermit = "2.2.0"
 dokka = "2.2.0"
 vanniktech = "0.37.0"
+bignum = "0.3.10"
 
 [libraries]
 kotlin-test = { group = "org.jetbrains.kotlin", name = "kotlin-test", version.ref = "kotlin" }
-kermit = { group = "co.touchlab", name = "kermit", version.ref = "kermit" }
+bignum = { group = "com.ionspin.kotlin", name = "bignum", version.ref = "bignum" }
 
 [plugins]
 android-kmp-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }

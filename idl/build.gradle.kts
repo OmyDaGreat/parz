@@ -58,7 +58,7 @@ kotlin {
     @Suppress("unused")
     sourceSets {
         commonMain.dependencies {
-            implementation(libs.kermit)
+            api(libs.bignum)
         }
 
         commonTest.dependencies {
