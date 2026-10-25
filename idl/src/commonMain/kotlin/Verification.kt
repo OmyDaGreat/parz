@@ -45,6 +45,11 @@ sealed interface Reason {
         val actual: Long,
     ) : Reason
 
+    data class InexactScale(
+        val expected: Int,
+        val actual: Int,
+    ) : Reason
+
     data class UnknownMember(
         val name: String,
     ) : Reason
@@ -139,6 +144,9 @@ fun Type.check(v: Value): List<Mismatch> =
                         is Type.Decimal -> {
                             if (v.unscaled < this@check.min || v.unscaled > this@check.max) {
                                 add(Mismatch(listOf(), OutOfRange(this@check.min, this@check.max)))
+                            }
+                            if (v.scale != this@check.scale) {
+                                add(Mismatch(listOf(), InexactScale(this@check.scale, v.scale)))
                             }
                         }
 
@@ -320,17 +328,17 @@ fun Type.check(v: Value): List<Mismatch> =
                         is Type.Record -> {
                             val fields = mutableMapOf<String, Pair<Type, Value>>()
                             this@check.fields.forEach {
-                                if (v.fields.containsKey(it.key)) {
-                                    fields[it.key] = it.type to v.fields[it.key]!!
+                                if (v.fields.containsKey(it.name)) {
+                                    fields[it.name] = it.type to v.fields[it.name]!!
                                 } else {
-                                    add(Mismatch(listOf(Segment.Field(it.key)), MissingField(it.key)))
+                                    add(Mismatch(listOf(Segment.Field(it.name)), MissingField(it.name)))
                                 }
                             }
-                            if (!v.fields.keys.containsAll(this@check.fields.keys)) {
-                                add(Mismatch(listOf(), MissingField(this@check.fields.keys.first { !v.fields.keys.contains(it) })))
+                            if (!v.fields.keys.containsAll(this@check.fields.names)) {
+                                add(Mismatch(listOf(), MissingField(this@check.fields.names.first { !v.fields.keys.contains(it) })))
                             }
-                            if (!this@check.fields.keys.containsAll(v.fields.keys)) {
-                                add(Mismatch(listOf(), ExtraField(v.fields.keys.first { !this@check.fields.keys.contains(it) })))
+                            if (!this@check.fields.names.containsAll(v.fields.keys)) {
+                                add(Mismatch(listOf(), ExtraField(v.fields.keys.first { !this@check.fields.names.contains(it) })))
                             }
                             fields
                                 .forEach { field ->

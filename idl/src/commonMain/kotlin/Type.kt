@@ -119,6 +119,9 @@ sealed interface Type {
             require(fields.distinctBy { it.name }.size == fields.size) { "Record fields must have unique names" }
         }
 
+        val List<Field>.names
+            get() = this.map { it.name }
+
         /**
          * A record field type. Represents a single field in a record type.
          */

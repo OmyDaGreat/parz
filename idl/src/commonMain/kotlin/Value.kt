@@ -6,6 +6,8 @@ import com.ionspin.kotlin.bignum.integer.BigInteger
  * Concrete values for the [Type] system. Used for conformance vectors and literals.
  */
 sealed interface Value {
+    data object Empty : Value
+
     data object None : Value
 
     data class Some(
