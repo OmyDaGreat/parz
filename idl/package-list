@@ -1,12 +1,19 @@
 $dokka.format:html-v1
 $dokka.linkExtension:html
 $dokka.location:xyz.malefic.parz.idl////PointingToDeclaration/idl/xyz.malefic.parz.idl/index.html
-$dokka.location:xyz.malefic.parz.idl/BoundType.EXCLUSIVE///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}idl/xyz.malefic.parz.idl/-bound-type/-e-x-c-l-u-s-i-v-e/index.html
-$dokka.location:xyz.malefic.parz.idl/BoundType.INCLUSIVE///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}idl/xyz.malefic.parz.idl/-bound-type/-i-n-c-l-u-s-i-v-e/index.html
-$dokka.location:xyz.malefic.parz.idl/BoundType///PointingToDeclaration/idl/xyz.malefic.parz.idl/-bound-type/index.html
-$dokka.location:xyz.malefic.parz.idl/BoundType/entries/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-bound-type/entries.html
-$dokka.location:xyz.malefic.parz.idl/BoundType/valueOf/#kotlin.String/PointingToDeclaration/idl/xyz.malefic.parz.idl/-bound-type/value-of.html
-$dokka.location:xyz.malefic.parz.idl/BoundType/values/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-bound-type/values.html
+$dokka.location:xyz.malefic.parz.idl/BoundValue.Bound///PointingToDeclaration/idl/xyz.malefic.parz.idl/-bound-value/-bound/index.html
+$dokka.location:xyz.malefic.parz.idl/BoundValue.Bound/Bound/#kotlin.Boolean#kotlin.Int#kotlin.Int/PointingToDeclaration/idl/xyz.malefic.parz.idl/-bound-value/-bound/-bound.html
+$dokka.location:xyz.malefic.parz.idl/BoundValue.Bound/base/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-bound-value/-bound/base.html
+$dokka.location:xyz.malefic.parz.idl/BoundValue.Bound/pos/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-bound-value/-bound/pos.html
+$dokka.location:xyz.malefic.parz.idl/BoundValue.Bound/power/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-bound-value/-bound/power.html
+$dokka.location:xyz.malefic.parz.idl/BoundValue.Zero///PointingToDeclaration/idl/xyz.malefic.parz.idl/-bound-value/-zero/index.html
+$dokka.location:xyz.malefic.parz.idl/BoundValue///PointingToDeclaration/idl/xyz.malefic.parz.idl/-bound-value/index.html
+$dokka.location:xyz.malefic.parz.idl/Inclusivity.EXCLUSIVE///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}idl/xyz.malefic.parz.idl/-inclusivity/-e-x-c-l-u-s-i-v-e/index.html
+$dokka.location:xyz.malefic.parz.idl/Inclusivity.INCLUSIVE///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}idl/xyz.malefic.parz.idl/-inclusivity/-i-n-c-l-u-s-i-v-e/index.html
+$dokka.location:xyz.malefic.parz.idl/Inclusivity///PointingToDeclaration/idl/xyz.malefic.parz.idl/-inclusivity/index.html
+$dokka.location:xyz.malefic.parz.idl/Inclusivity/entries/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-inclusivity/entries.html
+$dokka.location:xyz.malefic.parz.idl/Inclusivity/valueOf/#kotlin.String/PointingToDeclaration/idl/xyz.malefic.parz.idl/-inclusivity/value-of.html
+$dokka.location:xyz.malefic.parz.idl/Inclusivity/values/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-inclusivity/values.html
 $dokka.location:xyz.malefic.parz.idl/Overflow.ERROR///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}idl/xyz.malefic.parz.idl/-overflow/-e-r-r-o-r/index.html
 $dokka.location:xyz.malefic.parz.idl/Overflow.SATURATE///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}idl/xyz.malefic.parz.idl/-overflow/-s-a-t-u-r-a-t-e/index.html
 $dokka.location:xyz.malefic.parz.idl/Overflow.WRAP///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}idl/xyz.malefic.parz.idl/-overflow/-w-r-a-p/index.html
@@ -15,13 +22,8 @@ $dokka.location:xyz.malefic.parz.idl/Overflow/entries/#/PointingToDeclaration/i
 $dokka.location:xyz.malefic.parz.idl/Overflow/valueOf/#kotlin.String/PointingToDeclaration/idl/xyz.malefic.parz.idl/-overflow/value-of.html
 $dokka.location:xyz.malefic.parz.idl/Overflow/values/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-overflow/values.html
 $dokka.location:xyz.malefic.parz.idl/Ty.Bool///PointingToDeclaration/idl/xyz.malefic.parz.idl/-ty/-bool/index.html
-$dokka.location:xyz.malefic.parz.idl/Ty.Bounded.Bound///PointingToDeclaration/idl/xyz.malefic.parz.idl/-ty/-bounded/-bound/index.html
-$dokka.location:xyz.malefic.parz.idl/Ty.Bounded.Bound/Bound/#kotlin.Boolean#kotlin.Int#kotlin.Int/PointingToDeclaration/idl/xyz.malefic.parz.idl/-ty/-bounded/-bound/-bound.html
-$dokka.location:xyz.malefic.parz.idl/Ty.Bounded.Bound/pos/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-ty/-bounded/-bound/pos.html
-$dokka.location:xyz.malefic.parz.idl/Ty.Bounded.Bound/power/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-ty/-bounded/-bound/power.html
-$dokka.location:xyz.malefic.parz.idl/Ty.Bounded.Bound/scale/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-ty/-bounded/-bound/scale.html
 $dokka.location:xyz.malefic.parz.idl/Ty.Bounded///PointingToDeclaration/idl/xyz.malefic.parz.idl/-ty/-bounded/index.html
-$dokka.location:xyz.malefic.parz.idl/Ty.Bounded/boundType/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-ty/-bounded/bound-type.html
+$dokka.location:xyz.malefic.parz.idl/Ty.Bounded/inclusivity/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-ty/-bounded/inclusivity.html
 $dokka.location:xyz.malefic.parz.idl/Ty.Bounded/lower/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-ty/-bounded/lower.html
 $dokka.location:xyz.malefic.parz.idl/Ty.Bounded/overflow/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-ty/-bounded/overflow.html
 $dokka.location:xyz.malefic.parz.idl/Ty.Bounded/upper/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-ty/-bounded/upper.html
@@ -38,8 +40,8 @@ $dokka.location:xyz.malefic.parz.idl/Ty.BoundedDecimal.Rounding/entries/#/Pointi
 $dokka.location:xyz.malefic.parz.idl/Ty.BoundedDecimal.Rounding/valueOf/#kotlin.String/PointingToDeclaration/idl/xyz.malefic.parz.idl/-ty/-bounded-decimal/-rounding/value-of.html
 $dokka.location:xyz.malefic.parz.idl/Ty.BoundedDecimal.Rounding/values/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-ty/-bounded-decimal/-rounding/values.html
 $dokka.location:xyz.malefic.parz.idl/Ty.BoundedDecimal///PointingToDeclaration/idl/xyz.malefic.parz.idl/-ty/-bounded-decimal/index.html
-$dokka.location:xyz.malefic.parz.idl/Ty.BoundedDecimal/BoundedDecimal/#kotlin.Int#kotlin.Int#xyz.malefic.parz.idl.Ty.BoundedDecimal.Rounding#xyz.malefic.parz.idl.Overflow#kotlin.Pair[xyz.malefic.parz.idl.BoundType,xyz.malefic.parz.idl.BoundType]#xyz.malefic.parz.idl.Ty.Bounded.Bound#xyz.malefic.parz.idl.Ty.Bounded.Bound/PointingToDeclaration/idl/xyz.malefic.parz.idl/-ty/-bounded-decimal/-bounded-decimal.html
-$dokka.location:xyz.malefic.parz.idl/Ty.BoundedDecimal/boundType/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-ty/-bounded-decimal/bound-type.html
+$dokka.location:xyz.malefic.parz.idl/Ty.BoundedDecimal/BoundedDecimal/#kotlin.Int#kotlin.Int#xyz.malefic.parz.idl.Ty.BoundedDecimal.Rounding#xyz.malefic.parz.idl.Overflow#kotlin.Pair[xyz.malefic.parz.idl.Inclusivity,xyz.malefic.parz.idl.Inclusivity]#xyz.malefic.parz.idl.BoundValue#xyz.malefic.parz.idl.BoundValue/PointingToDeclaration/idl/xyz.malefic.parz.idl/-ty/-bounded-decimal/-bounded-decimal.html
+$dokka.location:xyz.malefic.parz.idl/Ty.BoundedDecimal/inclusivity/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-ty/-bounded-decimal/inclusivity.html
 $dokka.location:xyz.malefic.parz.idl/Ty.BoundedDecimal/lower/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-ty/-bounded-decimal/lower.html
 $dokka.location:xyz.malefic.parz.idl/Ty.BoundedDecimal/overflow/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-ty/-bounded-decimal/overflow.html
 $dokka.location:xyz.malefic.parz.idl/Ty.BoundedDecimal/precision/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-ty/-bounded-decimal/precision.html
@@ -47,8 +49,8 @@ $dokka.location:xyz.malefic.parz.idl/Ty.BoundedDecimal/rounding/#/PointingToDecl
 $dokka.location:xyz.malefic.parz.idl/Ty.BoundedDecimal/scale/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-ty/-bounded-decimal/scale.html
 $dokka.location:xyz.malefic.parz.idl/Ty.BoundedDecimal/upper/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-ty/-bounded-decimal/upper.html
 $dokka.location:xyz.malefic.parz.idl/Ty.BoundedInt///PointingToDeclaration/idl/xyz.malefic.parz.idl/-ty/-bounded-int/index.html
-$dokka.location:xyz.malefic.parz.idl/Ty.BoundedInt/BoundedInt/#xyz.malefic.parz.idl.Ty.Bounded.Bound#xyz.malefic.parz.idl.Ty.Bounded.Bound#kotlin.Pair[xyz.malefic.parz.idl.BoundType,xyz.malefic.parz.idl.BoundType]#xyz.malefic.parz.idl.Overflow/PointingToDeclaration/idl/xyz.malefic.parz.idl/-ty/-bounded-int/-bounded-int.html
-$dokka.location:xyz.malefic.parz.idl/Ty.BoundedInt/boundType/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-ty/-bounded-int/bound-type.html
+$dokka.location:xyz.malefic.parz.idl/Ty.BoundedInt/BoundedInt/#xyz.malefic.parz.idl.BoundValue#xyz.malefic.parz.idl.BoundValue#kotlin.Pair[xyz.malefic.parz.idl.Inclusivity,xyz.malefic.parz.idl.Inclusivity]#xyz.malefic.parz.idl.Overflow/PointingToDeclaration/idl/xyz.malefic.parz.idl/-ty/-bounded-int/-bounded-int.html
+$dokka.location:xyz.malefic.parz.idl/Ty.BoundedInt/inclusivity/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-ty/-bounded-int/inclusivity.html
 $dokka.location:xyz.malefic.parz.idl/Ty.BoundedInt/lower/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-ty/-bounded-int/lower.html
 $dokka.location:xyz.malefic.parz.idl/Ty.BoundedInt/overflow/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-ty/-bounded-int/overflow.html
 $dokka.location:xyz.malefic.parz.idl/Ty.BoundedInt/upper/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-ty/-bounded-int/upper.html
