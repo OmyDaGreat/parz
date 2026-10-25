@@ -56,6 +56,56 @@ sealed interface Type {
         init {
             require(min <= max) { "min must be less than or equal to max" }
         }
+
+        companion object {
+            /**
+             * Rounding modes for [Type.Decimal].
+             *
+             * [Rounding.CEILING] - Round towards positive infinity.
+             *
+             * [Rounding.FLOOR] - Round towards negative infinity.
+             *
+             * [Rounding.TRUNCATE] - Round towards zero.
+             *
+             * [Rounding.AWAY_FROM_ZERO] - Round away from zero.
+             *
+             * [Rounding.HALF_UP] - Round half towards positive infinity.
+             *
+             * [Rounding.HALF_DOWN] - Round half towards negative infinity.
+             *
+             * [Rounding.HALF_EVEN] - Round half to nearest even integer.
+             *
+             * [Rounding.PROHIBITED] - Prohibit rounding.
+             */
+            enum class Rounding {
+                CEILING,
+                FLOOR,
+                TRUNCATE,
+                AWAY_FROM_ZERO,
+                HALF_UP,
+                HALF_DOWN,
+                HALF_EVEN,
+                PROHIBITED,
+            }
+
+            /**
+             * Overflow modes for [Type.Decimal].
+             *
+             * [Overflow.ERROR] - Throw an exception.
+             *
+             * [Overflow.TRUNCATE_HIGH] - Truncate the high bits.
+             *
+             * [Overflow.WRAP] - Wrap around.
+             *
+             * [Overflow.SATURATE] - Stop at the max/min value.
+             */
+            enum class Overflow {
+                ERROR,
+                TRUNCATE_HIGH,
+                WRAP,
+                SATURATE,
+            }
+        }
     }
 
     /**
@@ -99,52 +149,4 @@ sealed interface Type {
             val tag: BigInteger,
         )
     }
-}
-
-/**
- * Rounding modes for [Type.Decimal].
- *
- * [Rounding.CEILING] - Round towards positive infinity.
- *
- * [Rounding.FLOOR] - Round towards negative infinity.
- *
- * [Rounding.TRUNCATE] - Round towards zero.
- *
- * [Rounding.AWAY_FROM_ZERO] - Round away from zero.
- *
- * [Rounding.HALF_UP] - Round half towards positive infinity.
- *
- * [Rounding.HALF_DOWN] - Round half towards negative infinity.
- *
- * [Rounding.HALF_EVEN] - Round half to nearest even integer.
- *
- * [Rounding.PROHIBITED] - Prohibit rounding.
- */
-enum class Rounding {
-    CEILING,
-    FLOOR,
-    TRUNCATE,
-    AWAY_FROM_ZERO,
-    HALF_UP,
-    HALF_DOWN,
-    HALF_EVEN,
-    PROHIBITED,
-}
-
-/**
- * Overflow modes for [Type.Decimal].
- *
- * [Overflow.ERROR] - Throw an exception.
- *
- * [Overflow.TRUNCATE_HIGH] - Truncate the high bits.
- *
- * [Overflow.WRAP] - Wrap around.
- *
- * [Overflow.SATURATE] - Stop at the max/min value.
- */
-enum class Overflow {
-    ERROR,
-    TRUNCATE_HIGH,
-    WRAP,
-    SATURATE,
 }
