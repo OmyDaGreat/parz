@@ -101,12 +101,24 @@ fun Type.check(v: Value): List<Mismatch> =
         }
 
         is Type.Decimal -> {
-            expect<Value.Dec>(v) {
-                if (it.unscaled !in min..max) {
+            expect<Value.Dec>(v) { dec ->
+                if (dec.scale == scale && dec.unscaled !in min..max) {
                     add(listOf(), OutOfRange(min, max))
                 }
-                if (it.scale != scale) {
-                    add(listOf(), InexactScale(scale, it.scale))
+                if (dec.scale != scale) {
+                    val newDec: Value.Dec
+                    if (dec.scale > scale) {
+                        val diff = dec.scale - scale
+                        newDec = Value.Dec(dec.unscaled.shl(diff), scale)
+                    } else {
+                        val diff = scale - dec.scale
+                        newDec = Value.Dec(dec.unscaled.shr(diff), scale)
+                    }
+                    if (newDec.unscaled !in min..max) {
+                        add(listOf(), OutOfRange(min, max))
+                    } else {
+                        add(listOf(), InexactScale(scale, newDec.scale))
+                    }
                 }
             }
         }
