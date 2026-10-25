@@ -12,6 +12,11 @@ class Void {
         assertFalse { Type.Void.accepts(Value.Bool(true)) }
         assertFalse { Type.Void.accepts(Value.Dec(BigInteger.ZERO, 0)) }
         assertFalse { Type.Void.accepts(Value.Str("")) }
+        assertFalse { Type.Void.accepts(Value.Seq(emptyList())) }
+        assertFalse { Type.Void.accepts(Value.Record(emptyMap())) }
+        assertFalse { Type.Void.accepts(Value.Enum("")) }
+        assertFalse { Type.Void.accepts(Value.Some(Value.Void)) }
+        assertFalse { Type.Void.accepts(Value.None) }
     }
 
     @Test
