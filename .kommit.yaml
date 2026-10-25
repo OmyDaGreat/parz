@@ -12,6 +12,7 @@ scopes:
     - idl
   chore:
     - gradle
+    - license
 
 options:
   autoStage: true
