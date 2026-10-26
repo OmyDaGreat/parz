@@ -1,6 +1,7 @@
 package xyz.malefic.parz.idl
 
 import com.ionspin.kotlin.bignum.integer.BigInteger
+import kotlin.math.pow
 
 /**
  * Concrete values for the [Type] system. Used for conformance vectors and literals.
@@ -28,11 +29,20 @@ sealed interface Value {
         override val kind = "bool"
     }
 
-    data class Dec(
+    data class Decimal(
         val unscaled: BigInteger,
         val scale: Int,
     ) : Value {
         override val kind = "decimal"
+
+        infix fun rescale(newScale: Int) =
+            if (newScale >= scale) {
+                Decimal(unscaled * BigInteger.TEN.pow(newScale - scale), newScale)
+            } else {
+                Decimal(unscaled / BigInteger.TEN.pow(scale - newScale), newScale)
+            }
+
+        infix fun isExactAt(newScale: Int) = newScale >= scale || unscaled % BigInteger.TEN.pow(scale - newScale) == BigInteger.ZERO
     }
 
     data class Str(

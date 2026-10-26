@@ -8,6 +8,7 @@ import xyz.malefic.parz.idl.Reason.OutOfRange
 import xyz.malefic.parz.idl.Reason.TooLong
 import xyz.malefic.parz.idl.Reason.UnknownMember
 import xyz.malefic.parz.idl.Reason.WrongKind
+import xyz.malefic.parz.idl.Type.Decimal.Rounding.PROHIBITED
 
 /**
  * A mismatch between a type and a value.
@@ -146,23 +147,13 @@ infix fun Type.check(v: Value): List<Mismatch> =
         }
 
         is Type.Decimal -> {
-            expect<Value.Dec>(v) { dec ->
-                if (dec.scale == scale && dec.unscaled !in min..max) {
-                    add(listOf(), OutOfRange(min, max))
-                }
-                if (dec.scale != scale) {
-                    val newDec: Value.Dec
-                    if (dec.scale > scale) {
-                        val diff = dec.scale - scale
-                        newDec = Value.Dec(dec.unscaled.shl(diff), scale)
-                    } else {
-                        val diff = scale - dec.scale
-                        newDec = Value.Dec(dec.unscaled.shr(diff), scale)
-                    }
-                    if (newDec.unscaled !in min..max) {
+            expect<Value.Decimal>(v) { dec ->
+                if (rounding == PROHIBITED && !dec.isExactAt(scale)) {
+                    add(listOf(), InexactScale(scale, dec.scale))
+                } else {
+                    val rescaled = dec rescale scale
+                    if (overflow == Type.Decimal.Overflow.ERROR && rescaled.unscaled !in min..max) {
                         add(listOf(), OutOfRange(min, max))
-                    } else {
-                        add(listOf(), InexactScale(scale, newDec.scale))
                     }
                 }
             }

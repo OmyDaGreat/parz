@@ -1,5 +1,3 @@
-@file:Suppress("unused")
-
 package xyz.malefic.parz.idl
 
 import com.ionspin.kotlin.bignum.integer.BigInteger
@@ -56,7 +54,7 @@ sealed interface Type {
     }
 
     /**
-     * A decimal type. [min] and [max] are unscaled big integers, allowing for easier comparison with the unscaled value of a decimal.
+     * A decimal type. [min] and [max] are inclusive unscaled big integers, allowing for easier comparison with the unscaled value of a decimal.
      */
     data class Decimal(
         val min: BigInteger,
@@ -74,6 +72,7 @@ sealed interface Type {
         /**
          * [Decimal]'s rounding modes, inspired by [com.ionspin.kotlin.bignum.decimal.RoundingMode].
          */
+        @Suppress("unused")
         enum class Rounding {
             /**
              * Rounds towards negative infinity.

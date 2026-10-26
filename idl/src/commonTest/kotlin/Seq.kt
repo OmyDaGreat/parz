@@ -10,7 +10,7 @@ class Seq {
     @Test
     fun nonSeq() {
         assertFalse { Type.Seq(Type.Bool) accepts Value.Void }
-        assertFalse { Type.Seq(Type.Bool) accepts Value.Dec(BigInteger.ZERO, 0) }
+        assertFalse { Type.Seq(Type.Bool) accepts Value.Decimal(BigInteger.ZERO, 0) }
         assertFalse { Type.Seq(Type.Bool) accepts Value.Str("") }
         assertFalse { Type.Seq(Type.Bool) accepts Value.Record(emptyMap()) }
         assertFalse { Type.Seq(Type.Bool) accepts Value.Enum("") }

@@ -10,7 +10,7 @@ class Option {
     @Test
     fun nonOption() {
         assertFalse { Type.Option(Type.Bool) accepts Value.Void }
-        assertFalse { Type.Option(Type.Bool) accepts Value.Dec(BigInteger.ZERO, 0) }
+        assertFalse { Type.Option(Type.Bool) accepts Value.Decimal(BigInteger.ZERO, 0) }
         assertFalse { Type.Option(Type.Bool) accepts Value.Str("") }
         assertFalse { Type.Option(Type.Bool) accepts Value.Seq(emptyList()) }
         assertFalse { Type.Option(Type.Bool) accepts Value.Record(emptyMap()) }

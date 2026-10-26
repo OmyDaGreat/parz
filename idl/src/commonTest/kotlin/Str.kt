@@ -12,7 +12,7 @@ class Str {
     fun nonStr() {
         assertFalse { Type.Str() accepts Value.Void }
         assertFalse { Type.Str() accepts Value.Bool(true) }
-        assertFalse { Type.Str() accepts Value.Dec(BigInteger.ZERO, 0) }
+        assertFalse { Type.Str() accepts Value.Decimal(BigInteger.ZERO, 0) }
         assertFalse { Type.Str() accepts Value.Seq(emptyList()) }
         assertFalse { Type.Str() accepts Value.Record(emptyMap()) }
         assertFalse { Type.Str() accepts Value.Enum("") }

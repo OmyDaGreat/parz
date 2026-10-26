@@ -10,7 +10,7 @@ class Bool {
     @Test
     fun nonBool() {
         assertFalse { Type.Bool accepts Value.Void }
-        assertFalse { Type.Bool accepts Value.Dec(BigInteger.ZERO, 0) }
+        assertFalse { Type.Bool accepts Value.Decimal(BigInteger.ZERO, 0) }
         assertFalse { Type.Bool accepts Value.Str("") }
         assertFalse { Type.Bool accepts Value.Seq(emptyList()) }
         assertFalse { Type.Bool accepts Value.Record(emptyMap()) }

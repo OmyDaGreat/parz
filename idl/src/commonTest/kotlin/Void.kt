@@ -10,7 +10,7 @@ class Void {
     @Test
     fun nonVoid() {
         assertFalse { Type.Void accepts Value.Bool(true) }
-        assertFalse { Type.Void accepts Value.Dec(BigInteger.ZERO, 0) }
+        assertFalse { Type.Void accepts Value.Decimal(BigInteger.ZERO, 0) }
         assertFalse { Type.Void accepts Value.Str("") }
         assertFalse { Type.Void accepts Value.Seq(emptyList()) }
         assertFalse { Type.Void accepts Value.Record(emptyMap()) }
