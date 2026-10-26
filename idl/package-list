@@ -92,6 +92,7 @@ $dokka.location:xyz.malefic.parz.idl/Type.Record.Field/name/#/PointingToDeclarat
 $dokka.location:xyz.malefic.parz.idl/Type.Record.Field/type/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-type/-record/-field/type.html
 $dokka.location:xyz.malefic.parz.idl/Type.Record///PointingToDeclaration/idl/xyz.malefic.parz.idl/-type/-record/index.html
 $dokka.location:xyz.malefic.parz.idl/Type.Record/Record/#kotlin.collections.List[xyz.malefic.parz.idl.Type.Record.Field]/PointingToDeclaration/idl/xyz.malefic.parz.idl/-type/-record/-record.html
+$dokka.location:xyz.malefic.parz.idl/Type.Record/Record/#vararg(xyz.malefic.parz.idl.Type.Record.Field)/PointingToDeclaration/idl/xyz.malefic.parz.idl/-type/-record/-record.html
 $dokka.location:xyz.malefic.parz.idl/Type.Record/fields/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-type/-record/fields.html
 $dokka.location:xyz.malefic.parz.idl/Type.Record/kind/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-type/-record/kind.html
 $dokka.location:xyz.malefic.parz.idl/Type.Record/names/kotlin.collections.List[xyz.malefic.parz.idl.Type.Record.Field]#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-type/-record/names.html
