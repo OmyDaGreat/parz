@@ -1,7 +1,6 @@
+package xyz.malefic.parz.idl
+
 import com.ionspin.kotlin.bignum.integer.BigInteger
-import xyz.malefic.parz.idl.Type
-import xyz.malefic.parz.idl.Value
-import xyz.malefic.parz.idl.accepts
 import kotlin.test.Test
 import kotlin.test.assertFails
 import kotlin.test.assertFalse
