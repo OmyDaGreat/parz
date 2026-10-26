@@ -22,7 +22,7 @@ class Record {
 
     @Test
     fun invalidRecord() {
-        assertFails { Type.Record(emptyList()) accepts Value.Record(mapOf("key" to Value.Str("hello world"))) }
+        assertFails { Type.Record(emptyList()) accepts Value.Record(emptyMap()) }
         assertFails {
             Type.Record(Field("key", Type.Str()), Field("key", Type.Bool)) accepts
                 Value.Record(mapOf("key" to Value.Str("hello world")))
@@ -34,5 +34,9 @@ class Record {
     fun isRecord() {
         assertTrue { Type.Record(Field("key", Type.Str())) accepts Value.Record(mapOf("key" to Value.Str("hello world"))) }
         assertTrue { Type.Record(Field("key", Type.Str())) accepts Value.Record(mapOf("key" to Value.Str("hello world"))) }
+        assertTrue {
+            Type.Record(Field("key", Type.Str()), Field("key2", Type.Str())) accepts
+                Value.Record(mapOf("key" to Value.Str("hello world"), "key2" to Value.Str("hello world")))
+        }
     }
 }

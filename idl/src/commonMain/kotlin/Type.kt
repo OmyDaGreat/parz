@@ -183,6 +183,7 @@ sealed interface Type {
     /**
      * An enum type. Similar to [kotlin.Enum].
      */
+    @OptIn(ExperimentalStdlibApi::class)
     data class Enum(
         val members: List<Member>,
     ) : Type {
@@ -190,8 +191,8 @@ sealed interface Type {
 
         init {
             require(members.isNotEmpty()) { "Enum must have at least one member" }
-            require(members.distinctBy { it.name }.size == members.size) { "Enum members must have unique names" }
-            require(members.distinctBy { it.tag }.size == members.size) { "Enum members must have unique tags" }
+            require(members.allDistinctBy { it.name }) { "Enum members must have unique names" }
+            require(members.allDistinctBy { it.tag }) { "Enum members must have unique tags" }
         }
 
         constructor(vararg members: Member) : this(members.toList())
