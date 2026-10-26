@@ -80,6 +80,7 @@ $dokka.location:xyz.malefic.parz.idl/Type.Enum.Member/name/#/PointingToDeclarati
 $dokka.location:xyz.malefic.parz.idl/Type.Enum.Member/tag/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-type/-enum/-member/tag.html
 $dokka.location:xyz.malefic.parz.idl/Type.Enum///PointingToDeclaration/idl/xyz.malefic.parz.idl/-type/-enum/index.html
 $dokka.location:xyz.malefic.parz.idl/Type.Enum/Enum/#kotlin.collections.List[xyz.malefic.parz.idl.Type.Enum.Member]/PointingToDeclaration/idl/xyz.malefic.parz.idl/-type/-enum/-enum.html
+$dokka.location:xyz.malefic.parz.idl/Type.Enum/Enum/#vararg(xyz.malefic.parz.idl.Type.Enum.Member)/PointingToDeclaration/idl/xyz.malefic.parz.idl/-type/-enum/-enum.html
 $dokka.location:xyz.malefic.parz.idl/Type.Enum/kind/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-type/-enum/kind.html
 $dokka.location:xyz.malefic.parz.idl/Type.Enum/members/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-type/-enum/members.html
 $dokka.location:xyz.malefic.parz.idl/Type.Option///PointingToDeclaration/idl/xyz.malefic.parz.idl/-type/-option/index.html
