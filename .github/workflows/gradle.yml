@@ -36,7 +36,7 @@ jobs:
           ~/.konan
         key: ${{ runner.os }}-${{ hashFiles('**/.lock') }}
 
-    - name: Set up JDK 25
+    - name: Set up JDK 27
       uses: actions/setup-java@v6
       with:
         java-version: '27'
