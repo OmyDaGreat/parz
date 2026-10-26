@@ -55,6 +55,8 @@ sealed interface Type {
 
     /**
      * A decimal type. [min] and [max] are inclusive unscaled big integers, allowing for easier comparison with the unscaled value of a decimal.
+     *
+     * [Decimal] types with [scale] of 0 are referred to as Integers.
      */
     data class Decimal(
         val min: BigInteger,
