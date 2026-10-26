@@ -173,7 +173,11 @@ sealed interface Type {
         data class Field(
             val name: String,
             val type: Type,
-        )
+        ) {
+            init {
+                require(name.isNotEmpty()) { "Record field name must not be empty" }
+            }
+        }
     }
 
     /**
@@ -188,8 +192,9 @@ sealed interface Type {
             require(members.isNotEmpty()) { "Enum must have at least one member" }
             require(members.distinctBy { it.name }.size == members.size) { "Enum members must have unique names" }
             require(members.distinctBy { it.tag }.size == members.size) { "Enum members must have unique tags" }
-            require(members.all { it.tag >= BigInteger.ZERO }) { "Enum members must have non-negative tags" }
         }
+
+        constructor(vararg members: Member) : this(members.toList())
 
         /**
          * An enum member type. Represents a single member in an enum type.
@@ -197,6 +202,11 @@ sealed interface Type {
         data class Member(
             val name: String,
             val tag: BigInteger,
-        )
+        ) {
+            init {
+                require(name.isNotEmpty()) { "Enum member name must not be empty" }
+                require(tag >= BigInteger.ZERO) { "Enum member tag must be non-negative" }
+            }
+        }
     }
 }
