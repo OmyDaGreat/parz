@@ -162,6 +162,8 @@ sealed interface Type {
             require(fields.distinctBy { it.name }.size == fields.size) { "Record fields must have unique names" }
         }
 
+        constructor(vararg fields: Field) : this(fields.toList())
+
         val List<Field>.names
             get() = this.map { it.name }
 
