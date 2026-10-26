@@ -1,10 +1,8 @@
 package xyz.malefic.parz.idl
 
-import com.ionspin.kotlin.bignum.integer.BigInteger
 import com.ionspin.kotlin.bignum.integer.BigInteger.Companion.ONE
 import com.ionspin.kotlin.bignum.integer.BigInteger.Companion.ZERO
 import xyz.malefic.parz.idl.Type.Enum.Member
-import xyz.malefic.parz.idl.Type.Record.Field
 import kotlin.test.Test
 import kotlin.test.assertFails
 import kotlin.test.assertFalse

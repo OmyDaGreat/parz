@@ -1,7 +1,6 @@
 package xyz.malefic.parz.idl
 
 import com.ionspin.kotlin.bignum.integer.BigInteger
-import kotlin.math.pow
 
 /**
  * Concrete values for the [Type] system. Used for conformance vectors and literals.
