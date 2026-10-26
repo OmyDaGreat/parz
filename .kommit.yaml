@@ -14,6 +14,8 @@ scopes:
     - deps
     - gradle
     - license
+  docs:
+    - readme
 
 options:
   autoStage: true
