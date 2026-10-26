@@ -13,6 +13,18 @@ IDL & IR setup with (planned) support for a variety of languages.
 ** IDL schema
 ** IR schema defined through the IDL
 
+=== Usage
+* Get from Maven Central:
+
+[source]
+----
+implementation("xyz.malefic.parz:idl:0.1.0")
+----
+
+* Create a compiler converting your language's typedefs into the link:idl/src/commonMain/kotlin/Value.kt[Value.kt] types.
+* Type-check against the link:idl/src/commonMain/kotlin/Type.kt[Type.kt] types (like in link:idl/src/commonTest/[commonTest] right now), which is a basic validation system.
+* For now, that's pretty much the entire functionality, though a language-independent IDL schema is planned in addition to a separate verification process and some built-in language type converters.
+
 == License
 
 This template is licensed under the GNU AGPLv3. View the link:LICENSE[LICENSE] file for more information.
