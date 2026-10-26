@@ -3,11 +3,15 @@ import com.ionspin.kotlin.bignum.integer.BigInteger.Companion.ONE
 import com.ionspin.kotlin.bignum.integer.BigInteger.Companion.TEN
 import com.ionspin.kotlin.bignum.integer.BigInteger.Companion.TWO
 import com.ionspin.kotlin.bignum.integer.BigInteger.Companion.ZERO
+import xyz.malefic.parz.idl.Mismatch
+import xyz.malefic.parz.idl.Reason
 import xyz.malefic.parz.idl.Type
+import xyz.malefic.parz.idl.Type.Decimal.Rounding
 import xyz.malefic.parz.idl.Value
 import xyz.malefic.parz.idl.accepts
 import xyz.malefic.parz.idl.check
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFails
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -33,6 +37,14 @@ class Decimal {
         assertFalse { Type.Decimal(-TEN, TEN, 0) accepts Value.Decimal(-TEN - 1, 0) }
         assertFalse { Type.Decimal(ZERO, TEN, 2) accepts Value.Decimal(-ONE, 2) }
         assertFalse { Type.Decimal(-TWO.pow(128), TWO.pow(128), 0) accepts Value.Decimal(TWO.pow(128) + 1, 0) }
+        assertEquals(
+            Type.Decimal(ZERO, BigInteger(100), 2).check(Value.Decimal(BigInteger(1004), 3)),
+            listOf(Mismatch(listOf(), Reason.OutOfRange(ZERO, BigInteger(100)))),
+        )
+        assertEquals(
+            Type.Decimal(ZERO, BigInteger(100), 2, Rounding.PROHIBITED).check(Value.Decimal(BigInteger(1004), 3)),
+            listOf(Mismatch(listOf(), Reason.InexactScale(2, 3))),
+        )
         assertFails { Type.Decimal(ONE, ZERO, 0) accepts Value.Decimal(ZERO, 0) }
         assertFails { Type.Decimal(TEN, -TEN, 2) accepts Value.Decimal(ZERO, 2) }
     }

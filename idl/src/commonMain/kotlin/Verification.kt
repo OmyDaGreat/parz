@@ -150,9 +150,10 @@ infix fun Type.check(v: Value): List<Mismatch> =
             expect<Value.Decimal>(v) { dec ->
                 if (rounding == PROHIBITED && !dec.isExactAt(scale)) {
                     add(listOf(), InexactScale(scale, dec.scale))
-                } else {
-                    val rescaled = dec rescale scale
-                    if (overflow == Type.Decimal.Overflow.ERROR && rescaled.unscaled !in min..max) {
+                } else if (overflow == Type.Decimal.Overflow.ERROR) {
+                    val common = maxOf(scale, dec.scale)
+                    val factor = BigInteger.TEN.pow(common - scale)
+                    if ((dec rescale common).unscaled !in (min * factor)..(max * factor)) {
                         add(listOf(), OutOfRange(min, max))
                     }
                 }
