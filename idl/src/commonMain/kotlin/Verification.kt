@@ -127,6 +127,8 @@ private fun add(
 
 /**
  * Check a value against a type.
+ *
+ * Decimals are checked strictly (rounding and overflow are ignored).
  */
 infix fun Type.check(v: Value): List<Mismatch> =
     when (this) {
@@ -148,14 +150,13 @@ infix fun Type.check(v: Value): List<Mismatch> =
 
         is Type.Decimal -> {
             expect<Value.Decimal>(v) { dec ->
-                if (rounding == PROHIBITED && !dec.isExactAt(scale)) {
+                if (!dec.isExactAt(scale)) {
                     add(listOf(), InexactScale(scale, dec.scale))
-                } else if (overflow == Type.Decimal.Overflow.ERROR) {
-                    val common = maxOf(scale, dec.scale)
-                    val factor = BigInteger.TEN.pow(common - scale)
-                    if ((dec rescale common).unscaled !in (min * factor)..(max * factor)) {
-                        add(listOf(), OutOfRange(min, max))
-                    }
+                }
+                val common = maxOf(scale, dec.scale)
+                val factor = BigInteger.TEN.pow(common - scale)
+                if (dec.rescale(common, PROHIBITED).unscaled !in (min * factor)..(max * factor)) {
+                    add(listOf(), OutOfRange(min, max))
                 }
             }
         }

@@ -149,6 +149,49 @@ sealed interface Type {
             WRAP,
             SATURATE,
         }
+
+        /**
+         * Coerce a decimal [value] into this type: rescale it to [scale] with [rounding], then apply [overflow] if the result falls outside [min]..[max].
+         *
+         * [Overflow.TRUNCATE_HIGH] keeps as many low-order digits as the wider of [min] and [max] has, keeping the sign.
+         *
+         * [Overflow.WRAP] wraps modulo the size of the range, so -128..127 at scale 0 behaves like a signed byte.
+         *
+         * @throws ArithmeticException if rounding is prohibited and the value is inexact, if [overflow] is [Overflow.ERROR] and the value is out of range, or if truncation still leaves it out of range
+         */
+        infix fun coerce(value: Value.Decimal): Value.Decimal {
+            val rounded = value.rescale(scale, rounding)
+            val unscaled = rounded.unscaled
+            if (unscaled in min..max) return rounded
+
+            val coerced =
+                when (overflow) {
+                    Overflow.ERROR -> {
+                        throw ArithmeticException("Decimal overflow: $rounded is outside $min..$max at scale $scale")
+                    }
+
+                    Overflow.TRUNCATE_HIGH -> {
+                        val digits = maxOf(min.numberOfDecimalDigits(), max.numberOfDecimalDigits())
+                        (unscaled % BigInteger.TEN.pow(digits)).also {
+                            if (it !in min..max) {
+                                throw ArithmeticException(
+                                    "Decimal overflow: $rounded is outside $min..$max at scale $scale after truncation",
+                                )
+                            }
+                        }
+                    }
+
+                    Overflow.WRAP -> {
+                        min + ((unscaled - min) mod (max - min + 1))
+                    }
+
+                    Overflow.SATURATE -> {
+                        if (unscaled < min) min else max
+                    }
+                }
+
+            return Value.Decimal(coerced, scale)
+        }
     }
 
     /**
