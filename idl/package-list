@@ -68,6 +68,7 @@ $dokka.location:xyz.malefic.parz.idl/Type.Decimal.Rounding/valueOf/#kotlin.Strin
 $dokka.location:xyz.malefic.parz.idl/Type.Decimal.Rounding/values/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-type/-decimal/-rounding/values.html
 $dokka.location:xyz.malefic.parz.idl/Type.Decimal///PointingToDeclaration/idl/xyz.malefic.parz.idl/-type/-decimal/index.html
 $dokka.location:xyz.malefic.parz.idl/Type.Decimal/Decimal/#com.ionspin.kotlin.bignum.integer.BigInteger#com.ionspin.kotlin.bignum.integer.BigInteger#kotlin.Int#xyz.malefic.parz.idl.Type.Decimal.Rounding#xyz.malefic.parz.idl.Type.Decimal.Overflow/PointingToDeclaration/idl/xyz.malefic.parz.idl/-type/-decimal/-decimal.html
+$dokka.location:xyz.malefic.parz.idl/Type.Decimal/coerce/#xyz.malefic.parz.idl.Value.Decimal/PointingToDeclaration/idl/xyz.malefic.parz.idl/-type/-decimal/coerce.html
 $dokka.location:xyz.malefic.parz.idl/Type.Decimal/kind/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-type/-decimal/kind.html
 $dokka.location:xyz.malefic.parz.idl/Type.Decimal/max/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-type/-decimal/max.html
 $dokka.location:xyz.malefic.parz.idl/Type.Decimal/min/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-type/-decimal/min.html
@@ -117,7 +118,7 @@ $dokka.location:xyz.malefic.parz.idl/Value.Decimal///PointingToDeclaration/idl/
 $dokka.location:xyz.malefic.parz.idl/Value.Decimal/Decimal/#com.ionspin.kotlin.bignum.integer.BigInteger#kotlin.Int/PointingToDeclaration/idl/xyz.malefic.parz.idl/-value/-decimal/-decimal.html
 $dokka.location:xyz.malefic.parz.idl/Value.Decimal/isExactAt/#kotlin.Int/PointingToDeclaration/idl/xyz.malefic.parz.idl/-value/-decimal/is-exact-at.html
 $dokka.location:xyz.malefic.parz.idl/Value.Decimal/kind/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-value/-decimal/kind.html
-$dokka.location:xyz.malefic.parz.idl/Value.Decimal/rescale/#kotlin.Int/PointingToDeclaration/idl/xyz.malefic.parz.idl/-value/-decimal/rescale.html
+$dokka.location:xyz.malefic.parz.idl/Value.Decimal/rescale/#kotlin.Int#xyz.malefic.parz.idl.Type.Decimal.Rounding/PointingToDeclaration/idl/xyz.malefic.parz.idl/-value/-decimal/rescale.html
 $dokka.location:xyz.malefic.parz.idl/Value.Decimal/scale/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-value/-decimal/scale.html
 $dokka.location:xyz.malefic.parz.idl/Value.Decimal/unscaled/#/PointingToDeclaration/idl/xyz.malefic.parz.idl/-value/-decimal/unscaled.html
 $dokka.location:xyz.malefic.parz.idl/Value.Enum///PointingToDeclaration/idl/xyz.malefic.parz.idl/-value/-enum/index.html
