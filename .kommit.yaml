@@ -18,7 +18,7 @@ scopes:
     - readme
 
 options:
-  autoStage: true
+  stageMode: auto
   autoPush: true
   allowBreakingChanges: false # Stability isn't important rn
   allowIssues: false # Not set up yet

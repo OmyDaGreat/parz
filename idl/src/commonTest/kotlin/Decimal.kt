@@ -74,19 +74,19 @@ class Decimal {
 
     @Test
     fun rescaleRounding() {
-        val inputs = listOf(55, 25, 16, 11, 10, -10, -11, -16, -25, -55).map { Value.Decimal(BigInteger(it), 1) }
+        val inputs = listOf(55, 25, 16, 11, 10, 5, 1, -1, -5, -10, -11, -16, -25, -55).map { Value.Decimal(BigInteger(it), 1) }
         val expected =
             mapOf(
-                Rounding.AWAY_FROM_ZERO to listOf(6, 3, 2, 2, 1, -1, -2, -2, -3, -6),
-                Rounding.TOWARDS_ZERO to listOf(5, 2, 1, 1, 1, -1, -1, -1, -2, -5),
-                Rounding.CEILING to listOf(6, 3, 2, 2, 1, -1, -1, -1, -2, -5),
-                Rounding.FLOOR to listOf(5, 2, 1, 1, 1, -1, -2, -2, -3, -6),
-                Rounding.ROUND_HALF_AWAY_FROM_ZERO to listOf(6, 3, 2, 1, 1, -1, -1, -2, -3, -6),
-                Rounding.ROUND_HALF_TOWARDS_ZERO to listOf(5, 2, 2, 1, 1, -1, -1, -2, -2, -5),
-                Rounding.ROUND_HALF_CEILING to listOf(6, 3, 2, 1, 1, -1, -1, -2, -2, -5),
-                Rounding.ROUND_HALF_FLOOR to listOf(5, 2, 2, 1, 1, -1, -1, -2, -3, -6),
-                Rounding.ROUND_HALF_TO_EVEN to listOf(6, 2, 2, 1, 1, -1, -1, -2, -2, -6),
-                Rounding.ROUND_HALF_TO_ODD to listOf(5, 3, 2, 1, 1, -1, -1, -2, -3, -5),
+                Rounding.AWAY_FROM_ZERO to listOf(6, 3, 2, 2, 1, 1, 1, -1, -1, -1, -2, -2, -3, -6),
+                Rounding.TOWARDS_ZERO to listOf(5, 2, 1, 1, 1, 0, 0, 0, 0, -1, -1, -1, -2, -5),
+                Rounding.CEILING to listOf(6, 3, 2, 2, 1, 1, 1, 0, 0, -1, -1, -1, -2, -5),
+                Rounding.FLOOR to listOf(5, 2, 1, 1, 1, 0, 0, -1, -1, -1, -2, -2, -3, -6),
+                Rounding.ROUND_HALF_AWAY_FROM_ZERO to listOf(6, 3, 2, 1, 1, 1, 0, 0, -1, -1, -1, -2, -3, -6),
+                Rounding.ROUND_HALF_TOWARDS_ZERO to listOf(5, 2, 2, 1, 1, 0, 0, 0, 0, -1, -1, -2, -2, -5),
+                Rounding.ROUND_HALF_CEILING to listOf(6, 3, 2, 1, 1, 1, 0, 0, 0, -1, -1, -2, -2, -5),
+                Rounding.ROUND_HALF_FLOOR to listOf(5, 2, 2, 1, 1, 0, 0, 0, -1, -1, -1, -2, -3, -6),
+                Rounding.ROUND_HALF_TO_EVEN to listOf(6, 2, 2, 1, 1, 0, 0, 0, 0, -1, -1, -2, -2, -6),
+                Rounding.ROUND_HALF_TO_ODD to listOf(5, 3, 2, 1, 1, 1, 0, 0, -1, -1, -1, -2, -3, -5),
             )
         expected.forEach { (rounding, outputs) ->
             inputs.zip(outputs).forEach { (input, output) ->

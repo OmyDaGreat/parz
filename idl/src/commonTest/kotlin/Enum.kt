@@ -24,7 +24,7 @@ class Enum {
 
     @Test
     fun invalidEnum() {
-        assertFails { Type.Enum(emptyList()) accepts Value.Enum("") }
+        assertFails { Type.Enum() accepts Value.Enum("") }
         assertFails { Type.Enum(Member("key", ONE), Member("key", ZERO)) accepts Value.Enum("key") }
         assertFails { Type.Enum(Member("key1", ZERO), Member("key2", ZERO)) accepts Value.Enum("key2") }
         assertFalse { Type.Enum(Member("key", ZERO)) accepts Value.Enum("") }
