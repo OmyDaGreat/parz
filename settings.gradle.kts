@@ -1,4 +1,6 @@
 pluginManagement {
+    includeBuild("build-logic")
+
     repositories {
         google()
         mavenCentral()
@@ -18,4 +20,5 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "parz"
-include(":idl")
+include(":bom")
+include(":idl:model")
