@@ -80,8 +80,8 @@ mavenPublishing {
         url = "https://github.com/$user/$repo"
         licenses {
             license {
-                name = "MIT License"
-                url = "https://mit.malefic.xyz"
+                name = "GNU AGPLv3"
+                url = "https://github.com/OmyDaGreat/parz/blob/main/LICENSE"
             }
         }
         developers {
