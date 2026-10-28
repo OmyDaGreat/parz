@@ -1,27 +1,9 @@
 package xyz.malefic.parz.idl
 
-import com.ionspin.kotlin.bignum.integer.BigInteger
 import kotlin.test.Test
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
 
 class Bool {
-    @Test
-    fun nonBool() {
-        assertFalse { Type.Bool accepts Value.Void }
-        assertFalse { Type.Bool accepts Value.Decimal(BigInteger.ZERO, 0) }
-        assertFalse { Type.Bool accepts Value.Str("") }
-        assertFalse { Type.Bool accepts Value.Seq(emptyList()) }
-        assertFalse { Type.Bool accepts Value.Record(emptyMap()) }
-        assertFalse { Type.Bool accepts Value.Enum("") }
-        assertFalse { Type.Bool accepts Value.Some(Value.Bool(true)) }
-        assertFalse { Type.Bool accepts Value.Some(Value.Bool(false)) }
-        assertFalse { Type.Bool accepts Value.None }
-    }
+    @Test fun nonBool() = Type.Bool.assertRejectsOtherKinds()
 
-    @Test
-    fun isBool() {
-        assertTrue { Type.Bool accepts Value.Bool(true) }
-        assertTrue { Type.Bool accepts Value.Bool(false) }
-    }
+    @Test fun isBool() = Type.Bool.assertAccepts(Value.Bool(true), Value.Bool(false))
 }

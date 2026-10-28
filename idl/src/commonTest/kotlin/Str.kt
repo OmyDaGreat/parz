@@ -1,38 +1,23 @@
 package xyz.malefic.parz.idl
 
-import com.ionspin.kotlin.bignum.integer.BigInteger
 import kotlin.test.Test
-import kotlin.test.assertFails
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
+import kotlin.test.assertFailsWith
 
 class Str {
-    @Test
-    fun nonStr() {
-        assertFalse { Type.Str() accepts Value.Void }
-        assertFalse { Type.Str() accepts Value.Bool(true) }
-        assertFalse { Type.Str() accepts Value.Decimal(BigInteger.ZERO, 0) }
-        assertFalse { Type.Str() accepts Value.Seq(emptyList()) }
-        assertFalse { Type.Str() accepts Value.Record(emptyMap()) }
-        assertFalse { Type.Str() accepts Value.Enum("") }
-        assertFalse { Type.Str() accepts Value.Some(Value.Void) }
-        assertFalse { Type.Str() accepts Value.None }
-    }
+    @Test fun nonStr() = Type.Str().assertRejectsOtherKinds()
 
     @Test
     fun invalidStr() {
-        assertFalse { Type.Str(maxLen = 10) accepts Value.Str("hello world") }
-        assertFalse { Type.Str(maxLen = 1) accepts Value.Str("hello") }
-        assertFails { Type.Str(maxLen = 0) accepts Value.Str("") }
-        assertFails { Type.Str(maxLen = -1) accepts Value.Str("") }
+        assertFailsWith<IllegalArgumentException> { Type.Str(maxLen = 0) }
+        assertFailsWith<IllegalArgumentException> { Type.Str(maxLen = -1) }
+        Type.Str(maxLen = 10).assertRejects(Value.Str("hello world"))
+        Type.Str(maxLen = 1).assertRejects(Value.Str("hello"))
     }
 
     @Test
     fun isStr() {
-        assertTrue { Type.Str() accepts Value.Str("") }
-        assertTrue { Type.Str() accepts Value.Str("hello") }
-        assertTrue { Type.Str(maxLen = 10) accepts Value.Str("hello") }
-        assertTrue { Type.Str(maxLen = 1) accepts Value.Str("") }
-        assertTrue { Type.Str(maxLen = 1) accepts Value.Str("e") }
+        Type.Str().assertAccepts(Value.Str(""), Value.Str("hello"))
+        Type.Str(maxLen = 10).assertAccepts(Value.Str("hello"))
+        Type.Str(maxLen = 1).assertAccepts(Value.Str(""), Value.Str("e"))
     }
 }

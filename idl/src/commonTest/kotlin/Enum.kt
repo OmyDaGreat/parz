@@ -4,36 +4,25 @@ import com.ionspin.kotlin.bignum.integer.BigInteger.Companion.ONE
 import com.ionspin.kotlin.bignum.integer.BigInteger.Companion.ZERO
 import xyz.malefic.parz.idl.Type.Enum.Member
 import kotlin.test.Test
-import kotlin.test.assertFails
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
+import kotlin.test.assertFailsWith
 
 class Enum {
-    @Test
-    fun nonEnum() {
-        assertFalse { Type.Enum(Member("key", ZERO)) accepts Value.Void }
-        assertFalse { Type.Enum(Member("key", ZERO)) accepts Value.Bool(true) }
-        assertFalse { Type.Enum(Member("key", ZERO)) accepts Value.Decimal(ZERO, 0) }
-        assertFalse { Type.Enum(Member("key", ZERO)) accepts Value.Seq(emptyList()) }
-        assertFalse { Type.Enum(Member("key", ZERO)) accepts Value.Str("") }
-        assertFalse { Type.Enum(Member("key", ZERO)) accepts Value.Enum("") }
-        assertFalse { Type.Enum(Member("key", ZERO)) accepts Value.Record(emptyMap()) }
-        assertFalse { Type.Enum(Member("key", ZERO)) accepts Value.Some(Value.Void) }
-        assertFalse { Type.Enum(Member("key", ZERO)) accepts Value.None }
-    }
+    private val single = Type.Enum(Member("key", ZERO))
+    private val pair = Type.Enum(Member("key", ZERO), Member("key2", ONE))
+
+    @Test fun nonEnum() = single.assertRejectsOtherKinds()
 
     @Test
     fun invalidEnum() {
-        assertFails { Type.Enum() accepts Value.Enum("") }
-        assertFails { Type.Enum(Member("key", ONE), Member("key", ZERO)) accepts Value.Enum("key") }
-        assertFails { Type.Enum(Member("key1", ZERO), Member("key2", ZERO)) accepts Value.Enum("key2") }
-        assertFalse { Type.Enum(Member("key", ZERO)) accepts Value.Enum("") }
+        assertFailsWith<IllegalArgumentException> { Type.Enum() }
+        assertFailsWith<IllegalArgumentException> { Type.Enum(Member("key", ONE), Member("key", ZERO)) }
+        assertFailsWith<IllegalArgumentException> { Type.Enum(Member("key1", ZERO), Member("key2", ZERO)) }
+        single.assertRejects(Value.Enum(""))
     }
 
     @Test
     fun isEnum() {
-        assertTrue { Type.Enum(Member("key", ZERO)) accepts Value.Enum("key") }
-        assertTrue { Type.Enum(Member("key", ZERO), Member("key2", ONE)) accepts Value.Enum("key") }
-        assertTrue { Type.Enum(Member("key", ZERO), Member("key2", ONE)) accepts Value.Enum("key2") }
+        single.assertAccepts(Value.Enum("key"))
+        pair.assertAccepts(Value.Enum("key"), Value.Enum("key2"))
     }
 }

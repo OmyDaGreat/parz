@@ -1,42 +1,27 @@
 package xyz.malefic.parz.idl
 
-import com.ionspin.kotlin.bignum.integer.BigInteger
 import xyz.malefic.parz.idl.Type.Record.Field
 import kotlin.test.Test
-import kotlin.test.assertFails
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
+import kotlin.test.assertFailsWith
 
 class Record {
-    @Test
-    fun nonRecord() {
-        assertFalse { Type.Record(Field("key", Type.Str())) accepts Value.Void }
-        assertFalse { Type.Record(Field("key", Type.Str())) accepts Value.Bool(true) }
-        assertFalse { Type.Record(Field("key", Type.Str())) accepts Value.Decimal(BigInteger.ZERO, 0) }
-        assertFalse { Type.Record(Field("key", Type.Str())) accepts Value.Seq(emptyList()) }
-        assertFalse { Type.Record(Field("key", Type.Str())) accepts Value.Str("") }
-        assertFalse { Type.Record(Field("key", Type.Str())) accepts Value.Enum("") }
-        assertFalse { Type.Record(Field("key", Type.Str())) accepts Value.Some(Value.Void) }
-        assertFalse { Type.Record(Field("key", Type.Str())) accepts Value.None }
-    }
+    private val single = Type.Record(Field("key", Type.Str()))
+    private val hello = Value.Str("hello world")
+
+    @Test fun nonRecord() = single.assertRejectsOtherKinds()
 
     @Test
     fun invalidRecord() {
-        assertFails { Type.Record(emptyList()) accepts Value.Record(emptyMap()) }
-        assertFails {
-            Type.Record(Field("key", Type.Str()), Field("key", Type.Bool)) accepts
-                Value.Record(mapOf("key" to Value.Str("hello world")))
-        }
-        assertFalse { Type.Record(Field("key", Type.Str())) accepts Value.Record(emptyMap()) }
+        assertFailsWith<IllegalArgumentException> { Type.Record(emptyList()) }
+        assertFailsWith<IllegalArgumentException> { Type.Record(Field("key", Type.Str()), Field("key", Type.Bool)) }
+        single.assertRejects(Value.Record(emptyMap()))
     }
 
     @Test
     fun isRecord() {
-        assertTrue { Type.Record(Field("key", Type.Str())) accepts Value.Record(mapOf("key" to Value.Str("hello world"))) }
-        assertTrue { Type.Record(Field("key", Type.Str())) accepts Value.Record(mapOf("key" to Value.Str("hello world"))) }
-        assertTrue {
-            Type.Record(Field("key", Type.Str()), Field("key2", Type.Str())) accepts
-                Value.Record(mapOf("key" to Value.Str("hello world"), "key2" to Value.Str("hello world")))
-        }
+        single.assertAccepts(Value.Record(mapOf("key" to hello)))
+        Type
+            .Record(Field("key", Type.Str()), Field("key2", Type.Str()))
+            .assertAccepts(Value.Record(mapOf("key" to hello, "key2" to hello)))
     }
 }
