@@ -21,8 +21,8 @@ IDL & IR setup with (planned) support for a variety of languages.
 implementation("xyz.malefic.parz:idl:0.1.0")
 ----
 
-* Create a compiler converting your language's typedefs into the link:idl/src/commonMain/kotlin/Value.kt[Value.kt] types.
-* Type-check against the link:idl/src/commonMain/kotlin/Type.kt[Type.kt] types (like in link:idl/src/commonTest/[commonTest] right now), which is a basic validation system.
+* Create a compiler converting your language's typedefs into the link:idl/model/src/commonMain/kotlin/Value.kt[Value.kt] types.
+* Type-check against the link:idl/model/src/commonMain/kotlin/Type.kt[Type.kt] types (like in link:idl/model/src/commonTest/[commonTest] right now), which is a basic validation system.
 * For now, that's pretty much the entire functionality, though a language-independent IDL schema is planned in addition to a separate verification process and some built-in language type converters.
 
 == License
