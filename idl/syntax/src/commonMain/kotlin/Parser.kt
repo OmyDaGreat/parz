@@ -15,7 +15,7 @@ class Parser(
         return when (word) {
             "void" -> Type.Void
             "bool" -> Type.Bool
-            "string" -> if (accept('(')) Type.Str(int().longValue()) else Type.Str()
+            "string" -> if (accept('(')) Type.Str(int().longValue().also { accept(')') }) else Type.Str()
             "option" -> Type.Option(angled { type() })
             "seq" -> Type.Seq(angled { type() })
             "decimal" -> decimal()
@@ -37,6 +37,7 @@ class Parser(
 
     private fun expect(c: Char) {
         if (!accept(c)) throw SyntaxError("Expected '$c'", tokens.getOrNull(pos)?.offset ?: -1)
+        pos++
     }
 
     private fun word(): Pair<String, Int> {
@@ -70,7 +71,7 @@ class Parser(
             )
     }
 
-    fun <T> delimited(
+    private fun <T> delimited(
         open: Char,
         close: Char,
         item: (Int) -> T,
@@ -89,12 +90,12 @@ class Parser(
         return result
     }
 
-    fun <T> angled(inner: () -> T): T {
+    private fun <T> angled(inner: () -> T): T {
         expect('<')
         return inner().also { expect('>') }
     }
 
-    fun decimal(): Type.Decimal {
+    private fun decimal(): Type.Decimal {
         expect('(')
         val precision = int()
         expect(',')
