@@ -104,7 +104,7 @@ internal class Parser(
         val result =
             buildList<Type.Enum.Member> {
                 while (!accept('}')) {
-                    add(member(lastTag++))
+                    add(member(++lastTag))
                     if (accept('=')) {
                         val tag = int().intValue()
                         lastTag = tag
