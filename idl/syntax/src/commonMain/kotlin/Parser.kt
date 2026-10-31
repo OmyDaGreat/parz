@@ -1,7 +1,5 @@
 package xyz.malefic.parz.idl.syntax
 
-import com.ionspin.kotlin.bignum.integer.BigInteger
-
 class Parser(
     private val tokens: List<Token>,
 ) {
@@ -33,15 +31,24 @@ class Parser(
         }
     }
 
-    fun int(): BigInteger {
+    fun int(): Int {
         if (done) throw SyntaxError("Expected integer, but reached end of input", tokens.getOrNull(pos)?.offset ?: -1)
         val token = tokens[pos]
         if (token is Token.Number) {
             pos++
-            return BigInteger.parseString(token.text)
+            return token.text.toInt()
         } else {
             throw SyntaxError("Expected integer, but got ${token::class.simpleName}", token.offset)
         }
+    }
+
+    private inline fun <reified T : Enum<T>> enumWord(): T {
+        val word = word()
+        return enumValues<T>().find { it.name.equals(word, ignoreCase = true) }
+            ?: throw SyntaxError(
+                "Expected one of ${enumValues<T>().joinToString(", ") { it.name }}, but got '$word'",
+                pos - 1,
+            )
     }
 
     fun <T> delimited(
