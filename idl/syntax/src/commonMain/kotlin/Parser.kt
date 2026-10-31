@@ -148,7 +148,6 @@ class Parser(
 
     private fun member(index: Int): Type.Enum.Member {
         val (name, _) = word()
-        expect(':')
         return Type.Enum.Member(name, index)
     }
 }
