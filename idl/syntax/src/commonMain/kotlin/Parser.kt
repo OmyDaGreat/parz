@@ -129,8 +129,8 @@ internal class Parser(
         val precisionOrMin = int()
         return checkSyntax("decimal", pos) {
             if (accept(',')) {
-                expect(',')
                 val scale = int()
+                expect(',')
                 val rounding = enumWord<Type.Decimal.Rounding>()
                 val overflow = if (accept(',')) enumWord<Type.Decimal.Overflow>() else Type.Decimal.Overflow.ERROR
                 expect(')')
