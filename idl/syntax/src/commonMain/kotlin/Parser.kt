@@ -126,7 +126,11 @@ internal class Parser(
 
     private fun decimal(): Type.Decimal {
         expect('(')
-        val precisionOrMin = int()
+        var signum = 1
+        if (accept('-')) {
+            signum = -1
+        }
+        val precisionOrMin = int() * signum
         return checkSyntax("decimal", pos) {
             if (accept(',')) {
                 val scale = int()
