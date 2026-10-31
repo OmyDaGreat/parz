@@ -15,7 +15,7 @@ class Parser(
         return when (word) {
             "void" -> Type.Void
             "bool" -> Type.Bool
-            "string" -> checkSyntax("string", pos) { if (accept('(')) Type.Str(int().longValue().also { accept(')') }) else Type.Str() }
+            "string" -> checkSyntax("string", pos) { if (accept('(')) Type.Str(int().longValue().also { expect(')') }) else Type.Str() }
             "option" -> Type.Option(angled { type() })
             "seq" -> Type.Seq(angled { type() })
             "decimal" -> decimal()
