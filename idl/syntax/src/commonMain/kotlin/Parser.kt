@@ -22,43 +22,15 @@ internal class Parser(
     fun type(): Type {
         val (word, offset) = word()
         return when (word) {
-            "void" -> {
-                Type.Void
-            }
-
-            "bool" -> {
-                Type.Bool
-            }
-
-            "string" -> {
-                checkSyntax("string", pos) {
-                    if (accept('(')) Type.Str(int().longValue(exactRequired = true).also { expect(')') }) else Type.Str()
-                }
-            }
-
-            "option" -> {
-                Type.Option(angled { type() })
-            }
-
-            "seq" -> {
-                Type.Seq(angled { type() })
-            }
-
-            "decimal" -> {
-                decimal()
-            }
-
-            "record" -> {
-                checkSyntax("record", pos) { Type.Record(delimited('{', '}') { field() }) }
-            }
-
-            "enum" -> {
-                enum()
-            }
-
-            else -> {
-                Type.Ref(word)
-            }
+            "void" -> Type.Void
+            "bool" -> Type.Bool
+            "string" -> str()
+            "option" -> Type.Option(angled { type() })
+            "seq" -> Type.Seq(angled { type() })
+            "decimal" -> decimal()
+            "record" -> checkSyntax("record", pos) { Type.Record(delimited('{', '}') { field() }) }
+            "enum" -> enum()
+            else -> Type.Ref(word)
         }
     }
 
@@ -126,6 +98,8 @@ internal class Parser(
         return result
     }
 
+    private fun str() = checkSyntax("string", pos) { if (accept('(')) Type.Str(int().exactLong().also { expect(')') }) else Type.Str() }
+
     private fun enum(): Type.Enum {
         expect('{')
         var lastTag = -1
@@ -134,7 +108,7 @@ internal class Parser(
                 while (!accept('}')) {
                     add(member(++lastTag))
                     if (accept('=')) {
-                        val tag = int().intValue(exactRequired = true)
+                        val tag = int().exactInt()
                         lastTag = tag
                         this[lastIndex] = last().copy(tag = tag)
                     }
@@ -167,7 +141,7 @@ internal class Parser(
                 val overflow = if (accept(',')) enumWord<Type.Decimal.Overflow>() else Type.Decimal.Overflow.ERROR
                 expect(')')
                 val bound = BigInteger.TEN.pow(precisionOrMin) - BigInteger.ONE
-                Type.Decimal(-bound, bound, scale.intValue(exactRequired = true), rounding, overflow)
+                Type.Decimal(-bound, bound, scale.exactInt(), rounding, overflow)
             } else if (accept('.') && accept('.') && accept('.')) {
                 signum = if (accept('-')) -1 else 1
                 val max = int() * signum
@@ -176,7 +150,7 @@ internal class Parser(
                 val rounding = if (accept(',')) enumWord<Type.Decimal.Rounding>() else Type.Decimal.Rounding.TOWARDS_ZERO
                 val overflow = if (accept(',')) enumWord<Type.Decimal.Overflow>() else Type.Decimal.Overflow.ERROR
                 expect(')')
-                Type.Decimal(precisionOrMin, max, scale.intValue(exactRequired = true), rounding, overflow)
+                Type.Decimal(precisionOrMin, max, scale.exactInt(), rounding, overflow)
             } else {
                 throw SyntaxError("Expected ',' or '...' in decimal type after first int", pos)
             }
@@ -203,5 +177,19 @@ internal class Parser(
             type()
         } catch (e: IllegalArgumentException) {
             throw SyntaxError(e.message ?: "Invalid $name", index)
+        }
+
+    private fun BigInteger.exactInt(): Int =
+        try {
+            intValue(exactRequired = true)
+        } catch (_: ArithmeticException) {
+            throw SyntaxError("Integer value $this is out of range for Int", pos - 1)
+        }
+
+    private fun BigInteger.exactLong(): Long =
+        try {
+            longValue(exactRequired = true)
+        } catch (_: ArithmeticException) {
+            throw SyntaxError("Integer value $this is out of range for Long", pos - 1)
         }
 }
