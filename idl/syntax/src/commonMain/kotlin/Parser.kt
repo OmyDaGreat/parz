@@ -37,7 +37,6 @@ class Parser(
 
     private fun expect(c: Char) {
         if (!accept(c)) throw SyntaxError("Expected '$c'", tokens.getOrNull(pos)?.offset ?: -1)
-        pos++
     }
 
     private fun word(): Pair<String, Int> {
