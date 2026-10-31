@@ -10,31 +10,47 @@ class Parser(
 
     val done get() = pos >= tokens.size
 
-    fun accept(c: Char): Boolean {
+    fun type(): Type {
+        val (word, offset) = word()
+        return when (word) {
+            "void" -> Type.Void
+            "bool" -> Type.Bool
+            "string" -> if (accept('(')) Type.Str(int().longValue()) else Type.Str()
+            "option" -> Type.Option(angled { type() })
+            "seq" -> Type.Seq(angled { type() })
+            "decimal" -> decimal()
+            "record" -> TODO("record field")
+            "enum" -> TODO("enum member")
+            else -> throw SyntaxError("unknown type '$word'", offset)
+        }
+    }
+
+    private fun accept(c: Char): Boolean {
         if (done) return false
-        if (tokens[pos] is Token.Symbol && (tokens[pos] as Token.Symbol).char == c) {
+        val token = tokens[pos]
+        if (token is Token.Symbol && token.char == c) {
             pos++
             return true
         }
         return false
     }
 
-    fun expect(c: Char) {
+    private fun expect(c: Char) {
         if (!accept(c)) throw SyntaxError("Expected '$c'", tokens.getOrNull(pos)?.offset ?: -1)
     }
 
-    fun word(): String {
+    private fun word(): Pair<String, Int> {
         if (done) throw SyntaxError("Expected word, but reached end of input", tokens.getOrNull(pos)?.offset ?: -1)
         val token = tokens[pos]
         if (token is Token.Word) {
             pos++
-            return token.text
+            return token.text to pos
         } else {
             throw SyntaxError("Expected word, but got ${token::class.simpleName}", token.offset)
         }
     }
 
-    fun int(): BigInteger {
+    private fun int(): BigInteger {
         if (done) throw SyntaxError("Expected integer, but reached end of input", tokens.getOrNull(pos)?.offset ?: -1)
         val token = tokens[pos]
         if (token is Token.Number) {
@@ -46,7 +62,7 @@ class Parser(
     }
 
     private inline fun <reified T : Enum<T>> enumWord(): T {
-        val word = word()
+        val (word, _) = word()
         return enumValues<T>().find { it.name.equals(word, ignoreCase = true) }
             ?: throw SyntaxError(
                 "Expected one of ${enumValues<T>().joinToString(", ") { it.name }}, but got '$word'",
