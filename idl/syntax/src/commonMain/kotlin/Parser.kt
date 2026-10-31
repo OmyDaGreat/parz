@@ -24,12 +24,12 @@ internal class Parser(
         return when (word) {
             "void" -> Type.Void
             "bool" -> Type.Bool
-            "string" -> str()
+            "string" -> str(offset)
             "option" -> Type.Option(angled { type() })
             "seq" -> Type.Seq(angled { type() })
-            "decimal" -> decimal()
-            "record" -> checkSyntax("record", pos) { Type.Record(delimited('{', '}') { field() }) }
-            "enum" -> enum()
+            "decimal" -> decimal(offset)
+            "record" -> checkSyntax("record", offset) { Type.Record(delimited('{', '}') { field() }) }
+            "enum" -> enum(offset)
             else -> Type.Ref(word)
         }
     }
@@ -48,12 +48,12 @@ internal class Parser(
         if (!accept(c)) throw SyntaxError("Expected '$c'", tokens.getOrNull(pos)?.offset ?: -1)
     }
 
-    private fun word(): Pair<String, Int> {
+    private fun word(): Token.Word {
         if (done) throw SyntaxError("Expected word, but reached end of input", tokens.getOrNull(pos)?.offset ?: -1)
         val token = tokens[pos]
         if (token is Token.Word) {
             pos++
-            return token.text to pos
+            return token
         } else {
             throw SyntaxError("Expected word, but got ${token::class.simpleName}", token.offset)
         }
@@ -71,11 +71,11 @@ internal class Parser(
     }
 
     private inline fun <reified T : Enum<T>> enumWord(): T {
-        val (word, _) = word()
+        val (word, offset) = word()
         return enumValues<T>().find { it.name.equals(word, ignoreCase = true) }
             ?: throw SyntaxError(
                 "Expected one of ${enumValues<T>().joinToString(", ") { it.name }}, but got '$word'",
-                pos - 1,
+                offset,
             )
     }
 
@@ -98,13 +98,16 @@ internal class Parser(
         return result
     }
 
-    private fun str() = checkSyntax("string", pos) { if (accept('(')) Type.Str(int().exactLong().also { expect(')') }) else Type.Str() }
+    private fun str(offset: Int) =
+        checkSyntax("string", offset) {
+            if (accept('(')) Type.Str(int().exactLong().also { expect(')') }) else Type.Str()
+        }
 
-    private fun enum(): Type.Enum {
+    private fun enum(offset: Int): Type.Enum {
         expect('{')
         var lastTag = -1
         val result =
-            buildList<Type.Enum.Member> {
+            buildList {
                 while (!accept('}')) {
                     add(member(++lastTag))
                     if (accept('=')) {
@@ -118,7 +121,7 @@ internal class Parser(
                     }
                 }
             }
-        return checkSyntax("enum", pos) { Type.Enum(result) }
+        return checkSyntax("enum", offset) { Type.Enum(result) }
     }
 
     private fun <T> angled(inner: () -> T): T {
@@ -126,14 +129,14 @@ internal class Parser(
         return inner().also { expect('>') }
     }
 
-    private fun decimal(): Type.Decimal {
+    private fun decimal(offset: Int): Type.Decimal {
         expect('(')
         var signum = 1
         if (accept('-')) {
             signum = -1
         }
         val precisionOrMin = int() * signum
-        return checkSyntax("decimal", pos) {
+        return checkSyntax("decimal", offset) {
             if (accept(',')) {
                 val scale = int()
                 expect(',')
@@ -152,7 +155,7 @@ internal class Parser(
                 expect(')')
                 Type.Decimal(precisionOrMin, max, scale.exactInt(), rounding, overflow)
             } else {
-                throw SyntaxError("Expected ',' or '...' in decimal type after first int", pos)
+                throw SyntaxError("Expected ',' or '...' in decimal type after first int", offset)
             }
         }
     }
