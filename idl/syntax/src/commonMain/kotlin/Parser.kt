@@ -9,17 +9,17 @@ class Parser(
 
     val done get() = pos >= tokens.size
 
-    fun accept(c: Token.Symbol): Boolean {
+    fun accept(c: Char): Boolean {
         if (done) return false
-        if (tokens[pos] is Token.Symbol && (tokens[pos] as Token.Symbol).char == c.char) {
+        if (tokens[pos] is Token.Symbol && (tokens[pos] as Token.Symbol).char == c) {
             pos++
             return true
         }
         return false
     }
 
-    fun expect(c: Token.Symbol) {
-        if (!accept(c)) throw SyntaxError("Expected '${c.char}'", tokens.getOrNull(pos)?.offset ?: -1)
+    fun expect(c: Char) {
+        if (!accept(c)) throw SyntaxError("Expected '$c'", tokens.getOrNull(pos)?.offset ?: -1)
     }
 
     fun word(): String {
@@ -42,5 +42,29 @@ class Parser(
         } else {
             throw SyntaxError("Expected integer, but got ${token::class.simpleName}", token.offset)
         }
+    }
+
+    fun <T> delimited(
+        open: Char,
+        close: Char,
+        item: (Int) -> T,
+    ): List<T> {
+        expect(open)
+        val result =
+            buildList {
+                while (!accept(close)) {
+                    add(item(pos))
+                    if (!accept(',')) {
+                        expect(close)
+                        break
+                    }
+                }
+            }
+        return result
+    }
+
+    fun <T> angled(inner: () -> T): T {
+        expect('<')
+        return inner().also { expect('>') }
     }
 }
