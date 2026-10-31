@@ -22,15 +22,43 @@ internal class Parser(
     fun type(): Type {
         val (word, offset) = word()
         return when (word) {
-            "void" -> Type.Void
-            "bool" -> Type.Bool
-            "string" -> checkSyntax("string", pos) { if (accept('(')) Type.Str(int().longValue().also { expect(')') }) else Type.Str() }
-            "option" -> Type.Option(angled { type() })
-            "seq" -> Type.Seq(angled { type() })
-            "decimal" -> decimal()
-            "record" -> checkSyntax("record", pos) { Type.Record(delimited('{', '}') { field() }) }
-            "enum" -> enum()
-            else -> Type.Ref(word)
+            "void" -> {
+                Type.Void
+            }
+
+            "bool" -> {
+                Type.Bool
+            }
+
+            "string" -> {
+                checkSyntax("string", pos) {
+                    if (accept('(')) Type.Str(int().longValue(exactRequired = true).also { expect(')') }) else Type.Str()
+                }
+            }
+
+            "option" -> {
+                Type.Option(angled { type() })
+            }
+
+            "seq" -> {
+                Type.Seq(angled { type() })
+            }
+
+            "decimal" -> {
+                decimal()
+            }
+
+            "record" -> {
+                checkSyntax("record", pos) { Type.Record(delimited('{', '}') { field() }) }
+            }
+
+            "enum" -> {
+                enum()
+            }
+
+            else -> {
+                Type.Ref(word)
+            }
         }
     }
 
@@ -106,7 +134,7 @@ internal class Parser(
                 while (!accept('}')) {
                     add(member(++lastTag))
                     if (accept('=')) {
-                        val tag = int().intValue()
+                        val tag = int().intValue(exactRequired = true)
                         lastTag = tag
                         this[lastIndex] = last().copy(tag = tag)
                     }
@@ -139,7 +167,7 @@ internal class Parser(
                 val overflow = if (accept(',')) enumWord<Type.Decimal.Overflow>() else Type.Decimal.Overflow.ERROR
                 expect(')')
                 val bound = BigInteger.TEN.pow(precisionOrMin) - BigInteger.ONE
-                Type.Decimal(-bound, bound, scale.intValue(), rounding, overflow)
+                Type.Decimal(-bound, bound, scale.intValue(exactRequired = true), rounding, overflow)
             } else if (accept('.') && accept('.') && accept('.')) {
                 signum = if (accept('-')) -1 else 1
                 val max = int() * signum
@@ -148,7 +176,7 @@ internal class Parser(
                 val rounding = if (accept(',')) enumWord<Type.Decimal.Rounding>() else Type.Decimal.Rounding.TOWARDS_ZERO
                 val overflow = if (accept(',')) enumWord<Type.Decimal.Overflow>() else Type.Decimal.Overflow.ERROR
                 expect(')')
-                Type.Decimal(precisionOrMin, max, scale.intValue(), rounding, overflow)
+                Type.Decimal(precisionOrMin, max, scale.intValue(exactRequired = true), rounding, overflow)
             } else {
                 throw SyntaxError("Expected ',' or '...' in decimal type after first int", pos)
             }
