@@ -100,15 +100,17 @@ internal class Parser(
 
     private fun enum(): Type.Enum {
         expect('{')
+        var lastTag = -1
         val result =
-            buildList {
+            buildList<Type.Enum.Member> {
                 while (!accept('}')) {
-                    add(member(size))
+                    add(member(lastTag++))
+                    if (accept('=')) {
+                        val tag = int().intValue()
+                        lastTag = tag
+                        this[lastIndex] = last().copy(tag = tag)
+                    }
                     if (!accept(',')) {
-                        if (accept('=')) {
-                            val tag = int().intValue()
-                            this[lastIndex] = last().copy(tag = tag)
-                        }
                         expect('}')
                         break
                     }
