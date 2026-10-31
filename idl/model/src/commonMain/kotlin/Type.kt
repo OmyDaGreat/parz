@@ -247,11 +247,11 @@ sealed interface Type {
          */
         data class Member(
             val name: String,
-            val tag: BigInteger,
+            val tag: Int,
         ) {
             init {
                 require(name.isNotEmpty()) { "Enum member name must not be empty" }
-                require(tag >= BigInteger.ZERO) { "Enum member tag must be non-negative" }
+                require(tag >= 0) { "Enum member tag must be non-negative" }
             }
         }
     }

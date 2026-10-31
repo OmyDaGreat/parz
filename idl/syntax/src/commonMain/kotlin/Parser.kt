@@ -19,8 +19,8 @@ class Parser(
             "option" -> Type.Option(angled { type() })
             "seq" -> Type.Seq(angled { type() })
             "decimal" -> decimal()
-            "record" -> TODO("record field")
-            "enum" -> TODO("enum member")
+            "record" -> Type.Record(delimited('{', '}', { field() }))
+            "enum" -> Type.Enum(delimited('{', '}', ::member))
             else -> throw SyntaxError("unknown type '$word'", offset)
         }
     }
@@ -80,7 +80,7 @@ class Parser(
         val result =
             buildList {
                 while (!accept(close)) {
-                    add(item(pos))
+                    add(item(size))
                     if (!accept(',')) {
                         expect(close)
                         break
@@ -119,5 +119,17 @@ class Parser(
             val bound = BigInteger.TEN.pow(precision) - BigInteger.ONE
             Type.Decimal(-bound, bound, scaleOrMin.intValue(), rounding, overflow)
         }
+    }
+
+    private fun field(): Type.Record.Field {
+        val (name, _) = word()
+        expect(':')
+        return Type.Record.Field(name, type())
+    }
+
+    private fun member(index: Int): Type.Enum.Member {
+        val (name, _) = word()
+        expect(':')
+        return Type.Enum.Member(name, index)
     }
 }
