@@ -1,6 +1,7 @@
 package xyz.malefic.parz.idl
 
 import com.ionspin.kotlin.bignum.integer.BigInteger
+import xyz.malefic.parz.idl.Type.Decimal.Rounding
 
 /**
  * Concrete values for the [Type] system. Used for conformance vectors and literals.
@@ -41,7 +42,7 @@ sealed interface Value {
          */
         fun rescale(
             newScale: Int,
-            rounding: Type.Decimal.Rounding,
+            rounding: Rounding,
         ): Decimal {
             if (newScale >= scale) return Decimal(unscaled * BigInteger.TEN.pow(newScale - scale), newScale)
 
@@ -54,27 +55,27 @@ sealed interface Value {
             val even = (quotient % 2).isZero()
             val away =
                 when (rounding) {
-                    Type.Decimal.Rounding.FLOOR -> signedUnit < 0
+                    Rounding.FLOOR -> signedUnit < 0
 
-                    Type.Decimal.Rounding.CEILING -> signedUnit > 0
+                    Rounding.CEILING -> signedUnit > 0
 
-                    Type.Decimal.Rounding.AWAY_FROM_ZERO -> true
+                    Rounding.AWAY_FROM_ZERO -> true
 
-                    Type.Decimal.Rounding.TOWARDS_ZERO -> false
+                    Rounding.TOWARDS_ZERO -> false
 
-                    Type.Decimal.Rounding.ROUND_HALF_AWAY_FROM_ZERO -> half >= 0
+                    Rounding.ROUND_HALF_AWAY_FROM_ZERO -> half >= 0
 
-                    Type.Decimal.Rounding.ROUND_HALF_TOWARDS_ZERO -> half > 0
+                    Rounding.ROUND_HALF_TOWARDS_ZERO -> half > 0
 
-                    Type.Decimal.Rounding.ROUND_HALF_CEILING -> half > 0 || (half == 0 && signedUnit > 0)
+                    Rounding.ROUND_HALF_CEILING -> half > 0 || (half == 0 && signedUnit > 0)
 
-                    Type.Decimal.Rounding.ROUND_HALF_FLOOR -> half > 0 || (half == 0 && signedUnit < 0)
+                    Rounding.ROUND_HALF_FLOOR -> half > 0 || (half == 0 && signedUnit < 0)
 
-                    Type.Decimal.Rounding.ROUND_HALF_TO_EVEN -> half > 0 || (half == 0 && !even)
+                    Rounding.ROUND_HALF_TO_EVEN -> half > 0 || (half == 0 && !even)
 
-                    Type.Decimal.Rounding.ROUND_HALF_TO_ODD -> half > 0 || (half == 0 && even)
+                    Rounding.ROUND_HALF_TO_ODD -> half > 0 || (half == 0 && even)
 
-                    Type.Decimal.Rounding.PROHIBITED -> throw ArithmeticException(
+                    Rounding.PROHIBITED -> throw ArithmeticException(
                         "Rounding prohibited: $this is inexact at scale $newScale",
                     )
                 }

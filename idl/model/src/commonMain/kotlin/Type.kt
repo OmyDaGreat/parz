@@ -255,4 +255,10 @@ sealed interface Type {
             }
         }
     }
+
+    data class Ref(
+        val name: String,
+    ) : Type {
+        override val kind = "ref"
+    }
 }

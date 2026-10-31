@@ -30,7 +30,7 @@ internal class Parser(
             "decimal" -> decimal()
             "record" -> checkSyntax("record", pos) { Type.Record(delimited('{', '}') { field() }) }
             "enum" -> enum()
-            else -> throw SyntaxError("Unknown type '$word'", offset)
+            else -> Type.Ref(word)
         }
     }
 
