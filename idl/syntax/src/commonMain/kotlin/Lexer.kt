@@ -21,7 +21,7 @@ sealed interface Token {
 
 class SyntaxError(
     message: String,
-    offset: Int,
+    val offset: Int,
 ) : Exception("$message at offset $offset")
 
 fun lex(source: String): List<Token> =
