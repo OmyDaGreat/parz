@@ -3,3 +3,5 @@ $dokka.linkExtension:html
 
 module:model
 xyz.malefic.parz.idl
+module:syntax
+xyz.malefic.parz.idl.syntax
