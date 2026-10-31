@@ -3,7 +3,16 @@ package xyz.malefic.parz.idl.syntax
 import com.ionspin.kotlin.bignum.integer.BigInteger
 import xyz.malefic.parz.idl.Type
 
-class Parser(
+fun parse(tokens: List<Token>): List<Type> {
+    val parser = Parser(tokens)
+    return buildList {
+        while (!parser.done) {
+            add(parser.type())
+        }
+    }
+}
+
+internal class Parser(
     private val tokens: List<Token>,
 ) {
     private var pos = 0
