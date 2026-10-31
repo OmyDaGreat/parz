@@ -22,3 +22,4 @@ dependencyResolutionManagement {
 rootProject.name = "parz"
 include(":bom")
 include(":idl:model")
+include(":idl:syntax")

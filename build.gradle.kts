@@ -4,4 +4,5 @@ plugins {
 
 dependencies {
     dokka(project(":idl:model"))
+    dokka(project(":idl:syntax"))
 }

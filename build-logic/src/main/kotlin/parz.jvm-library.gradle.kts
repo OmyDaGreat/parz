@@ -1,6 +1,3 @@
-/**
- * JVM-only library, for compiler-side modules (frontends, lowering, backends, tooling).
- */
 plugins {
     id("org.jetbrains.kotlin.jvm")
     id("org.jmailen.kotlinter")

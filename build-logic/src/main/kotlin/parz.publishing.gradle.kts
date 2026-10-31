@@ -1,7 +1,3 @@
-/**
- * Maven Central publishing. The artifact ID is derived from the project path, dropping the `lang` grouping folder:
- * `:lang:cobol:frontend` -> `cobol-frontend`. Override it with `parzPublishing { artifactId = "..." }`.
- */
 plugins {
     id("com.vanniktech.maven.publish")
 }
@@ -23,8 +19,6 @@ parzPublishing.artifactId.convention(
         .joinToString("-"),
 )
 
-// The plugin renames Kotlin Multiplatform publications on each coordinates() call and can only do it once,
-// so wait until the module's build script has had a chance to override the artifact ID
 afterEvaluate {
     mavenPublishing {
         coordinates(project.group.toString(), parzPublishing.artifactId.get(), project.version.toString())

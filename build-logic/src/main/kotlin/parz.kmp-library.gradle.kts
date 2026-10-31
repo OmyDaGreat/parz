@@ -1,7 +1,3 @@
-/**
- * Kotlin Multiplatform library: JVM, Android, iOS and JS. Only for modules that consumers on other platforms need,
- * such as the IDL model, the IR core and runtimes. Compiler-side modules use `parz.jvm-library`.
- */
 plugins {
     id("org.jetbrains.kotlin.multiplatform")
     id("com.android.kotlin.multiplatform.library")

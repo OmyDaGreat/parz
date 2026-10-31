@@ -12,8 +12,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class Decimal {
-    @Test
-    fun nonDecimal() = Type.Decimal(ZERO, ZERO, 0).assertRejectsOtherKinds()
+    @Test fun nonDecimal() = Type.Decimal(ZERO, ZERO, 0).assertRejectsOtherKinds()
 
     @Test
     fun invalidBounds() {
