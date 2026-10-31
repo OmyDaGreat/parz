@@ -141,7 +141,8 @@ internal class Parser(
                 val bound = BigInteger.TEN.pow(precisionOrMin) - BigInteger.ONE
                 Type.Decimal(-bound, bound, scale.intValue(), rounding, overflow)
             } else if (accept('.') && accept('.') && accept('.')) {
-                val max = int()
+                signum = if (accept('-')) -1 else 1
+                val max = int() * signum
                 expect(',')
                 val scale = int()
                 val rounding = if (accept(',')) enumWord<Type.Decimal.Rounding>() else Type.Decimal.Rounding.TOWARDS_ZERO
