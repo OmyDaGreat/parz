@@ -15,13 +15,13 @@ class Parser(
         return when (word) {
             "void" -> Type.Void
             "bool" -> Type.Bool
-            "string" -> if (accept('(')) Type.Str(int().longValue().also { accept(')') }) else Type.Str()
+            "string" -> checkSyntax("string", pos) { if (accept('(')) Type.Str(int().longValue().also { accept(')') }) else Type.Str() }
             "option" -> Type.Option(angled { type() })
             "seq" -> Type.Seq(angled { type() })
             "decimal" -> decimal()
-            "record" -> Type.Record(delimited('{', '}') { field() })
+            "record" -> checkSyntax("record", pos) { Type.Record(delimited('{', '}') { field() }) }
             "enum" -> enum()
-            else -> throw SyntaxError("unknown type '$word'", offset)
+            else -> throw SyntaxError("Unknown type '$word'", offset)
         }
     }
 
@@ -106,7 +106,7 @@ class Parser(
                     }
                 }
             }
-        return Type.Enum(result)
+        return checkSyntax("enum", pos) { Type.Enum(result) }
     }
 
     private fun <T> angled(inner: () -> T): T {
@@ -119,35 +119,48 @@ class Parser(
         val precision = int()
         expect(',')
         val scaleOrMin = int()
-        return if (accept(',')) {
-            val rounding = enumWord<Type.Decimal.Rounding>()
-            val overflow = if (accept(',')) enumWord<Type.Decimal.Overflow>() else Type.Decimal.Overflow.ERROR
-            expect(')')
-            val bound = BigInteger.TEN.pow(precision) - BigInteger.ONE
-            Type.Decimal(-bound, bound, scaleOrMin.intValue(), rounding, overflow)
-        } else if (accept('.') && accept('.') && accept('.')) {
-            val max = int()
-            val rounding = if (accept(',')) enumWord<Type.Decimal.Rounding>() else Type.Decimal.Rounding.TOWARDS_ZERO
-            val overflow = if (accept(',')) enumWord<Type.Decimal.Overflow>() else Type.Decimal.Overflow.ERROR
-            expect(')')
-            Type.Decimal(scaleOrMin, max, scaleOrMin.intValue(), rounding, overflow)
-        } else {
-            val rounding = Type.Decimal.Rounding.TOWARDS_ZERO
-            val overflow = Type.Decimal.Overflow.ERROR
-            expect(')')
-            val bound = BigInteger.TEN.pow(precision) - BigInteger.ONE
-            Type.Decimal(-bound, bound, scaleOrMin.intValue(), rounding, overflow)
+        return checkSyntax("decimal", pos) {
+            if (accept(',')) {
+                val rounding = enumWord<Type.Decimal.Rounding>()
+                val overflow = if (accept(',')) enumWord<Type.Decimal.Overflow>() else Type.Decimal.Overflow.ERROR
+                expect(')')
+                val bound = BigInteger.TEN.pow(precision) - BigInteger.ONE
+                Type.Decimal(-bound, bound, scaleOrMin.intValue(), rounding, overflow)
+            } else if (accept('.') && accept('.') && accept('.')) {
+                val max = int()
+                val rounding = if (accept(',')) enumWord<Type.Decimal.Rounding>() else Type.Decimal.Rounding.TOWARDS_ZERO
+                val overflow = if (accept(',')) enumWord<Type.Decimal.Overflow>() else Type.Decimal.Overflow.ERROR
+                expect(')')
+                Type.Decimal(scaleOrMin, max, scaleOrMin.intValue(), rounding, overflow)
+            } else {
+                val rounding = Type.Decimal.Rounding.TOWARDS_ZERO
+                val overflow = Type.Decimal.Overflow.ERROR
+                expect(')')
+                val bound = BigInteger.TEN.pow(precision) - BigInteger.ONE
+                Type.Decimal(-bound, bound, scaleOrMin.intValue(), rounding, overflow)
+            }
         }
     }
 
     private fun field(): Type.Record.Field {
-        val (name, _) = word()
+        val (name, index) = word()
         expect(':')
-        return Type.Record.Field(name, type())
+        return checkSyntax("record field", index) { Type.Record.Field(name, type()) }
     }
 
-    private fun member(index: Int): Type.Enum.Member {
-        val (name, _) = word()
-        return Type.Enum.Member(name, index)
+    private fun member(tag: Int): Type.Enum.Member {
+        val (name, index) = word()
+        return checkSyntax("enum member", index) { Type.Enum.Member(name, tag) }
     }
+
+    private fun <T> checkSyntax(
+        name: String,
+        index: Int,
+        type: () -> T,
+    ): T =
+        try {
+            type()
+        } catch (e: IllegalArgumentException) {
+            throw SyntaxError(e.message ?: "Invalid $name", index)
+        }
 }
