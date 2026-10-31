@@ -45,7 +45,7 @@ fun lex(source: String): List<Token> =
                     add(Token.Number(source.substring(start, i), start))
                 }
 
-                c in "(){}<>,;" -> {
+                c in "(){}<>,;:=-." -> {
                     add(Token.Symbol(c, i++))
                 }
 
