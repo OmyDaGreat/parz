@@ -221,6 +221,10 @@ infix fun Type.check(v: Value): List<Mismatch> =
                 }
             }
         }
+
+        is Type.Ref -> {
+            throw UnsupportedOperationException("ref type not supported yet")
+        }
     }
 
 /**
