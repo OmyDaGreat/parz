@@ -19,8 +19,8 @@ class Parser(
             "option" -> Type.Option(angled { type() })
             "seq" -> Type.Seq(angled { type() })
             "decimal" -> decimal()
-            "record" -> Type.Record(delimited('{', '}', { field() }))
-            "enum" -> Type.Enum(delimited('{', '}', ::member))
+            "record" -> Type.Record(delimited('{', '}') { field() })
+            "enum" -> enum()
             else -> throw SyntaxError("unknown type '$word'", offset)
         }
     }
@@ -88,6 +88,25 @@ class Parser(
                 }
             }
         return result
+    }
+
+    private fun enum(): Type.Enum {
+        expect('{')
+        val result =
+            buildList {
+                while (!accept('}')) {
+                    add(member(size))
+                    if (!accept(',')) {
+                        if (accept('=')) {
+                            val tag = int().intValue()
+                            this[lastIndex] = last().copy(tag = tag)
+                        }
+                        expect('}')
+                        break
+                    }
+                }
+            }
+        return Type.Enum(result)
     }
 
     private fun <T> angled(inner: () -> T): T {
