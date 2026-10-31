@@ -1,4 +1,8 @@
+@file:Suppress("ktlint:standard:no-empty-file")
+
 package xyz.malefic.parz.idl.syntax
+
+/*
 
 import xyz.malefic.parz.idl.Value
 
@@ -24,3 +28,5 @@ fun parse(string: String): List<Value> {
     val parser = Parser(string.split(Regex("\\s+")).filter { it.isNotBlank() })
     return buildList { while (!parser.done) add(parser.value()) }
 }
+
+*/
