@@ -115,28 +115,26 @@ class Parser(
 
     private fun decimal(): Type.Decimal {
         expect('(')
-        val precision = int()
-        expect(',')
-        val scaleOrMin = int()
+        val precisionOrMin = int()
         return checkSyntax("decimal", pos) {
             if (accept(',')) {
+                expect(',')
+                val scale = int()
                 val rounding = enumWord<Type.Decimal.Rounding>()
                 val overflow = if (accept(',')) enumWord<Type.Decimal.Overflow>() else Type.Decimal.Overflow.ERROR
                 expect(')')
-                val bound = BigInteger.TEN.pow(precision) - BigInteger.ONE
-                Type.Decimal(-bound, bound, scaleOrMin.intValue(), rounding, overflow)
+                val bound = BigInteger.TEN.pow(precisionOrMin) - BigInteger.ONE
+                Type.Decimal(-bound, bound, scale.intValue(), rounding, overflow)
             } else if (accept('.') && accept('.') && accept('.')) {
                 val max = int()
+                expect(',')
+                val scale = int()
                 val rounding = if (accept(',')) enumWord<Type.Decimal.Rounding>() else Type.Decimal.Rounding.TOWARDS_ZERO
                 val overflow = if (accept(',')) enumWord<Type.Decimal.Overflow>() else Type.Decimal.Overflow.ERROR
                 expect(')')
-                Type.Decimal(scaleOrMin, max, scaleOrMin.intValue(), rounding, overflow)
+                Type.Decimal(precisionOrMin, max, scale.intValue(), rounding, overflow)
             } else {
-                val rounding = Type.Decimal.Rounding.TOWARDS_ZERO
-                val overflow = Type.Decimal.Overflow.ERROR
-                expect(')')
-                val bound = BigInteger.TEN.pow(precision) - BigInteger.ONE
-                Type.Decimal(-bound, bound, scaleOrMin.intValue(), rounding, overflow)
+                throw SyntaxError("Expected ',' or '...' in decimal type after first int", pos)
             }
         }
     }
