@@ -22,7 +22,18 @@ sealed interface Token {
 class SyntaxError(
     message: String,
     val offset: Int,
-) : Exception("$message at offset $offset")
+) : Exception("$message at offset $offset") {
+    fun describe(source: String): String {
+        val line =
+            source
+                .lines()
+                .withIndex()
+                .first { it.value.contains('\n') }
+                .index
+        val lineStart = source.lines().take(line).sumOf { it.length + 1 }
+        return "Error: $message at line $line, column ${offset - lineStart}"
+    }
+}
 
 fun lex(source: String): List<Token> =
     buildList {

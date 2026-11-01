@@ -104,11 +104,15 @@ jobs:
           echo "$changelog" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
+      - name: Build CLI
+        run: ./gradlew :tooling:cli:distZip
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ steps.bump_version.outputs.new_version }}
           name: v${{ steps.bump_version.outputs.new_version }}
           body: ${{ steps.changelog.outputs.changelog }}
+          files: tooling/cli/build/distributions/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
