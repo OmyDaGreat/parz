@@ -194,69 +194,6 @@ sealed interface Type {
         }
     }
 
-    /**
-     * A record type. Similar to data classes or OCaml's records.
-     */
-    @OptIn(ExperimentalStdlibApi::class)
-    data class Record(
-        val fields: List<Field>,
-    ) : Type {
-        override val kind = "record"
-
-        init {
-            require(fields.isNotEmpty()) { "Record must have at least one field" }
-            require(fields.allDistinctBy { it.name.generatorDistinct() }) { "Record fields must have unique names" }
-        }
-
-        constructor(vararg fields: Field) : this(fields.toList())
-
-        val List<Field>.names
-            get() = this.map { it.name }
-
-        /**
-         * A record field type. Represents a single field in a record type.
-         */
-        data class Field(
-            val name: String,
-            val type: Type,
-        ) {
-            init {
-                require(name.isNotEmpty()) { "Record field name must not be empty" }
-            }
-        }
-    }
-
-    /**
-     * An enum type. Similar to [kotlin.Enum].
-     */
-    @OptIn(ExperimentalStdlibApi::class)
-    data class Enum(
-        val members: List<Member>,
-    ) : Type {
-        override val kind = "enum"
-
-        init {
-            require(members.isNotEmpty()) { "Enum must have at least one member" }
-            require(members.allDistinctBy { it.name.generatorDistinct() }) { "Enum members must have unique names" }
-            require(members.allDistinctBy { it.tag }) { "Enum members must have unique tags" }
-        }
-
-        constructor(vararg members: Member) : this(members.toList())
-
-        /**
-         * An enum member type. Represents a single member in an enum type.
-         */
-        data class Member(
-            val name: String,
-            val tag: Int,
-        ) {
-            init {
-                require(name.isNotEmpty()) { "Enum member name must not be empty" }
-                require(tag >= 0) { "Enum member tag must be non-negative" }
-            }
-        }
-    }
-
     data class Ref(
         val name: String,
     ) : Type {

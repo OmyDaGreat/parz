@@ -1,12 +1,9 @@
 package xyz.malefic.parz.idl
 
 import com.ionspin.kotlin.bignum.integer.BigInteger
-import xyz.malefic.parz.idl.Reason.ExtraField
 import xyz.malefic.parz.idl.Reason.InexactScale
-import xyz.malefic.parz.idl.Reason.MissingField
 import xyz.malefic.parz.idl.Reason.OutOfRange
 import xyz.malefic.parz.idl.Reason.TooLong
-import xyz.malefic.parz.idl.Reason.UnknownMember
 import xyz.malefic.parz.idl.Reason.WrongKind
 import xyz.malefic.parz.idl.Type.Decimal.Rounding.PROHIBITED
 
@@ -25,13 +22,6 @@ data class Mismatch(
  * A segment of a path, used to locate mismatches.
  */
 sealed interface Segment {
-    /**
-     * A field in a [Type.Record].
-     */
-    data class Field(
-        val name: String,
-    ) : Segment
-
     /**
      * An index in a [Type.Seq].
      */
@@ -79,27 +69,6 @@ sealed interface Reason {
     data class InexactScale(
         val expected: Int,
         val actual: Int,
-    ) : Reason
-
-    /**
-     * The value has a member not reflected in the type.
-     */
-    data class UnknownMember(
-        val name: String,
-    ) : Reason
-
-    /**
-     * The value is missing a field from the type.
-     */
-    data class MissingField(
-        val name: String,
-    ) : Reason
-
-    /**
-     * The value has a field not reflected in the type.
-     */
-    data class ExtraField(
-        val name: String,
     ) : Reason
 }
 
@@ -161,14 +130,6 @@ infix fun Type.check(v: Value): List<Mismatch> =
             }
         }
 
-        is Type.Enum -> {
-            expect<Value.Enum>(v) { enum ->
-                if (!members.map { it.name }.contains(enum.name)) {
-                    add(listOf(), UnknownMember(enum.name))
-                }
-            }
-        }
-
         is Type.Option -> {
             when (v) {
                 is Value.None -> {
@@ -186,29 +147,6 @@ infix fun Type.check(v: Value): List<Mismatch> =
                 else -> {
                     wrongKind(v)
                 }
-            }
-        }
-
-        is Type.Record -> {
-            expect<Value.Record>(v) { record ->
-                val combined = mutableMapOf<String, Pair<Type, Value>>()
-                fields.forEach {
-                    if (record.fields.containsKey(it.name)) {
-                        combined[it.name] = it.type to record.fields[it.name]!!
-                    } else {
-                        add(listOf(Segment.Field(it.name)), MissingField(it.name))
-                    }
-                }
-                record.fields.keys
-                    .filter { !fields.names.contains(it) }
-                    .forEach { add(listOf(Segment.Field(it)), ExtraField(it)) }
-                combined
-                    .forEach { field ->
-                        val (type, value) = field.value
-                        type.check(value).forEach { mismatch ->
-                            add(listOf(Segment.Field(field.key)) + mismatch.path, mismatch.reason)
-                        }
-                    }
             }
         }
 

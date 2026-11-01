@@ -5,18 +5,51 @@ sealed interface Decl {
 
     data class Record(
         override val name: String,
-        val type: Type.Record,
-    ) : Decl
+        val fields: List<Field>,
+    ) : Decl {
+        data class Field(
+            val name: String,
+            val type: Type,
+        ) {
+            init {
+                require(name.isNotEmpty()) { "Record field name must not be empty" }
+            }
+        }
+    }
 
     data class Enum(
         override val name: String,
-        val type: Type.Enum,
-    ) : Decl
+        val members: List<Member>,
+    ) : Decl {
+        data class Member(
+            val name: String,
+            val tag: Int,
+        ) {
+            init {
+                require(name.isNotEmpty()) { "Enum member name must not be empty" }
+                require(tag >= 0) { "Enum member tag must be non-negative" }
+            }
+        }
+    }
 
     data class Alias(
         override val name: String,
         val type: Type,
     ) : Decl
+}
+
+sealed interface Resolved {
+    data class Record(
+        val decl: Decl.Record,
+    ) : Resolved
+
+    data class Enum(
+        val decl: Decl.Enum,
+    ) : Resolved
+
+    data class Other(
+        val type: Type,
+    ) : Resolved
 }
 
 data class Schema(
@@ -31,18 +64,18 @@ data class Schema(
 
     operator fun get(name: String) = byName[name]
 
-    fun resolve(type: Type): Type =
+    fun resolve(type: Type): Resolved =
         when (type) {
             is Type.Ref -> {
                 when (val decl = get(type.name) ?: error("Unresolved type reference in schema: ${type.name}")) {
-                    is Decl.Record -> decl.type
-                    is Decl.Enum -> decl.type
+                    is Decl.Record -> Resolved.Record(decl)
+                    is Decl.Enum -> Resolved.Enum(decl)
                     is Decl.Alias -> resolve(decl.type)
                 }
             }
 
             else -> {
-                type
+                Resolved.Other(type)
             }
         }
 
@@ -84,7 +117,7 @@ fun validate(decls: List<Decl>): List<SchemaProblem> =
             when (decl) {
                 is Decl.Record -> {
                     val fieldNames = mutableSetOf<String>()
-                    decl.type.fields.forEach { field ->
+                    decl.fields.forEach { field ->
                         if (!fieldNames.add(field.name.generatorDistinct())) {
                             add(decl.name, field.name, "Duplicate field name")
                         }
@@ -98,14 +131,6 @@ fun validate(decls: List<Decl>): List<SchemaProblem> =
                                 }
                             }
 
-                            is Type.Record -> {
-                                add(decl.name, field.name, "Inline record types are not allowed")
-                            }
-
-                            is Type.Enum -> {
-                                add(decl.name, field.name, "Inline enum types are not allowed")
-                            }
-
                             else -> {}
                         }
                     }
@@ -117,17 +142,9 @@ fun validate(decls: List<Decl>): List<SchemaProblem> =
                             if (decl.type.name.generatorDistinct() == decl.name.generatorDistinct()) {
                                 add(decl.name, null, "Recursive type definition: ${decl.type.name}")
                             }
-                            if (!declarations.contains(decl.type.name.generatorDistinct())) {
+                            if (!declarations.contains(decl.type.name)) {
                                 add(decl.name, null, "Unknown type: ${decl.type.name}")
                             }
-                        }
-
-                        is Type.Record -> {
-                            add(decl.name, null, "Inline record types are not allowed")
-                        }
-
-                        is Type.Enum -> {
-                            add(decl.name, null, "Inline enum types are not allowed")
                         }
 
                         else -> {}
@@ -137,7 +154,7 @@ fun validate(decls: List<Decl>): List<SchemaProblem> =
                 is Decl.Enum -> {
                     val memberNames = mutableSetOf<String>()
                     val memberTags = mutableSetOf<Int>()
-                    decl.type.members.forEach { member ->
+                    decl.members.forEach { member ->
                         if (!memberNames.add(member.name.generatorDistinct())) {
                             add(decl.name, member.name, "Duplicate member name")
                         }
