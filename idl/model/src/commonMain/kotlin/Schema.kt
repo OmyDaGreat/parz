@@ -117,45 +117,52 @@ fun MutableList<SchemaProblem>.add(
     this.add(SchemaProblem(decl, field, message))
 }
 
+fun Type.refs(): List<String> =
+    when (this) {
+        is Type.Ref -> listOf(name)
+        is Type.Option -> inner.refs()
+        is Type.Seq -> inner.refs()
+        else -> emptyList()
+    }
+
+fun Decl.refs(): List<String> =
+    when (this) {
+        is Decl.Record -> fields.flatMap { it.type.refs() }
+        is Decl.Enum -> emptyList()
+        is Decl.Alias -> type.refs()
+    }
+
+fun Type.unguardedRefs(): List<String> =
+    when (this) {
+        is Type.Ref -> listOf(name)
+        else -> emptyList()
+    }
+
+fun Decl.Record.unguardedRefs(): List<String> = fields.flatMap { it.type.unguardedRefs() }
+
 fun validate(decls: List<Decl>): List<SchemaProblem> =
     buildList {
         val distinct = decls.distinctSchema()
-        val declarations = distinct.map { it.name }
+        val declarations = distinct.mapTo(HashSet()) { it.name }
         distinct.forEach { decl ->
             when (decl) {
                 is Decl.Record -> {
+                    decl.fields.forEach { field ->
+                        field.type
+                            .refs()
+                            .filter { it !in declarations }
+                            .forEach { add(decl.name, field.name, "Unknown type: $it") }
+                    }
+                    decl.unguardedRefs().forEach { name ->
+                        if (name == decl.name) {
+                            add(decl.name, null, "Recursive type definition: $name")
+                        }
+                    }
                     val fieldNames = mutableSetOf<String>()
                     decl.fields.forEach { field ->
                         if (!fieldNames.add(field.name.generatorDistinct())) {
                             add(decl.name, field.name, "Duplicate field name")
                         }
-                        when (field.type) {
-                            is Type.Ref -> {
-                                if (field.type.name == decl.name) {
-                                    add(decl.name, field.name, "Recursive type definition: ${field.type.name}")
-                                }
-                                if (!declarations.contains(field.type.name)) {
-                                    add(decl.name, field.name, "Unknown type: ${field.type.name}")
-                                }
-                            }
-
-                            else -> {}
-                        }
-                    }
-                }
-
-                is Decl.Alias -> {
-                    when (decl.type) {
-                        is Type.Ref -> {
-                            if (decl.type.name.generatorDistinct() == decl.name.generatorDistinct()) {
-                                add(decl.name, null, "Recursive type definition: ${decl.type.name}")
-                            }
-                            if (!declarations.contains(decl.type.name)) {
-                                add(decl.name, null, "Unknown type: ${decl.type.name}")
-                            }
-                        }
-
-                        else -> {}
                     }
                 }
 
@@ -170,6 +177,13 @@ fun validate(decls: List<Decl>): List<SchemaProblem> =
                             add(decl.name, member.name, "Duplicate member tag")
                         }
                     }
+                }
+
+                is Decl.Alias -> {
+                    decl.type
+                        .refs()
+                        .filter { it !in declarations }
+                        .forEach { add(decl.name, null, "Unknown type: $it") }
                 }
             }
         }
