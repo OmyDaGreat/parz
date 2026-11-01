@@ -6,7 +6,7 @@ import xyz.malefic.parz.idl.Type
 import xyz.malefic.parz.idl.Type.Decimal.Overflow
 import xyz.malefic.parz.idl.Type.Decimal.Rounding
 
-fun parse(tokens: List<Token>): List<Type> {
+fun parse(tokens: List<Token>): List<TypeExpr> {
     val parser = Parser(tokens)
     return buildList {
         while (!parser.done) {
@@ -22,16 +22,17 @@ internal class Parser(
 
     val done get() = pos >= tokens.size
 
-    fun type(): Type {
+    fun type(): TypeExpr {
         val (word, offset) = word()
         return when (word) {
-            "void" -> Type.Void
-            "bool" -> Type.Bool
+            "void" -> TypeExpr.Primitive(Type.Void, offset)
+            "bool" -> TypeExpr.Primitive(Type.Bool, offset)
             "string" -> str(offset)
-            "option" -> Type.Option(angled { type() })
-            "seq" -> Type.Seq(angled { type() })
             "decimal" -> decimal(offset)
-            else -> Type.Ref(word)
+            "option" -> TypeExpr.Option(angled { type() }, offset)
+            "seq" -> TypeExpr.Seq(angled { type() }, offset)
+            "record", "enum" -> throw SyntaxError("Inline $word types aren't allowed", offset)
+            else -> TypeExpr.Named(word, offset)
         }
     }
 
@@ -100,14 +101,17 @@ internal class Parser(
     }
 
     private fun str(offset: Int) =
-        checkSyntax("string", offset) {
-            if (accept('(')) Type.Str(int().exactLong().also { expect(')') }) else Type.Str()
-        }
+        TypeExpr.Primitive(
+            checkSyntax("string", offset) {
+                if (accept('(')) Type.Str(int().exactLong().also { expect(')') }) else Type.Str()
+            },
+            offset,
+        )
 
     // TODO: Should be used by the record/enum declaration parsing to replace the inline record and enum types (now nonexistent)
-    private fun fields(): List<Decl.Record.Field> = delimited('{', '}') { field() }
+    private fun fields(): List<FieldSyntax> = delimited('{', '}') { field() }
 
-    private fun members(): List<Decl.Enum.Member> {
+    private fun members(): List<MemberSyntax> {
         expect('{')
         var lastTag = -1
         return buildList {
@@ -126,15 +130,15 @@ internal class Parser(
         }
     }
 
-    private fun field(): Decl.Record.Field {
+    private fun field(): FieldSyntax {
         val (name, index) = word()
         expect(':')
-        return checkSyntax("record field", index) { Decl.Record.Field(name, type()) }
+        return FieldSyntax(name, index, type())
     }
 
-    private fun member(tag: Int): Decl.Enum.Member {
+    private fun member(tag: Int): MemberSyntax {
         val (name, index) = word()
-        return checkSyntax("enum member", index) { Decl.Enum.Member(name, tag) }
+        return MemberSyntax(name, index, tag, if (accept('=')) int().exactInt() else null)
     }
 
     private fun <T> angled(inner: () -> T): T {
@@ -142,34 +146,37 @@ internal class Parser(
         return inner().also { expect('>') }
     }
 
-    private fun decimal(offset: Int): Type.Decimal {
+    private fun decimal(offset: Int): TypeExpr.Primitive {
         expect('(')
         var signum = 1
         if (accept('-')) {
             signum = -1
         }
         val precisionOrMin = int() * signum
-        return checkSyntax("decimal", offset) {
-            if (accept(',')) {
-                val scale = int()
-                val rounding = if (accept(',')) enumWord<Rounding>(offset) else Rounding.TOWARDS_ZERO
-                val overflow = if (accept(',')) enumWord<Overflow>(offset) else Overflow.ERROR
-                expect(')')
-                val bound = BigInteger.TEN.pow(precisionOrMin) - BigInteger.ONE
-                Type.Decimal(-bound, bound, scale.exactInt(), rounding, overflow)
-            } else if (accept('.') && accept('.') && accept('.')) {
-                signum = if (accept('-')) -1 else 1
-                val max = int() * signum
-                expect(',')
-                val scale = int()
-                val rounding = if (accept(',')) enumWord<Rounding>(offset) else Rounding.TOWARDS_ZERO
-                val overflow = if (accept(',')) enumWord<Overflow>(offset) else Overflow.ERROR
-                expect(')')
-                Type.Decimal(precisionOrMin, max, scale.exactInt(), rounding, overflow)
-            } else {
-                throw SyntaxError("Expected ',' or '...' in decimal type after first int", offset)
-            }
-        }
+        return TypeExpr.Primitive(
+            checkSyntax("decimal", offset) {
+                if (accept(',')) {
+                    val scale = int()
+                    val rounding = if (accept(',')) enumWord<Rounding>(offset) else Rounding.TOWARDS_ZERO
+                    val overflow = if (accept(',')) enumWord<Overflow>(offset) else Overflow.ERROR
+                    expect(')')
+                    val bound = BigInteger.TEN.pow(precisionOrMin) - BigInteger.ONE
+                    Type.Decimal(-bound, bound, scale.exactInt(), rounding, overflow)
+                } else if (accept('.') && accept('.') && accept('.')) {
+                    signum = if (accept('-')) -1 else 1
+                    val max = int() * signum
+                    expect(',')
+                    val scale = int()
+                    val rounding = if (accept(',')) enumWord<Rounding>(offset) else Rounding.TOWARDS_ZERO
+                    val overflow = if (accept(',')) enumWord<Overflow>(offset) else Overflow.ERROR
+                    expect(')')
+                    Type.Decimal(precisionOrMin, max, scale.exactInt(), rounding, overflow)
+                } else {
+                    throw SyntaxError("Expected ',' or '...' in decimal type after first int", offset)
+                }
+            },
+            offset,
+        )
     }
 
     private fun <T> checkSyntax(
