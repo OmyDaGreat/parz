@@ -57,26 +57,35 @@ data class SchemaProblem(
     val message: String,
 )
 
+context(schemaProblems: MutableList<SchemaProblem>)
+fun List<Decl>.distinctSchema(): List<Decl> {
+    val set = HashSet<String>()
+    val list = ArrayList<Decl>()
+    for (e in this) {
+        val key = e.name.generatorDistinct()
+        if (set.add(key)) list.add(e) else schemaProblems.add(SchemaProblem(e.name, null, "Duplicate declaration name"))
+    }
+    return list
+}
+
+fun MutableList<SchemaProblem>.add(
+    decl: String,
+    field: String?,
+    message: String,
+) {
+    this.add(SchemaProblem(decl, field, message))
+}
+
 fun validate(decls: List<Decl>): List<SchemaProblem> =
     buildList {
-        context(schemaProblems: MutableList<SchemaProblem>)
-        fun List<Decl>.distinctSchema(): List<Decl> {
-            val set = HashSet<String>()
-            val list = ArrayList<Decl>()
-            for (e in this) {
-                val key = e.name.replace("_", "").lowercase()
-                if (set.add(key)) list.add(e) else schemaProblems.add(SchemaProblem(e.name, null, "Duplicate declaration name"))
-            }
-            return list
-        }
         val distinct = decls.distinctSchema()
         distinct.forEach { decl ->
             when (decl) {
                 is Decl.Record -> {
                     val fieldNames = mutableSetOf<String>()
                     decl.type.fields.forEach { field ->
-                        if (!fieldNames.add(field.name)) {
-                            add(SchemaProblem(decl.name, field.name, "Duplicate field name"))
+                        if (!fieldNames.add(field.name.generatorDistinct())) {
+                            add(decl.name, field.name, "Duplicate field name")
                         }
                     }
                 }
@@ -85,11 +94,11 @@ fun validate(decls: List<Decl>): List<SchemaProblem> =
                     val memberNames = mutableSetOf<String>()
                     val memberTags = mutableSetOf<Int>()
                     decl.type.members.forEach { member ->
-                        if (!memberNames.add(member.name)) {
-                            add(SchemaProblem(decl.name, member.name, "Duplicate member name"))
+                        if (!memberNames.add(member.name.generatorDistinct())) {
+                            add(decl.name, member.name, "Duplicate member name")
                         }
                         if (!memberTags.add(member.tag)) {
-                            add(SchemaProblem(decl.name, member.name, "Duplicate member tag"))
+                            add(decl.name, member.name, "Duplicate member tag")
                         }
                     }
                 }

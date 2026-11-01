@@ -197,6 +197,7 @@ sealed interface Type {
     /**
      * A record type. Similar to data classes or OCaml's records.
      */
+    @OptIn(ExperimentalStdlibApi::class)
     data class Record(
         val fields: List<Field>,
     ) : Type {
@@ -204,7 +205,7 @@ sealed interface Type {
 
         init {
             require(fields.isNotEmpty()) { "Record must have at least one field" }
-            require(fields.distinctBy { it.name }.size == fields.size) { "Record fields must have unique names" }
+            require(fields.allDistinctBy { it.name.generatorDistinct() }) { "Record fields must have unique names" }
         }
 
         constructor(vararg fields: Field) : this(fields.toList())
@@ -236,7 +237,7 @@ sealed interface Type {
 
         init {
             require(members.isNotEmpty()) { "Enum must have at least one member" }
-            require(members.allDistinctBy { it.name }) { "Enum members must have unique names" }
+            require(members.allDistinctBy { it.name.generatorDistinct() }) { "Enum members must have unique names" }
             require(members.allDistinctBy { it.tag }) { "Enum members must have unique tags" }
         }
 
@@ -262,3 +263,5 @@ sealed interface Type {
         override val kind = "ref"
     }
 }
+
+fun String.generatorDistinct() = replace("_", "").lowercase()
