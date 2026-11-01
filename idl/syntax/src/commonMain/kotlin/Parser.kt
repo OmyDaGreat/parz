@@ -152,8 +152,7 @@ internal class Parser(
         return checkSyntax("decimal", offset) {
             if (accept(',')) {
                 val scale = int()
-                expect(',')
-                val rounding = enumWord<Rounding>(offset)
+                val rounding = if (accept(',')) enumWord<Rounding>(offset) else Rounding.TOWARDS_ZERO
                 val overflow = if (accept(',')) enumWord<Overflow>(offset) else Overflow.ERROR
                 expect(')')
                 val bound = BigInteger.TEN.pow(precisionOrMin) - BigInteger.ONE
