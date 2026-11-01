@@ -15,7 +15,7 @@ internal class Parser(
 
     private val current get() = tokens[pos]
     private val here get() = current.offset
-    private val done get() = pos >= tokens.size
+    private val done get() = current is Token.EOF
 
     fun schema() = SchemaSyntax(buildList { while (!done) add(decl()) })
 
