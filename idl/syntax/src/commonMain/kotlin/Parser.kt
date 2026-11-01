@@ -6,23 +6,18 @@ import xyz.malefic.parz.idl.Type
 import xyz.malefic.parz.idl.Type.Decimal.Overflow
 import xyz.malefic.parz.idl.Type.Decimal.Rounding
 
-fun parse(tokens: List<Token>): List<TypeExpr> {
-    val parser = Parser(tokens)
-    return buildList {
-        while (!parser.done) {
-            add(parser.type())
-        }
-    }
-}
+fun parse(tokens: List<Token>) = Parser(tokens).schema()
 
 internal class Parser(
     private val tokens: List<Token>,
 ) {
     private var pos = 0
 
-    val done get() = pos >= tokens.size
+    private val done get() = pos >= tokens.size
 
-    fun type(): TypeExpr {
+    fun schema() = SchemaSyntax(buildList { while (!done) add(decl()) })
+
+    private fun type(): TypeExpr {
         val (word, offset) = word()
         return when (word) {
             "void" -> TypeExpr.Primitive(Type.Void, offset)
@@ -33,6 +28,17 @@ internal class Parser(
             "seq" -> TypeExpr.Seq(angled { type() }, offset)
             "record", "enum" -> throw SyntaxError("Inline $word types aren't allowed", offset)
             else -> TypeExpr.Named(word, offset)
+        }
+    }
+
+    private fun decl(): DeclSyntax {
+        val (keyword, keywordOffset) = word()
+        val (name, offset) = word()
+        return when (keyword) {
+            "record" -> DeclSyntax.Record(name, offset, fields())
+            "enum" -> DeclSyntax.Enum(name, offset, members())
+            "type" -> expect('=').let { DeclSyntax.Alias(name, offset, type()) }
+            else -> throw SyntaxError("Expected 'record', 'enum', or 'type', but got '$keyword'", keywordOffset)
         }
     }
 
@@ -108,7 +114,6 @@ internal class Parser(
             offset,
         )
 
-    // TODO: Should be used by the record/enum declaration parsing to replace the inline record and enum types (now nonexistent)
     private fun fields(): List<FieldSyntax> = delimited('{', '}') { field() }
 
     private fun members(): List<MemberSyntax> {
