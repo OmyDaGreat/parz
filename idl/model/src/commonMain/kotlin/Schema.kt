@@ -183,11 +183,11 @@ private fun recordCycles(edges: Map<String, List<String>>): List<List<String>> {
 
 fun edgeTargets(
     name: String,
-    byName: Map<String, Decl>,
+    declarationMap: Map<String, Decl>,
 ): List<String> =
-    when (val decl = byName[name]) {
+    when (val decl = declarationMap[name]) {
         is Decl.Record -> listOf(name)
-        is Decl.Alias -> decl.type.unguardedRefs().flatMap { edgeTargets(it, byName) }
+        is Decl.Alias -> decl.type.unguardedRefs().flatMap { edgeTargets(it, declarationMap) }
         is Decl.Enum, null -> emptyList()
     }
 
@@ -195,7 +195,8 @@ fun validate(decls: List<Decl>): List<SchemaProblem> =
     buildList {
         val distinct = decls.distinctSchema()
         val declarations = distinct.mapTo(HashSet()) { it.name }
-        var checkCycles = true
+        val declarationMap = distinct.associateBy { it.name }
+        var checkRecordCycles = true
         distinct.forEach { decl ->
             when (decl) {
                 is Decl.Record -> {
@@ -204,12 +205,6 @@ fun validate(decls: List<Decl>): List<SchemaProblem> =
                             .refs()
                             .filter { it !in declarations }
                             .forEach { add(decl.name, field.name, "Unknown type: $it") }
-                    }
-                    decl.unguardedRefs().forEach { name ->
-                        if (name == decl.name) {
-                            add(decl.name, null, "Cyclic type definition: $name")
-                            checkCycles = false
-                        }
                     }
                     val fieldNames = mutableSetOf<String>()
                     decl.fields.forEach { field ->
@@ -233,9 +228,9 @@ fun validate(decls: List<Decl>): List<SchemaProblem> =
                 }
 
                 is Decl.Alias -> {
-                    if (decl.isCyclic(byName = distinct.associateBy { it.name })) {
+                    if (decl.isCyclic(declarationMap)) {
                         add(decl.name, null, "Cyclic type definition")
-                        checkCycles = false
+                        checkRecordCycles = false
                     }
                     decl.type
                         .refs()
@@ -245,10 +240,10 @@ fun validate(decls: List<Decl>): List<SchemaProblem> =
             }
         }
 
-        if (checkCycles) {
+        if (checkRecordCycles) {
             val edges =
                 decls.filterIsInstance<Decl.Record>().associate { record ->
-                    record.name to record.unguardedRefs().flatMap { n -> edgeTargets(n, distinct.associateBy { it.name }) }
+                    record.name to record.unguardedRefs().flatMap { n -> edgeTargets(n, declarationMap) }
                 }
             recordCycles(edges).forEach {
                 add(it.first(), null, "Cyclic type definition: ${it.joinToString(" -> ")}")
