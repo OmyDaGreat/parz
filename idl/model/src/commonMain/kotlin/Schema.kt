@@ -7,6 +7,10 @@ sealed interface Decl {
         override val name: String,
         val fields: List<Field>,
     ) : Decl {
+        init {
+            require(fields.isNotEmpty()) { "Record must have at least one field" }
+        }
+
         data class Field(
             val name: String,
             val type: Type,
@@ -21,6 +25,10 @@ sealed interface Decl {
         override val name: String,
         val members: List<Member>,
     ) : Decl {
+        init {
+            require(members.isNotEmpty()) { "Enum must have at least one member" }
+        }
+
         data class Member(
             val name: String,
             val tag: Int,

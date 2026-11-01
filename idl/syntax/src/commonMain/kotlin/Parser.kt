@@ -1,6 +1,7 @@
 package xyz.malefic.parz.idl.syntax
 
 import com.ionspin.kotlin.bignum.integer.BigInteger
+import xyz.malefic.parz.idl.Decl
 import xyz.malefic.parz.idl.Type
 import xyz.malefic.parz.idl.Type.Decimal.Overflow
 import xyz.malefic.parz.idl.Type.Decimal.Rounding
@@ -30,8 +31,6 @@ internal class Parser(
             "option" -> Type.Option(angled { type() })
             "seq" -> Type.Seq(angled { type() })
             "decimal" -> decimal(offset)
-            "record" -> checkSyntax("record", offset) { Type.Record(delimited('{', '}') { field() }) }
-            "enum" -> enum(offset)
             else -> Type.Ref(word)
         }
     }
@@ -105,25 +104,37 @@ internal class Parser(
             if (accept('(')) Type.Str(int().exactLong().also { expect(')') }) else Type.Str()
         }
 
-    private fun enum(offset: Int): Type.Enum {
+    // TODO: Should be used by the record/enum declaration parsing to replace the inline record and enum types (now nonexistent)
+    private fun fields(): List<Decl.Record.Field> = delimited('{', '}') { field() }
+
+    private fun members(): List<Decl.Enum.Member> {
         expect('{')
         var lastTag = -1
-        val result =
-            buildList {
-                while (!accept('}')) {
-                    add(member(++lastTag))
-                    if (accept('=')) {
-                        val tag = int().exactInt()
-                        lastTag = tag
-                        this[lastIndex] = last().copy(tag = tag)
-                    }
-                    if (!accept(',')) {
-                        expect('}')
-                        break
-                    }
+        return buildList {
+            while (!accept('}')) {
+                add(member(++lastTag))
+                if (accept('=')) {
+                    val tag = int().exactInt()
+                    lastTag = tag
+                    this[lastIndex] = last().copy(tag = tag)
+                }
+                if (!accept(',')) {
+                    expect('}')
+                    break
                 }
             }
-        return checkSyntax("enum", offset) { Type.Enum(result) }
+        }
+    }
+
+    private fun field(): Decl.Record.Field {
+        val (name, index) = word()
+        expect(':')
+        return checkSyntax("record field", index) { Decl.Record.Field(name, type()) }
+    }
+
+    private fun member(tag: Int): Decl.Enum.Member {
+        val (name, index) = word()
+        return checkSyntax("enum member", index) { Decl.Enum.Member(name, tag) }
     }
 
     private fun <T> angled(inner: () -> T): T {
@@ -160,17 +171,6 @@ internal class Parser(
                 throw SyntaxError("Expected ',' or '...' in decimal type after first int", offset)
             }
         }
-    }
-
-    private fun field(): Type.Record.Field {
-        val (name, index) = word()
-        expect(':')
-        return checkSyntax("record field", index) { Type.Record.Field(name, type()) }
-    }
-
-    private fun member(tag: Int): Type.Enum.Member {
-        val (name, index) = word()
-        return checkSyntax("enum member", index) { Type.Enum.Member(name, tag) }
     }
 
     private fun <T> checkSyntax(

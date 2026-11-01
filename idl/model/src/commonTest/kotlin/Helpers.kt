@@ -32,11 +32,38 @@ private val samples =
         Value.None,
     )
 
-fun Type.assertAccepts(vararg values: Value) = values.forEach { assertTrue(this accepts it, "$this should accept $it") }
+/**
+ * A schema holding a single declaration, with a reference to it.
+ */
+data class Declared(
+    val schema: Schema,
+    val ref: Type.Ref,
+)
 
-fun Type.assertRejects(vararg values: Value) = values.forEach { assertFalse(this accepts it, "$this should reject $it") }
+fun record(vararg fields: Decl.Record.Field) = Declared(Schema(listOf(Decl.Record("Test", fields.toList()))), Type.Ref("Test"))
+
+fun enum(vararg members: Decl.Enum.Member) = Declared(Schema(listOf(Decl.Enum("Test", members.toList()))), Type.Ref("Test"))
+
+fun Type.assertAccepts(
+    vararg values: Value,
+    schema: Schema = Schema.EMPTY,
+) = values.forEach { assertTrue(accepts(it, schema), "$this should accept $it") }
+
+fun Type.assertRejects(
+    vararg values: Value,
+    schema: Schema = Schema.EMPTY,
+) = values.forEach { assertFalse(accepts(it, schema), "$this should reject $it") }
+
+fun Declared.assertAccepts(vararg values: Value) = ref.assertAccepts(*values, schema = schema)
+
+fun Declared.assertRejects(vararg values: Value) = ref.assertRejects(*values, schema = schema)
 
 /**
  * Assert that this type rejects a sample of every value kind not in [kinds].
  */
-fun Type.assertRejectsOtherKinds(kinds: Set<String> = setOf(kind)) = assertRejects(*samples.filter { it.kind !in kinds }.toTypedArray())
+fun Type.assertRejectsOtherKinds(
+    kinds: Set<String> = setOf(kind),
+    schema: Schema = Schema.EMPTY,
+) = assertRejects(*samples.filter { it.kind !in kinds }.toTypedArray(), schema = schema)
+
+fun Declared.assertRejectsOtherKinds(kind: String) = ref.assertRejectsOtherKinds(setOf(kind), schema)

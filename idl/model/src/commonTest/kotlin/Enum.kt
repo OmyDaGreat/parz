@@ -1,22 +1,21 @@
 package xyz.malefic.parz.idl
 
-import com.ionspin.kotlin.bignum.integer.BigInteger.Companion.ONE
-import com.ionspin.kotlin.bignum.integer.BigInteger.Companion.ZERO
-import xyz.malefic.parz.idl.Type.Enum.Member
+import xyz.malefic.parz.idl.Decl.Enum.Member
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class Enum {
-    private val single = Type.Enum(Member("key", 0))
-    private val pair = Type.Enum(Member("key", 0), Member("key2", 1))
+    private val single = enum(Member("key", 0))
+    private val pair = enum(Member("key", 0), Member("key2", 1))
 
-    @Test fun nonEnum() = single.assertRejectsOtherKinds()
+    @Test fun nonEnum() = single.assertRejectsOtherKinds("enum")
 
     @Test
     fun invalidEnum() {
-        assertFailsWith<IllegalArgumentException> { Type.Enum() }
-        assertFailsWith<IllegalArgumentException> { Type.Enum(Member("key", 1), Member("key", 0)) }
-        assertFailsWith<IllegalArgumentException> { Type.Enum(Member("key1", 0), Member("key2", 0)) }
+        assertFailsWith<IllegalArgumentException> { enum() }
+        assertFailsWith<IllegalArgumentException> { enum(Member("key", 1), Member("key", 0)) }
+        assertFailsWith<IllegalArgumentException> { enum(Member("key1", 0), Member("key2", 0)) }
         single.assertRejects(Value.Enum(""))
     }
 
@@ -24,5 +23,11 @@ class Enum {
     fun isEnum() {
         single.assertAccepts(Value.Enum("key"))
         pair.assertAccepts(Value.Enum("key"), Value.Enum("key2"))
+    }
+
+    @Test
+    fun unknownMember() {
+        val (schema, ref) = pair
+        assertEquals(listOf(mismatch(Reason.UnknownMember("key3"))), ref.check(Value.Enum("key3"), schema))
     }
 }
