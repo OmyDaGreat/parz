@@ -34,7 +34,7 @@ data class Schema(
     fun resolve(type: Type): Type =
         when (type) {
             is Type.Ref -> {
-                when (val decl = byName.getValue(type.name)) {
+                when (val decl = get(type.name) ?: error("Unresolved type reference in schema: ${type.name}")) {
                     is Decl.Record -> decl.type
                     is Decl.Enum -> decl.type
                     is Decl.Alias -> resolve(decl.type)
