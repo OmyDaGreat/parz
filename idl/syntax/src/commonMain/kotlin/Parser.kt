@@ -121,12 +121,9 @@ internal class Parser(
         var lastTag = -1
         return buildList {
             while (!accept('}')) {
-                add(member(++lastTag))
-                if (accept('=')) {
-                    val tag = int().exactInt()
-                    lastTag = tag
-                    this[lastIndex] = last().copy(tag = tag)
-                }
+                val member = member(++lastTag)
+                add(member)
+                lastTag = member.tag
                 if (!accept(',')) {
                     expect('}')
                     break
@@ -136,14 +133,16 @@ internal class Parser(
     }
 
     private fun field(): FieldSyntax {
-        val (name, index) = word()
+        val (name, offset) = word()
         expect(':')
-        return FieldSyntax(name, index, type())
+        return FieldSyntax(name, offset, type())
     }
 
-    private fun member(tag: Int): MemberSyntax {
-        val (name, index) = word()
-        return MemberSyntax(name, index, tag, if (accept('=')) int().exactInt() else null)
+    private fun member(autoTag: Int): MemberSyntax {
+        val (name, offset) = word()
+        if (!accept('=')) return MemberSyntax(name, offset, autoTag, null)
+        val tagOffset = tokens.getOrNull(pos)?.offset ?: -1
+        return MemberSyntax(name, offset, int().exactInt(), tagOffset)
     }
 
     private fun <T> angled(inner: () -> T): T {
