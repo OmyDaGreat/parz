@@ -70,12 +70,12 @@ internal class Parser(
         }
     }
 
-    private inline fun <reified T : Enum<T>> enumWord(): T {
-        val (word, offset) = word()
+    private inline fun <reified T : Enum<T>> enumWord(initialOffset: Int): T {
+        val (word, _) = word()
         return enumValues<T>().find { it.name.equals(word, ignoreCase = true) }
             ?: throw SyntaxError(
                 "Expected one of ${enumValues<T>().joinToString(", ") { it.name }}, but got '$word'",
-                offset,
+                initialOffset,
             )
     }
 
@@ -140,8 +140,8 @@ internal class Parser(
             if (accept(',')) {
                 val scale = int()
                 expect(',')
-                val rounding = enumWord<Type.Decimal.Rounding>()
-                val overflow = if (accept(',')) enumWord<Type.Decimal.Overflow>() else Type.Decimal.Overflow.ERROR
+                val rounding = enumWord<Type.Decimal.Rounding>(offset)
+                val overflow = if (accept(',')) enumWord<Type.Decimal.Overflow>(offset) else Type.Decimal.Overflow.ERROR
                 expect(')')
                 val bound = BigInteger.TEN.pow(precisionOrMin) - BigInteger.ONE
                 Type.Decimal(-bound, bound, scale.exactInt(), rounding, overflow)
@@ -150,8 +150,8 @@ internal class Parser(
                 val max = int() * signum
                 expect(',')
                 val scale = int()
-                val rounding = if (accept(',')) enumWord<Type.Decimal.Rounding>() else Type.Decimal.Rounding.TOWARDS_ZERO
-                val overflow = if (accept(',')) enumWord<Type.Decimal.Overflow>() else Type.Decimal.Overflow.ERROR
+                val rounding = if (accept(',')) enumWord<Type.Decimal.Rounding>(offset) else Type.Decimal.Rounding.TOWARDS_ZERO
+                val overflow = if (accept(',')) enumWord<Type.Decimal.Overflow>(offset) else Type.Decimal.Overflow.ERROR
                 expect(')')
                 Type.Decimal(precisionOrMin, max, scale.exactInt(), rounding, overflow)
             } else {
