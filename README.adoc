@@ -8,22 +8,51 @@ IDL & IR setup with (planned) support for a variety of languages.
 
 === Features
 * IDL through Kotlin
+** Records, enums and aliases declared in a schema
 ** Testing
+* IDL schema text format, parsed into a syntax tree
+* CLI for parsing schemas from the terminal
 * Planned:
-** IDL schema
+** Checking parsed schemas and reporting errors with their position
 ** IR schema defined through the IDL
 
 === Usage
+
+==== Libraries
 * Get from Maven Central:
+
+[source,kotlin]
+----
+implementation(platform("xyz.malefic.parz:bom:<version>"))
+implementation("xyz.malefic.parz:idl-model")  // types, values and schemas
+implementation("xyz.malefic.parz:idl-syntax") // the schema text format
+----
+
+The BOM keeps the module versions aligned. Without it, give each dependency a version. See the https://github.com/OmyDaGreat/parz/releases[releases] for the latest one.
+
+NOTE: Up to 0.1.0, the IDL model was published as `xyz.malefic.parz:idl`.
+
+* Create a compiler converting your language's typedefs into the link:idl/model/src/commonMain/kotlin/Value.kt[Value.kt] types.
+* Declare records, enums and aliases in a link:idl/model/src/commonMain/kotlin/Schema.kt[Schema], and type-check values against the link:idl/model/src/commonMain/kotlin/Type.kt[Type.kt] types (like in link:idl/model/src/commonTest/[commonTest] right now), which is a basic validation system.
+* Parse schema text with `parse(lex(source))` from `idl-syntax`, which returns the syntax tree for the schema.
+
+==== CLI
+Each https://github.com/OmyDaGreat/parz/releases[release] has a `parz-<version>.zip` attached, which needs Java to run (27 recommended). Unzip it and run `bin/parz` (`bin\parz.bat` on Windows). It reads a schema from standard input and prints its syntax tree, or the error with its line and column:
+
+[source,shell]
+----
+bin/parz < payment.idl
+----
+
+Run it without input to type schemas in directly. End each one with `;;` to parse it (inspired by OCaml's `utop`):
 
 [source]
 ----
-implementation("xyz.malefic.parz:idl:0.1.0")
+record Payment { amount: decimal(9, 2), status: Status }
+enum Status { pending, settled = 5 };;
 ----
 
-* Create a compiler converting your language's typedefs into the link:idl/model/src/commonMain/kotlin/Value.kt[Value.kt] types.
-* Type-check against the link:idl/model/src/commonMain/kotlin/Type.kt[Type.kt] types (like in link:idl/model/src/commonTest/[commonTest] right now), which is a basic validation system.
-* For now, that's pretty much the entire functionality, though a language-independent IDL schema is planned in addition to a separate verification process and some built-in language type converters.
+For line editing and history, run it through `rlwrap bin/parz`.
 
 == License
 
