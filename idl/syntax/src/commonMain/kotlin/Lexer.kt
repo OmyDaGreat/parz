@@ -34,18 +34,16 @@ sealed interface Token {
 }
 
 class SyntaxError(
-    message: String,
+    val reason: String,
     val offset: Int,
-) : Exception("$message at offset $offset") {
+) : Exception("$reason at offset $offset") {
     fun describe(source: String): String {
-        val line =
-            source
-                .lines()
-                .withIndex()
-                .first { it.value.contains('\n') }
-                .index
-        val lineStart = source.lines().take(line).sumOf { it.length + 1 }
-        return "Error: $message at line $line, column ${offset - lineStart}"
+        val before = source.substring(0..<offset.coerceAtMost(source.length))
+        val line = before.count { it == '\n' } + 1
+        val lineStart = before.lastIndexOf('\n') + 1
+        val column = offset - lineStart + 1
+        val text = source.substring(lineStart).substringBefore('\n')
+        return "error: $reason at line $line:$column\n$text\n${" ".repeat(column - 1)}^"
     }
 }
 
