@@ -3,20 +3,34 @@ package xyz.malefic.parz.idl.syntax
 sealed interface Token {
     val offset: Int
 
+    fun pretty(): String
+
     data class Word(
         val text: String,
         override val offset: Int,
-    ) : Token
+    ) : Token {
+        override fun pretty(): String = "'$text'"
+    }
 
     data class Number(
         val text: String,
         override val offset: Int,
-    ) : Token
+    ) : Token {
+        override fun pretty(): String = text
+    }
 
     data class Symbol(
         val char: Char,
         override val offset: Int,
-    ) : Token
+    ) : Token {
+        override fun pretty(): String = "'$char'"
+    }
+
+    data class EOF(
+        override val offset: Int,
+    ) : Token {
+        override fun pretty(): String = "end of input"
+    }
 }
 
 class SyntaxError(
@@ -65,4 +79,5 @@ fun lex(source: String): List<Token> =
                 }
             }
         }
+        add(Token.EOF(source.trimEnd().length))
     }

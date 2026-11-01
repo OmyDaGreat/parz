@@ -13,6 +13,8 @@ internal class Parser(
 ) {
     private var pos = 0
 
+    private val current get() = tokens[pos]
+    private val here get() = current.offset
     private val done get() = pos >= tokens.size
 
     fun schema() = SchemaSyntax(buildList { while (!done) add(decl()) })
@@ -43,8 +45,7 @@ internal class Parser(
     }
 
     private fun accept(c: Char): Boolean {
-        if (done) return false
-        val token = tokens[pos]
+        val token = current
         if (token is Token.Symbol && token.char == c) {
             pos++
             return true
@@ -53,29 +54,19 @@ internal class Parser(
     }
 
     private fun expect(c: Char) {
-        if (!accept(c)) throw SyntaxError("Expected '$c'", tokens.getOrNull(pos)?.offset ?: -1)
+        if (!accept(c)) throw SyntaxError("Expected '$c', but got ${current.pretty()}", here)
     }
 
     private fun word(): Token.Word {
-        if (done) throw SyntaxError("Expected word, but reached end of input", tokens.getOrNull(pos)?.offset ?: -1)
-        val token = tokens[pos]
-        if (token is Token.Word) {
-            pos++
-            return token
-        } else {
-            throw SyntaxError("Expected word, but got ${token::class.simpleName}", token.offset)
-        }
+        val token = current as? Token.Word ?: throw SyntaxError("Expected word, but got ${current.pretty()}", here)
+        pos++
+        return token
     }
 
     private fun int(): BigInteger {
-        if (done) throw SyntaxError("Expected integer, but reached end of input", tokens.getOrNull(pos)?.offset ?: -1)
-        val token = tokens[pos]
-        if (token is Token.Number) {
-            pos++
-            return BigInteger.parseString(token.text)
-        } else {
-            throw SyntaxError("Expected integer, but got ${token::class.simpleName}", token.offset)
-        }
+        val token = current as? Token.Number ?: throw SyntaxError("Expected integer, but got ${current.pretty()}", here)
+        pos++
+        return BigInteger.parseString(token.text)
     }
 
     private inline fun <reified T : Enum<T>> enumWord(initialOffset: Int): T {
@@ -141,8 +132,7 @@ internal class Parser(
     private fun member(autoTag: Int): MemberSyntax {
         val (name, offset) = word()
         if (!accept('=')) return MemberSyntax(name, offset, autoTag, null)
-        val tagOffset = tokens.getOrNull(pos)?.offset ?: -1
-        return MemberSyntax(name, offset, int().exactInt(), tagOffset)
+        return MemberSyntax(name, offset, int().exactInt(), here)
     }
 
     private fun <T> angled(inner: () -> T): T {
