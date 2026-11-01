@@ -17,6 +17,7 @@ fun main() {
             buffer.appendLine(line)
         }
     }
+    if (buffer.isNotBlank()) run(buffer.toString())
 }
 
 private fun run(source: String) =
