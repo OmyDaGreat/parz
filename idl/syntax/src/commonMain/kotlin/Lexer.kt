@@ -63,7 +63,7 @@ fun lex(source: String): List<Token> =
                     add(Token.Word(source.substring(start, i), start))
                 }
 
-                c.isDigit() -> {
+                c in '0'..'9' -> {
                     while (i < source.length && source[i].isDigit()) i++
                     add(Token.Number(source.substring(start, i), start))
                 }
