@@ -9,4 +9,5 @@ kotlin {
             api(project(":idl:model"))
         }
     }
+    compilerOptions.freeCompilerArgs.add("-Xcollection-literals")
 }
