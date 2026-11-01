@@ -140,10 +140,62 @@ fun Type.unguardedRefs(): List<String> =
 
 fun Decl.Record.unguardedRefs(): List<String> = fields.flatMap { it.type.unguardedRefs() }
 
+private fun Decl.Alias.isCyclic(byName: Map<String, Decl>): Boolean {
+    val seen = mutableSetOf<String>()
+    val pending = ArrayDeque(type.refs())
+    while (pending.isNotEmpty()) {
+        val name = pending.removeLast()
+        if (name == this.name) return true
+        if (!seen.add(name)) continue
+        (byName[name] as? Decl.Alias)?.let { pending += it.type.refs() }
+    }
+    return false
+}
+
+private fun recordCycles(edges: Map<String, List<String>>): List<List<String>> {
+    val state = mutableMapOf<String, Boolean>()
+    val path = ArrayDeque<String>()
+    val cycles = mutableListOf<List<String>>()
+
+    fun visit(name: String) {
+        when (state[name]) {
+            true -> {
+                return
+            }
+
+            false -> {
+                cycles += path.dropWhile { it != name } + name
+                return
+            }
+
+            null -> {}
+        }
+        state[name] = false
+        path.addLast(name)
+        edges[name].orEmpty().forEach(::visit)
+        path.removeLast()
+        state[name] = true
+    }
+
+    edges.keys.forEach(::visit)
+    return cycles
+}
+
+fun edgeTargets(
+    name: String,
+    byName: Map<String, Decl>,
+): List<String> =
+    when (val decl = byName[name]) {
+        is Decl.Record -> listOf(name)
+        is Decl.Alias -> decl.type.unguardedRefs().flatMap { edgeTargets(it, byName) }
+        is Decl.Enum, null -> emptyList()
+    }
+
 fun validate(decls: List<Decl>): List<SchemaProblem> =
     buildList {
         val distinct = decls.distinctSchema()
         val declarations = distinct.mapTo(HashSet()) { it.name }
+        var checkCycles = true
         distinct.forEach { decl ->
             when (decl) {
                 is Decl.Record -> {
@@ -155,7 +207,8 @@ fun validate(decls: List<Decl>): List<SchemaProblem> =
                     }
                     decl.unguardedRefs().forEach { name ->
                         if (name == decl.name) {
-                            add(decl.name, null, "Recursive type definition: $name")
+                            add(decl.name, null, "Cyclic type definition: $name")
+                            checkCycles = false
                         }
                     }
                     val fieldNames = mutableSetOf<String>()
@@ -180,11 +233,25 @@ fun validate(decls: List<Decl>): List<SchemaProblem> =
                 }
 
                 is Decl.Alias -> {
+                    if (decl.isCyclic(byName = distinct.associateBy { it.name })) {
+                        add(decl.name, null, "Cyclic type definition")
+                        checkCycles = false
+                    }
                     decl.type
                         .refs()
                         .filter { it !in declarations }
                         .forEach { add(decl.name, null, "Unknown type: $it") }
                 }
+            }
+        }
+
+        if (checkCycles) {
+            val edges =
+                decls.filterIsInstance<Decl.Record>().associate { record ->
+                    record.name to record.unguardedRefs().flatMap { n -> edgeTargets(n, distinct.associateBy { it.name }) }
+                }
+            recordCycles(edges).forEach {
+                add(it.first(), null, "Cyclic type definition: ${it.joinToString(" -> ")}")
             }
         }
     }
