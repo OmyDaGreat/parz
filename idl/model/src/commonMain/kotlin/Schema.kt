@@ -79,6 +79,7 @@ fun MutableList<SchemaProblem>.add(
 fun validate(decls: List<Decl>): List<SchemaProblem> =
     buildList {
         val distinct = decls.distinctSchema()
+        val declarations = distinct.map { it.name }
         distinct.forEach { decl ->
             when (decl) {
                 is Decl.Record -> {
@@ -87,6 +88,49 @@ fun validate(decls: List<Decl>): List<SchemaProblem> =
                         if (!fieldNames.add(field.name.generatorDistinct())) {
                             add(decl.name, field.name, "Duplicate field name")
                         }
+                        when (field.type) {
+                            is Type.Ref -> {
+                                if (field.type.name == decl.name) {
+                                    add(decl.name, field.name, "Recursive type definition: ${field.type.name}")
+                                }
+                                if (!declarations.contains(field.type.name)) {
+                                    add(decl.name, field.name, "Unknown type: ${field.type.name}")
+                                }
+                            }
+
+                            is Type.Record -> {
+                                add(decl.name, field.name, "Inline record types are not allowed")
+                            }
+
+                            is Type.Enum -> {
+                                add(decl.name, field.name, "Inline enum types are not allowed")
+                            }
+
+                            else -> {}
+                        }
+                    }
+                }
+
+                is Decl.Alias -> {
+                    when (decl.type) {
+                        is Type.Ref -> {
+                            if (decl.type.name.generatorDistinct() == decl.name.generatorDistinct()) {
+                                add(decl.name, null, "Recursive type definition: ${decl.type.name}")
+                            }
+                            if (!declarations.contains(decl.type.name.generatorDistinct())) {
+                                add(decl.name, null, "Unknown type: ${decl.type.name}")
+                            }
+                        }
+
+                        is Type.Record -> {
+                            add(decl.name, null, "Inline record types are not allowed")
+                        }
+
+                        is Type.Enum -> {
+                            add(decl.name, null, "Inline enum types are not allowed")
+                        }
+
+                        else -> {}
                     }
                 }
 
@@ -101,10 +145,6 @@ fun validate(decls: List<Decl>): List<SchemaProblem> =
                             add(decl.name, member.name, "Duplicate member tag")
                         }
                     }
-                }
-
-                is Decl.Alias -> {
-                    // No additional validation needed for basic transparent aliases
                 }
             }
         }
