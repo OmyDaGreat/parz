@@ -132,7 +132,8 @@ internal class Parser(
     private fun member(autoTag: Int): MemberSyntax {
         val (name, offset) = word()
         if (!accept('=')) return MemberSyntax(name, offset, autoTag, null)
-        return MemberSyntax(name, offset, int().exactInt(), here)
+        val tagOffset = here
+        return MemberSyntax(name, offset, int().exactInt(), tagOffset)
     }
 
     private fun <T> angled(inner: () -> T): T {
