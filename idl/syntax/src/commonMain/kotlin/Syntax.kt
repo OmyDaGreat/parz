@@ -1,5 +1,6 @@
 package xyz.malefic.parz.idl.syntax
 
+import xyz.malefic.parz.idl.Decl
 import xyz.malefic.parz.idl.Type
 
 interface PrettySyntax {
@@ -9,11 +10,15 @@ interface PrettySyntax {
 sealed interface TypeExpr : PrettySyntax {
     val offset: Int
 
+    fun toType(): Type
+
     data class Primitive(
         val type: Type,
         override val offset: Int,
     ) : TypeExpr {
         override fun pretty(): String = type.kind
+
+        override fun toType() = type
     }
 
     data class Named(
@@ -21,6 +26,8 @@ sealed interface TypeExpr : PrettySyntax {
         override val offset: Int,
     ) : TypeExpr {
         override fun pretty(): String = name
+
+        override fun toType() = Type.Ref(name)
     }
 
     data class Option(
@@ -28,6 +35,8 @@ sealed interface TypeExpr : PrettySyntax {
         override val offset: Int,
     ) : TypeExpr {
         override fun pretty(): String = "option<${inner.pretty()}>"
+
+        override fun toType() = Type.Option(inner.toType())
     }
 
     data class Seq(
@@ -35,6 +44,8 @@ sealed interface TypeExpr : PrettySyntax {
         override val offset: Int,
     ) : TypeExpr {
         override fun pretty(): String = "seq<${inner.pretty()}>"
+
+        override fun toType() = Type.Seq(inner.toType())
     }
 }
 
@@ -59,6 +70,8 @@ sealed interface DeclSyntax : PrettySyntax {
     val name: String
     val offset: Int
 
+    fun toDecl(): Decl
+
     data class Record(
         override val name: String,
         override val offset: Int,
@@ -72,6 +85,8 @@ sealed interface DeclSyntax : PrettySyntax {
                 }
                 appendLine("}")
             }
+
+        override fun toDecl() = Decl.Record(name, fields.map { Decl.Record.Field(it.name, it.type.toType()) })
     }
 
     data class Enum(
@@ -87,6 +102,8 @@ sealed interface DeclSyntax : PrettySyntax {
                 }
                 appendLine("}")
             }
+
+        override fun toDecl() = Decl.Enum(name, members.map { Decl.Enum.Member(it.name, it.tag) })
     }
 
     data class Alias(
@@ -98,6 +115,8 @@ sealed interface DeclSyntax : PrettySyntax {
             buildString {
                 appendLine("alias $name = ${type.pretty()} @$offset")
             }
+
+        override fun toDecl() = Decl.Alias(name, type.toType())
     }
 }
 
