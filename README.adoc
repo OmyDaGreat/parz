@@ -4,7 +4,7 @@ A centralized IDL implementation for a small subset of languages
 
 == Overview
 
-IDL & IR setup with (planned) support for a variety of languages.
+IDL & IR setup with (planned) support for a variety of languages. Input and output is going to be designed to be any language (hopefully) as the ideal design is something of an intermediate language.
 
 === Features
 * IDL through Kotlin

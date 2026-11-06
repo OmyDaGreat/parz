@@ -155,7 +155,7 @@ internal class Parser(
                     val rounding = if (accept(',')) enumWord<Rounding>(offset) else Rounding.TOWARDS_ZERO
                     val overflow = if (accept(',')) enumWord<Overflow>(offset) else Overflow.ERROR
                     expect(')')
-                    if (precisionOrMin !in BigInteger.ZERO..BigInteger(38)) throw SyntaxError("Precision cannot be negative", offset)
+                    if (precisionOrMin !in BigInteger.ZERO..BigInteger(38)) throw SyntaxError("Precision must be between 0 and 38", offset)
                     val bound = BigInteger.TEN.pow(precisionOrMin) - BigInteger.ONE
                     Type.Decimal(-bound, bound, scale.exactInt(), rounding, overflow)
                 } else if (accept('.') && accept('.') && accept('.')) {
