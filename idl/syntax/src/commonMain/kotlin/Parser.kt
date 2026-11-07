@@ -1,16 +1,33 @@
 package xyz.malefic.parz.idl.syntax
 
 import com.ionspin.kotlin.bignum.integer.BigInteger
+import xyz.malefic.parz.core.Diagnostic
+import xyz.malefic.parz.core.Sink
+import xyz.malefic.parz.core.collecting
 import xyz.malefic.parz.idl.Type
 import xyz.malefic.parz.idl.Type.Decimal.Overflow
 import xyz.malefic.parz.idl.Type.Decimal.Rounding
+import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.ExpectedDecimalBounds
+import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.ExpectedDeclKeyword
+import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.ExpectedInt
+import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.ExpectedOption
+import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.ExpectedWord
+import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.IntegerOutOfRange
+import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.InvalidType
+import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.PrecisionOutOfRange
+import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.UnexpectedCharacter
 
-fun parse(tokens: List<Token>) = Parser(tokens).schema()
+fun parse(tokens: context(Sink<Diagnostic<SyntaxErrorKind>>) () -> List<Token>) =
+    collecting<SchemaSyntax, Diagnostic<SyntaxErrorKind>> {
+        Parser(tokens(), contextOf<Sink<Diagnostic<SyntaxErrorKind>>>()).schema()
+    }
 
-fun parseRecovering(tokens: List<Token>): Pair<SchemaSyntax, List<SyntaxError>> = Parser(tokens).schemaRecovering()
+@Suppress("ObjectInheritsException")
+private object Abort : Exception()
 
 internal class Parser(
     private val tokens: List<Token>,
+    private val sink: Sink<Diagnostic<SyntaxErrorKind>>,
 ) {
     private var pos = 0
 
@@ -18,58 +35,62 @@ internal class Parser(
     private val here get() = current.offset
     private val done get() = current is Token.EOF
 
-    fun schema() = SchemaSyntax(buildList { while (!done) add(decl()) })
+    private fun fail(
+        kind: SyntaxErrorKind,
+        at: Token,
+    ): Nothing {
+        sink.report(Diagnostic(kind, at.span))
+        throw Abort
+    }
 
-    private val recordKeywords = listOf("record", "enum", "type")
-
-    fun schemaRecovering(): Pair<SchemaSyntax, List<SyntaxError>> {
-        val errors = mutableListOf<SyntaxError>()
-        val decls =
+    fun schema() =
+        SchemaSyntax(
             buildList {
                 while (!done) {
                     val start = pos
                     try {
                         add(decl())
-                    } catch (e: SyntaxError) {
-                        errors.add(e)
+                    } catch (_: Abort) {
                         if (pos == start) pos++
                         skipToNext()
                     }
                 }
-            }
-        return SchemaSyntax(decls) to errors
-    }
+            },
+        )
+
+    private val declKeywords = listOf("record", "enum", "type")
 
     private fun skipToNext() {
         while (!done) {
             val token = current
-            if (token is Token.Word && token.text in recordKeywords && tokens.getOrNull(pos + 1) is Token.Word) return
+            if (token is Token.Word && token.text in declKeywords && tokens.getOrNull(pos + 1) is Token.Word) return
             pos++
         }
     }
 
     private fun type(): TypeExpr {
-        val (word, offset) = word()
-        return when (word) {
+        val token = word()
+        val (text, offset) = token
+        return when (text) {
             "void" -> TypeExpr.Primitive(Type.Void, offset)
             "bool" -> TypeExpr.Primitive(Type.Bool, offset)
             "string" -> str(offset)
             "decimal" -> decimal(offset)
             "option" -> TypeExpr.Option(angled { type() }, offset)
             "seq" -> TypeExpr.Seq(angled { type() }, offset)
-            "record", "enum" -> throw SyntaxError("Inline $word types aren't allowed", offset)
-            else -> TypeExpr.Named(word, offset)
+            "record", "enum" -> fail(SyntaxErrorKind.InlineDecl(text), token)
+            else -> TypeExpr.Named(text, offset)
         }
     }
 
     private fun decl(): DeclSyntax {
-        val (keyword, keywordOffset) = word()
+        val (keyword, _) = word()
         val (name, offset) = word()
         return when (keyword) {
             "record" -> DeclSyntax.Record(name, offset, fields())
             "enum" -> DeclSyntax.Enum(name, offset, members())
             "type" -> expect('=').let { DeclSyntax.Alias(name, offset, type()) }
-            else -> throw SyntaxError("Expected 'record', 'enum', or 'type', but got '$keyword'", keywordOffset)
+            else -> fail(ExpectedDeclKeyword(current), current)
         }
     }
 
@@ -83,28 +104,25 @@ internal class Parser(
     }
 
     private fun expect(c: Char) {
-        if (!accept(c)) throw SyntaxError("Expected '$c', but got ${current.pretty()}", here)
+        if (!accept(c)) fail(UnexpectedCharacter(c), current)
     }
 
     private fun word(): Token.Word {
-        val token = current as? Token.Word ?: throw SyntaxError("Expected word, but got ${current.pretty()}", here)
+        val token = current as? Token.Word ?: fail(ExpectedWord(current), current)
         pos++
         return token
     }
 
     private fun int(): BigInteger {
-        val token = current as? Token.Number ?: throw SyntaxError("Expected integer, but got ${current.pretty()}", here)
+        val token = current as? Token.Number ?: fail(ExpectedInt(current), current)
         pos++
         return BigInteger.parseString(token.text)
     }
 
-    private inline fun <reified T : Enum<T>> enumWord(initialOffset: Int): T {
-        val (word, _) = word()
-        return enumValues<T>().find { it.name.equals(word, ignoreCase = true) }
-            ?: throw SyntaxError(
-                "Expected one of ${enumValues<T>().joinToString(", ") { it.name }}, but got '$word'",
-                initialOffset,
-            )
+    private inline fun <reified T : Enum<T>> enumWord(): T {
+        val token = word()
+        return enumValues<T>().find { it.name.equals(token.text, ignoreCase = true) }
+            ?: fail(ExpectedOption(enumValues<T>().map { it.name }, token.text), token)
     }
 
     private fun <T> delimited(
@@ -181,10 +199,10 @@ internal class Parser(
             checkSyntax("decimal", offset) {
                 if (accept(',')) {
                     val scale = int()
-                    val rounding = if (accept(',')) enumWord<Rounding>(offset) else Rounding.TOWARDS_ZERO
-                    val overflow = if (accept(',')) enumWord<Overflow>(offset) else Overflow.ERROR
+                    val rounding = if (accept(',')) enumWord<Rounding>() else Rounding.TOWARDS_ZERO
+                    val overflow = if (accept(',')) enumWord<Overflow>() else Overflow.ERROR
                     expect(')')
-                    if (precisionOrMin !in BigInteger.ZERO..BigInteger(38)) throw SyntaxError("Precision must be between 0 and 38", offset)
+                    if (precisionOrMin !in BigInteger.ZERO..BigInteger(38)) fail(PrecisionOutOfRange(precisionOrMin), current)
                     val bound = BigInteger.TEN.pow(precisionOrMin) - BigInteger.ONE
                     Type.Decimal(-bound, bound, scale.exactInt(), rounding, overflow)
                 } else if (accept('.') && accept('.') && accept('.')) {
@@ -192,12 +210,12 @@ internal class Parser(
                     val max = int() * signum
                     expect(',')
                     val scale = int()
-                    val rounding = if (accept(',')) enumWord<Rounding>(offset) else Rounding.TOWARDS_ZERO
-                    val overflow = if (accept(',')) enumWord<Overflow>(offset) else Overflow.ERROR
+                    val rounding = if (accept(',')) enumWord<Rounding>() else Rounding.TOWARDS_ZERO
+                    val overflow = if (accept(',')) enumWord<Overflow>() else Overflow.ERROR
                     expect(')')
                     Type.Decimal(precisionOrMin, max, scale.exactInt(), rounding, overflow)
                 } else {
-                    throw SyntaxError("Expected ',' or '...' in decimal type after first int", offset)
+                    fail(ExpectedDecimalBounds(current), current)
                 }
             },
             offset,
@@ -212,20 +230,20 @@ internal class Parser(
         try {
             type()
         } catch (e: IllegalArgumentException) {
-            throw SyntaxError(e.message ?: "Invalid $name", index)
+            fail(InvalidType(name, e.message), Token.Word(name, index))
         }
 
     private fun BigInteger.exactInt(): Int =
         try {
             intValue(exactRequired = true)
         } catch (_: ArithmeticException) {
-            throw SyntaxError("Integer value $this is out of range for Int", pos - 1)
+            fail(IntegerOutOfRange(this, "Int"), current)
         }
 
     private fun BigInteger.exactLong(): Long =
         try {
             longValue(exactRequired = true)
         } catch (_: ArithmeticException) {
-            throw SyntaxError("Integer value $this is out of range for Long", pos - 1)
+            fail(IntegerOutOfRange(this, "Long"), current)
         }
 }

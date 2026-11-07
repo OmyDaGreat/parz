@@ -1,9 +1,8 @@
 package xyz.malefic.parz.tooling.cli
 
 import xyz.malefic.parz.idl.Decl
-import xyz.malefic.parz.idl.syntax.SyntaxError
 import xyz.malefic.parz.idl.syntax.lex
-import xyz.malefic.parz.idl.syntax.parseRecovering
+import xyz.malefic.parz.idl.syntax.parse
 import xyz.malefic.parz.idl.validate
 
 fun main() {
@@ -26,8 +25,8 @@ private var session = emptyList<Decl>()
 
 private fun run(source: String) =
     try {
-        val (schema, syntaxErrors) = parseRecovering(lex(source))
-        syntaxErrors.forEach { println(it.describe(source)) }
+        val (schema, syntaxErrors) = parse { lex(source) }
+        syntaxErrors.forEach { println(it.render(source)) }
 
         var pending = schema.decls.map { it.toDecl() }
         while (true) {
@@ -40,9 +39,6 @@ private fun run(source: String) =
         }
         session = session + pending
         println(schema.pretty())
-        println(schema.toSchema().validate())
-    } catch (e: SyntaxError) {
-        println(e.describe(source))
     } catch (e: IllegalArgumentException) {
         println("error:  ${e.message}")
     }

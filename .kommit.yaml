@@ -9,6 +9,7 @@ types:
 
 scopes:
   all:
+    - core
     - idl
     - tooling
   chore:
@@ -19,7 +20,7 @@ scopes:
     - readme
 
 options:
-  stageMode: auto
+  stageMode: review
   autoPush: true
   allowBreakingChanges: false # Stability isn't important rn
   allowIssues: false # Not set up yet

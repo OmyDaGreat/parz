@@ -34,15 +34,15 @@ class ParserTest {
                     DeclSyntax.Alias("Payments", 99, TypeExpr.Seq(TypeExpr.Named("Payment", 114), 110)),
                 ],
             ),
-            parse(
+            parse {
                 lex(
                     """
                     record Payment { amount: decimal(9, 2), status: Status }
                     enum Status { pending, settled = 5 }
                     type Payments = seq<Payment>
                     """.trimIndent(),
-                ),
-            ),
+                )
+            }.value,
         )
     }
 }
