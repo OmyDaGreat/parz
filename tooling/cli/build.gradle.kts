@@ -11,3 +11,9 @@ application {
     mainClass.set("xyz.malefic.parz.tooling.cli.MainKt")
     applicationName = "parz"
 }
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(25))
+    }
+}

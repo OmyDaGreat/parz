@@ -37,7 +37,7 @@ NOTE: Up to 0.1.0, the IDL model was published as `xyz.malefic.parz:idl`.
 * Parse schema text with `parse(lex(source))` from `idl-syntax`, which returns the syntax tree for the schema.
 
 ==== CLI
-Each https://github.com/OmyDaGreat/parz/releases[release] has a `parz-<version>.zip` attached, which needs Java to run (27 recommended). Unzip it and run `bin/parz` (`bin\parz.bat` on Windows). It reads a schema from standard input and prints its syntax tree, or the error with its line and column:
+Each https://github.com/OmyDaGreat/parz/releases[release] has a `parz-<version>.zip` attached, which needs Java to run (25 recommended). Unzip it and run `bin/parz` (`bin\parz.bat` on Windows). It reads a schema from standard input and prints its syntax tree, or the error with its line and column:
 
 [source,shell]
 ----

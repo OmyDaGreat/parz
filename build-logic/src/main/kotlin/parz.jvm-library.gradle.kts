@@ -7,7 +7,7 @@ plugins {
 val libs = the<VersionCatalogsExtension>().named("libs")
 
 kotlin {
-    jvmToolchain(26)
+    jvmToolchain(25)
 }
 
 dependencies {
