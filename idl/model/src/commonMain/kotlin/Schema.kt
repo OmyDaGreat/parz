@@ -66,7 +66,7 @@ data class Schema(
     private val byName = decls.associateBy { it.name }
 
     init {
-        val problems = validate(decls)
+        val problems = validate()
         require(problems.isEmpty()) { "Schema validation failed: ${problems.joinToString { it.message }}" }
     }
 

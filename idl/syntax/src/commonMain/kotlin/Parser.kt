@@ -1,12 +1,13 @@
 package xyz.malefic.parz.idl.syntax
 
 import com.ionspin.kotlin.bignum.integer.BigInteger
-import xyz.malefic.parz.idl.Decl
 import xyz.malefic.parz.idl.Type
 import xyz.malefic.parz.idl.Type.Decimal.Overflow
 import xyz.malefic.parz.idl.Type.Decimal.Rounding
 
 fun parse(tokens: List<Token>) = Parser(tokens).schema()
+
+fun parseRecovering(tokens: List<Token>): Pair<SchemaSyntax, List<SyntaxError>> = Parser(tokens).schemaRecovering()
 
 internal class Parser(
     private val tokens: List<Token>,
@@ -18,6 +19,34 @@ internal class Parser(
     private val done get() = current is Token.EOF
 
     fun schema() = SchemaSyntax(buildList { while (!done) add(decl()) })
+
+    private val recordKeywords = listOf("record", "enum", "type")
+
+    fun schemaRecovering(): Pair<SchemaSyntax, List<SyntaxError>> {
+        val errors = mutableListOf<SyntaxError>()
+        val decls =
+            buildList {
+                while (!done) {
+                    val start = pos
+                    try {
+                        add(decl())
+                    } catch (e: SyntaxError) {
+                        errors.add(e)
+                        if (pos == start) pos++
+                        skipToNext()
+                    }
+                }
+            }
+        return SchemaSyntax(decls) to errors
+    }
+
+    private fun skipToNext() {
+        while (!done) {
+            val token = current
+            if (token is Token.Word && token.text in recordKeywords && tokens.getOrNull(pos + 1) is Token.Word) return
+            pos++
+        }
+    }
 
     private fun type(): TypeExpr {
         val (word, offset) = word()

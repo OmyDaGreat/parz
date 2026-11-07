@@ -1,8 +1,10 @@
 package xyz.malefic.parz.tooling.cli
 
+import xyz.malefic.parz.idl.Decl
 import xyz.malefic.parz.idl.syntax.SyntaxError
 import xyz.malefic.parz.idl.syntax.lex
-import xyz.malefic.parz.idl.syntax.parse
+import xyz.malefic.parz.idl.syntax.parseRecovering
+import xyz.malefic.parz.idl.validate
 
 fun main() {
     val buffer = StringBuilder()
@@ -20,11 +22,27 @@ fun main() {
     if (buffer.isNotBlank()) run(buffer.toString())
 }
 
+private var session = emptyList<Decl>()
+
 private fun run(source: String) =
     try {
-        val schemaSyntax = parse(lex(source))
-        println(schemaSyntax.pretty())
-        println(schemaSyntax.toSchema().validate())
+        val (schema, syntaxErrors) = parseRecovering(lex(source))
+        syntaxErrors.forEach { println(it.describe(source)) }
+
+        var pending = schema.decls.map { it.toDecl() }
+        while (true) {
+            val problems = validate(session + pending)
+            val bad = problems.map { it.decl }.toSet()
+            val rejected = pending.filter { it.name in bad }
+            if (rejected.isEmpty()) break
+            problems.filter { p -> rejected.any { it.name == p.decl } }.forEach { println("${it.decl}: ${it.message}") }
+            pending = pending - rejected.toSet()
+        }
+        session = session + pending
+        println(schema.pretty())
+        println(schema.toSchema().validate())
     } catch (e: SyntaxError) {
         println(e.describe(source))
+    } catch (e: IllegalArgumentException) {
+        println("error:  ${e.message}")
     }
