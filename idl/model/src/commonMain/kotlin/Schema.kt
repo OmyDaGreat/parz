@@ -70,6 +70,10 @@ data class Schema(
         require(problems.isEmpty()) { "Schema validation failed: ${problems.joinToString { it.message }}" }
     }
 
+    companion object {
+        val EMPTY = Schema(emptyList())
+    }
+
     operator fun get(name: String) = byName[name]
 
     fun resolve(type: Type): Resolved =
@@ -87,9 +91,7 @@ data class Schema(
             }
         }
 
-    companion object {
-        val EMPTY = Schema(emptyList())
-    }
+    fun validate() = validate(decls)
 }
 
 data class SchemaProblem(

@@ -22,7 +22,9 @@ fun main() {
 
 private fun run(source: String) =
     try {
-        println(parse(lex(source)).pretty())
+        val schemaSyntax = parse(lex(source))
+        println(schemaSyntax.pretty())
+        println(schemaSyntax.toSchema().validate())
     } catch (e: SyntaxError) {
         println(e.describe(source))
     }

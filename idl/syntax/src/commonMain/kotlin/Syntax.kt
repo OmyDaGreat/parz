@@ -1,6 +1,7 @@
 package xyz.malefic.parz.idl.syntax
 
 import xyz.malefic.parz.idl.Decl
+import xyz.malefic.parz.idl.Schema
 import xyz.malefic.parz.idl.Type
 
 interface PrettySyntax {
@@ -129,4 +130,6 @@ data class SchemaSyntax(
                 appendLine(decl.pretty())
             }
         }
+
+    fun toSchema() = Schema(decls.map { it.toDecl() })
 }
