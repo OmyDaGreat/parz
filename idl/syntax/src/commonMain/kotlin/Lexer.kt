@@ -126,7 +126,7 @@ sealed interface SyntaxErrorKind : DiagnosticKind {
     }
 }
 
-context(sink: Sink<Diagnostic<SyntaxErrorKind>>)
+context(sink: Sink<SyntaxDiagnostic>)
 fun lex(source: String): List<Token> =
     buildList {
         var i = 0

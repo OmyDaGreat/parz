@@ -19,9 +19,11 @@ import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.IntegerOutOfRange
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.InvalidType
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.PrecisionOutOfRange
 
-fun parse(tokens: context(Sink<Diagnostic<SyntaxErrorKind>>) () -> List<Token>) =
-    collecting<SchemaSyntax, Diagnostic<SyntaxErrorKind>> {
-        Parser(tokens(), contextOf<Sink<Diagnostic<SyntaxErrorKind>>>()).schema()
+typealias SyntaxDiagnostic = Diagnostic<SyntaxErrorKind>
+
+fun parse(tokens: context(Sink<SyntaxDiagnostic>) () -> List<Token>) =
+    collecting<SchemaSyntax, SyntaxDiagnostic> {
+        Parser(tokens(), contextOf<Sink<SyntaxDiagnostic>>()).schema()
     }
 
 @Suppress("ObjectInheritsException")
@@ -29,7 +31,7 @@ private object Abort : Exception()
 
 internal class Parser(
     private val tokens: List<Token>,
-    private val sink: Sink<Diagnostic<SyntaxErrorKind>>,
+    private val sink: Sink<SyntaxDiagnostic>,
 ) {
     private var pos = 0
 
