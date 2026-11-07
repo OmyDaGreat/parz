@@ -11,6 +11,7 @@ import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.ExpectedDecimalBounds
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.ExpectedDeclKeyword
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.ExpectedInt
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.ExpectedOption
+import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.ExpectedSymbol
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.ExpectedWord
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.IntegerOutOfRange
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.InvalidType
@@ -104,7 +105,7 @@ internal class Parser(
     }
 
     private fun expect(c: Char) {
-        if (!accept(c)) fail(UnexpectedCharacter(c), current)
+        if (!accept(c)) fail(ExpectedSymbol(c, current), current)
     }
 
     private fun word(): Token.Word {
