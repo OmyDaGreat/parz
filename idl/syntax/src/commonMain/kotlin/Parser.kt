@@ -13,6 +13,7 @@ import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.ExpectedInt
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.ExpectedOption
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.ExpectedSymbol
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.ExpectedWord
+import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.InlineDecl
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.IntegerOutOfRange
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.InvalidType
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.PrecisionOutOfRange
@@ -79,7 +80,7 @@ internal class Parser(
             "decimal" -> decimal(offset)
             "option" -> TypeExpr.Option(angled { type() }, offset)
             "seq" -> TypeExpr.Seq(angled { type() }, offset)
-            "record", "enum" -> fail(SyntaxErrorKind.InlineDecl(text), token)
+            "record", "enum", "type" -> fail(InlineDecl(text), token)
             else -> TypeExpr.Named(text, offset)
         }
     }
