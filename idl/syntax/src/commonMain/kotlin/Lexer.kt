@@ -48,7 +48,7 @@ sealed interface SyntaxErrorKind : DiagnosticKind {
         val char: Char,
     ) : SyntaxErrorKind {
         override val code = "IDL001"
-        override val message = "Unexpected character $char"
+        override val message = "Unexpected character '$char'"
     }
 
     data class InlineDecl(
