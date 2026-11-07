@@ -3,6 +3,7 @@ package xyz.malefic.parz.idl.syntax
 import com.ionspin.kotlin.bignum.integer.BigInteger
 import xyz.malefic.parz.core.Diagnostic
 import xyz.malefic.parz.core.Sink
+import xyz.malefic.parz.core.SourceSpan
 import xyz.malefic.parz.core.collecting
 import xyz.malefic.parz.idl.Type
 import xyz.malefic.parz.idl.Type.Decimal.Overflow
@@ -17,7 +18,6 @@ import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.InlineDecl
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.IntegerOutOfRange
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.InvalidType
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.PrecisionOutOfRange
-import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.UnexpectedCharacter
 
 fun parse(tokens: context(Sink<Diagnostic<SyntaxErrorKind>>) () -> List<Token>) =
     collecting<SchemaSyntax, Diagnostic<SyntaxErrorKind>> {
@@ -34,14 +34,14 @@ internal class Parser(
     private var pos = 0
 
     private val current get() = tokens[pos]
-    private val here get() = current.offset
+    private val here get() = current.span
     private val done get() = current is Token.EOF
 
     private fun fail(
         kind: SyntaxErrorKind,
-        at: Token,
+        at: SourceSpan,
     ): Nothing {
-        sink.report(Diagnostic(kind, at.span))
+        sink.report(Diagnostic(kind, at))
         throw Abort
     }
 
@@ -71,28 +71,27 @@ internal class Parser(
     }
 
     private fun type(): TypeExpr {
-        val token = word()
-        val (text, offset) = token
+        val (text, span) = word()
         return when (text) {
-            "void" -> TypeExpr.Primitive(Type.Void, offset)
-            "bool" -> TypeExpr.Primitive(Type.Bool, offset)
-            "string" -> str(offset)
-            "decimal" -> decimal(offset)
-            "option" -> TypeExpr.Option(angled { type() }, offset)
-            "seq" -> TypeExpr.Seq(angled { type() }, offset)
-            "record", "enum", "type" -> fail(InlineDecl(text), token)
-            else -> TypeExpr.Named(text, offset)
+            "void" -> TypeExpr.Primitive(Type.Void, span)
+            "bool" -> TypeExpr.Primitive(Type.Bool, span)
+            "string" -> str(span)
+            "decimal" -> decimal(span)
+            "option" -> TypeExpr.Option(angled { type() }, span)
+            "seq" -> TypeExpr.Seq(angled { type() }, span)
+            "record", "enum", "type" -> fail(InlineDecl(text), span)
+            else -> TypeExpr.Named(text, span)
         }
     }
 
     private fun decl(): DeclSyntax {
-        val (keyword, _) = word()
-        val (name, offset) = word()
-        return when (keyword) {
-            "record" -> DeclSyntax.Record(name, offset, fields())
-            "enum" -> DeclSyntax.Enum(name, offset, members())
-            "type" -> expect('=').let { DeclSyntax.Alias(name, offset, type()) }
-            else -> fail(ExpectedDeclKeyword(current), current)
+        val keywordToken = word()
+        val (name, _) = word()
+        return when (keywordToken.text) {
+            "record" -> DeclSyntax.Record(name, keywordToken.span, fields())
+            "enum" -> DeclSyntax.Enum(name, keywordToken.span, members())
+            "type" -> expect('=').let { DeclSyntax.Alias(name, keywordToken.span, type()) }
+            else -> fail(ExpectedDeclKeyword(current), current.span)
         }
     }
 
@@ -106,25 +105,25 @@ internal class Parser(
     }
 
     private fun expect(c: Char) {
-        if (!accept(c)) fail(ExpectedSymbol(c, current), current)
+        if (!accept(c)) fail(ExpectedSymbol(c, current), current.span)
     }
 
     private fun word(): Token.Word {
-        val token = current as? Token.Word ?: fail(ExpectedWord(current), current)
+        val token = current as? Token.Word ?: fail(ExpectedWord(current), current.span)
         pos++
         return token
     }
 
     private fun int(): Token.Number {
-        val token = current as? Token.Number ?: fail(ExpectedInt(current), current)
+        val token = current as? Token.Number ?: fail(ExpectedInt(current), current.span)
         pos++
         return token
     }
 
     private inline fun <reified T : Enum<T>> enumWord(): T {
-        val token = word()
-        return enumValues<T>().find { it.name.equals(token.text, ignoreCase = true) }
-            ?: fail(ExpectedOption(enumValues<T>().map { it.name }, token.text), token)
+        val (text, span) = word()
+        return enumValues<T>().find { it.name.equals(text, ignoreCase = true) }
+            ?: fail(ExpectedOption(enumValues<T>().map { it.name }, text), span)
     }
 
     private fun <T> delimited(
@@ -146,12 +145,12 @@ internal class Parser(
         return result
     }
 
-    private fun str(offset: Int) =
+    private fun str(span: SourceSpan) =
         TypeExpr.Primitive(
-            checkSyntax("string", offset) {
+            checkSyntax("string", span) {
                 if (accept('(')) Type.Str(int().exactLong().also { expect(')') }) else Type.Str()
             },
-            offset,
+            span,
         )
 
     private fun fields(): List<FieldSyntax> = delimited('{', '}') { field() }
@@ -173,16 +172,16 @@ internal class Parser(
     }
 
     private fun field(): FieldSyntax {
-        val (name, offset) = word()
+        val (name, span) = word()
         expect(':')
-        return FieldSyntax(name, offset, type())
+        return FieldSyntax(name, span, type())
     }
 
     private fun member(autoTag: Int): MemberSyntax {
-        val (name, offset) = word()
-        if (!accept('=')) return MemberSyntax(name, offset, autoTag, null)
-        val tagOffset = here
-        return MemberSyntax(name, offset, int().exactInt(), tagOffset)
+        val (name, span) = word()
+        if (!accept('=')) return MemberSyntax(name, span, autoTag, null)
+        val tagSpan = here
+        return MemberSyntax(name, span, int().exactInt(), tagSpan)
     }
 
     private fun <T> angled(inner: () -> T): T {
@@ -190,7 +189,7 @@ internal class Parser(
         return inner().also { expect('>') }
     }
 
-    private fun decimal(offset: Int): TypeExpr.Primitive {
+    private fun decimal(span: SourceSpan): TypeExpr.Primitive {
         expect('(')
         var signum = 1
         if (accept('-')) {
@@ -199,13 +198,13 @@ internal class Parser(
         val precisionOrMin = int().bigInt * signum
         val precisionToken = current
         return TypeExpr.Primitive(
-            checkSyntax("decimal", offset) {
+            checkSyntax("decimal", span) {
                 if (accept(',')) {
                     val scale = int()
                     val rounding = if (accept(',')) enumWord<Rounding>() else Rounding.TOWARDS_ZERO
                     val overflow = if (accept(',')) enumWord<Overflow>() else Overflow.ERROR
                     expect(')')
-                    if (precisionOrMin !in BigInteger.ZERO..BigInteger(38)) fail(PrecisionOutOfRange(precisionOrMin), precisionToken)
+                    if (precisionOrMin !in BigInteger.ZERO..BigInteger(38)) fail(PrecisionOutOfRange(precisionOrMin), precisionToken.span)
                     val bound = BigInteger.TEN.pow(precisionOrMin) - BigInteger.ONE
                     Type.Decimal(-bound, bound, scale.exactInt(), rounding, overflow)
                 } else if (accept('.') && accept('.') && accept('.')) {
@@ -218,22 +217,22 @@ internal class Parser(
                     expect(')')
                     Type.Decimal(precisionOrMin, max, scale.exactInt(), rounding, overflow)
                 } else {
-                    fail(ExpectedDecimalBounds(current), current)
+                    fail(ExpectedDecimalBounds(current), current.span)
                 }
             },
-            offset,
+            span,
         )
     }
 
     private fun <T> checkSyntax(
         name: String,
-        index: Int,
+        span: SourceSpan,
         type: () -> T,
     ): T =
         try {
             type()
         } catch (e: IllegalArgumentException) {
-            fail(InvalidType(name, e.message), Token.Word(name, index))
+            fail(InvalidType(name, e.message), span)
         }
 
     private fun Token.Number.exactInt(): Int =
@@ -241,7 +240,7 @@ internal class Parser(
             try {
                 it.intValue(exactRequired = true)
             } catch (_: ArithmeticException) {
-                fail(IntegerOutOfRange(it, "Int"), current)
+                fail(IntegerOutOfRange(it, "Int"), current.span)
             }
         }
 
@@ -250,7 +249,7 @@ internal class Parser(
             try {
                 it.longValue(exactRequired = true)
             } catch (_: ArithmeticException) {
-                fail(IntegerOutOfRange(it, "Long"), current)
+                fail(IntegerOutOfRange(it, "Long"), current.span)
             }
         }
 }

@@ -7,26 +7,21 @@ import xyz.malefic.parz.core.Sink
 import xyz.malefic.parz.core.SourceSpan
 
 sealed interface Token {
-    val offset: Int
     val span: SourceSpan
 
     fun pretty(): String
 
     data class Word(
         val text: String,
-        override val offset: Int,
+        override val span: SourceSpan,
     ) : Token {
-        override val span = SourceSpan(offset, offset + text.length)
-
         override fun pretty(): String = "'$text'"
     }
 
     data class Number(
         val text: String,
-        override val offset: Int,
+        override val span: SourceSpan,
     ) : Token {
-        override val span = SourceSpan(offset, offset + text.length)
-
         override fun pretty(): String = text
 
         val bigInt = BigInteger.parseString(text)
@@ -34,15 +29,13 @@ sealed interface Token {
 
     data class Symbol(
         val char: Char,
-        override val offset: Int,
+        override val span: SourceSpan,
     ) : Token {
-        override val span = SourceSpan(offset, offset + 1)
-
         override fun pretty(): String = "'$char'"
     }
 
     data class EOF(
-        override val offset: Int,
+        val offset: Int,
     ) : Token {
         override val span = SourceSpan(offset, offset)
 
@@ -147,16 +140,16 @@ fun lex(source: String): List<Token> =
 
                 c.isLetter() || c == '_' -> {
                     while (i < source.length && (source[i].isLetterOrDigit() || source[i] == '_')) i++
-                    add(Token.Word(source.substring(start, i), start))
+                    add(Token.Word(source.substring(start, i), SourceSpan(start, i)))
                 }
 
                 c in '0'..'9' -> {
                     while (i < source.length && source[i].isDigit()) i++
-                    add(Token.Number(source.substring(start, i), start))
+                    add(Token.Number(source.substring(start, i), SourceSpan(start, i)))
                 }
 
                 c in "(){}<>,;:=-." -> {
-                    add(Token.Symbol(c, i++))
+                    add(Token.Symbol(c, SourceSpan(start, start + 1)))
                 }
 
                 else -> {
