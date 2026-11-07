@@ -115,10 +115,10 @@ internal class Parser(
         return token
     }
 
-    private fun int(): BigInteger {
+    private fun int(): Token.Number {
         val token = current as? Token.Number ?: fail(ExpectedInt(current), current)
         pos++
-        return BigInteger.parseString(token.text)
+        return token
     }
 
     private inline fun <reified T : Enum<T>> enumWord(): T {
@@ -196,7 +196,8 @@ internal class Parser(
         if (accept('-')) {
             signum = -1
         }
-        val precisionOrMin = int() * signum
+        val precisionOrMin = int().bigInt * signum
+        val precisionToken = current
         return TypeExpr.Primitive(
             checkSyntax("decimal", offset) {
                 if (accept(',')) {
@@ -204,12 +205,12 @@ internal class Parser(
                     val rounding = if (accept(',')) enumWord<Rounding>() else Rounding.TOWARDS_ZERO
                     val overflow = if (accept(',')) enumWord<Overflow>() else Overflow.ERROR
                     expect(')')
-                    if (precisionOrMin !in BigInteger.ZERO..BigInteger(38)) fail(PrecisionOutOfRange(precisionOrMin), current)
+                    if (precisionOrMin !in BigInteger.ZERO..BigInteger(38)) fail(PrecisionOutOfRange(precisionOrMin), precisionToken)
                     val bound = BigInteger.TEN.pow(precisionOrMin) - BigInteger.ONE
                     Type.Decimal(-bound, bound, scale.exactInt(), rounding, overflow)
                 } else if (accept('.') && accept('.') && accept('.')) {
                     signum = if (accept('-')) -1 else 1
-                    val max = int() * signum
+                    val max = int().bigInt * signum
                     expect(',')
                     val scale = int()
                     val rounding = if (accept(',')) enumWord<Rounding>() else Rounding.TOWARDS_ZERO
@@ -235,17 +236,21 @@ internal class Parser(
             fail(InvalidType(name, e.message), Token.Word(name, index))
         }
 
-    private fun BigInteger.exactInt(): Int =
-        try {
-            intValue(exactRequired = true)
-        } catch (_: ArithmeticException) {
-            fail(IntegerOutOfRange(this, "Int"), current)
+    private fun Token.Number.exactInt(): Int =
+        bigInt.let {
+            try {
+                it.intValue(exactRequired = true)
+            } catch (_: ArithmeticException) {
+                fail(IntegerOutOfRange(it, "Int"), current)
+            }
         }
 
-    private fun BigInteger.exactLong(): Long =
-        try {
-            longValue(exactRequired = true)
-        } catch (_: ArithmeticException) {
-            fail(IntegerOutOfRange(this, "Long"), current)
+    private fun Token.Number.exactLong(): Long =
+        bigInt.let {
+            try {
+                it.longValue(exactRequired = true)
+            } catch (_: ArithmeticException) {
+                fail(IntegerOutOfRange(it, "Long"), current)
+            }
         }
 }

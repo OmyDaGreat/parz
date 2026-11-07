@@ -28,6 +28,8 @@ sealed interface Token {
         override val span = SourceSpan(offset, offset + text.length)
 
         override fun pretty(): String = text
+
+        val bigInt = BigInteger.parseString(text)
     }
 
     data class Symbol(
