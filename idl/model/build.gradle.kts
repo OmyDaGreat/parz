@@ -7,6 +7,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(libs.bignum)
+            api(project(":core"))
         }
     }
 }
