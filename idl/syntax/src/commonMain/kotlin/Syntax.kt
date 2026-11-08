@@ -120,7 +120,7 @@ sealed interface DeclSyntax : PrettySyntax {
     ) : DeclSyntax {
         override fun pretty(): String =
             buildString {
-                appendLine("alias $name = ${type.pretty()}")
+                appendLine("type $name = ${type.pretty()}")
             }
 
         override fun toDecl() = Decl.Alias(name, type.toType())
