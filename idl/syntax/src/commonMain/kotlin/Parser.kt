@@ -249,7 +249,7 @@ internal class Parser(
             try {
                 it.intValue(exactRequired = true)
             } catch (_: ArithmeticException) {
-                fail(IntegerOutOfRange(it, "Int"), current.span)
+                fail(IntegerOutOfRange(it, "Int"), span)
             }
         }
 
@@ -258,7 +258,7 @@ internal class Parser(
             try {
                 it.longValue(exactRequired = true)
             } catch (_: ArithmeticException) {
-                fail(IntegerOutOfRange(it, "Long"), current.span)
+                fail(IntegerOutOfRange(it, "Long"), span)
             }
         }
 }
