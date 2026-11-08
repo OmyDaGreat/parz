@@ -127,6 +127,7 @@ private fun wrongKind(
 /**
  * Convenience method to add a mismatch to a list.
  */
+@IgnorableReturnValue
 context(m: MutableList<Mismatch>)
 private fun add(
     path: List<Segment>,

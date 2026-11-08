@@ -43,7 +43,8 @@ private fun run(
             .map { it.copy(span = pending.locate(it.kind)) }
             .forEach {
                 val code = if (debug) "[${it.kind.code}] " else ""
-                println("$code${it.kind.decl.name}: ${it.kind.message}")
+                val span = if (debug) " ${it.span}" else ""
+                println("$code${it.kind.decl.name}: ${it.kind.message}$span")
             }
         pending = pending - rejected.toSet()
     }
