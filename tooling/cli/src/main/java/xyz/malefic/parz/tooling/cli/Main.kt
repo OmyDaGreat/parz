@@ -1,6 +1,7 @@
 package xyz.malefic.parz.tooling.cli
 
 import xyz.malefic.parz.idl.Decl
+import xyz.malefic.parz.idl.syntax.DeclSyntax.Companion.locate
 import xyz.malefic.parz.idl.syntax.SchemaSyntax
 import xyz.malefic.parz.idl.syntax.lex
 import xyz.malefic.parz.idl.syntax.parse
@@ -39,6 +40,7 @@ private fun run(
         if (rejected.isEmpty()) break
         problems.diagnostics
             .filter { p -> rejected.any { it.second === p.kind.decl } }
+            .map { it.copy(span = pending.locate(it.kind)) }
             .forEach {
                 val code = if (debug) "[${it.kind.code}] " else ""
                 println("$code${it.kind.decl.name}: ${it.kind.message}")
