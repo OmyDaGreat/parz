@@ -152,12 +152,10 @@ sealed interface DeclSyntax : PrettySyntax {
                     (syntax as Record).fields[i].span
                 }
 
-                is SchemaErrorKind.DuplicateMemberName, is SchemaErrorKind.DuplicateMemberTag -> {
-                    val member =
-                        (kind as? SchemaErrorKind.DuplicateMemberName)?.member ?: (kind as SchemaErrorKind.DuplicateMemberTag).member
-                    val i = (kind.decl as Decl.Enum).members.indexOfFirst { it === member }
+                is SchemaErrorKind.MemberError -> {
+                    val i = (kind.decl as Decl.Enum).members.indexOfFirst { it === kind.member }
                     val m = (syntax as Enum).members.getOrNull(i) ?: return syntax.span
-                    if (kind is SchemaErrorKind.DuplicateMemberTag) m.tagSpan ?: m.span else m.span
+                    if (kind is SchemaErrorKind.MemberError.DuplicateMemberTag) m.tagSpan ?: m.span else m.span
                 }
 
                 is SchemaErrorKind.CyclicType, is SchemaErrorKind.DuplicateDecl -> {

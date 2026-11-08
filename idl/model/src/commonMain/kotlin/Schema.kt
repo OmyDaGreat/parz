@@ -10,8 +10,8 @@ import xyz.malefic.parz.idl.Decl.Record.Field
 import xyz.malefic.parz.idl.SchemaErrorKind.CyclicType
 import xyz.malefic.parz.idl.SchemaErrorKind.DuplicateDecl
 import xyz.malefic.parz.idl.SchemaErrorKind.DuplicateFieldName
-import xyz.malefic.parz.idl.SchemaErrorKind.DuplicateMemberName
-import xyz.malefic.parz.idl.SchemaErrorKind.DuplicateMemberTag
+import xyz.malefic.parz.idl.SchemaErrorKind.MemberError.DuplicateMemberName
+import xyz.malefic.parz.idl.SchemaErrorKind.MemberError.DuplicateMemberTag
 import xyz.malefic.parz.idl.SchemaErrorKind.UnknownType
 
 sealed interface Decl {
@@ -128,22 +128,26 @@ sealed interface SchemaErrorKind : DiagnosticKind {
         override val message = "Duplicate field: ${field.name}"
     }
 
-    data class DuplicateMemberName(
-        val name: String,
-        override val decl: Decl,
-        val member: Member?,
-    ) : SchemaErrorKind {
-        override val code = "IDL103"
-        override val message = "Duplicate member name: $name"
-    }
+    sealed interface MemberError : SchemaErrorKind {
+        val member: Member
 
-    data class DuplicateMemberTag(
-        val tag: Int,
-        override val decl: Decl,
-        val member: Member?,
-    ) : SchemaErrorKind {
-        override val code = "IDL104"
-        override val message = "Duplicate member tag: $tag"
+        data class DuplicateMemberName(
+            val name: String,
+            override val decl: Decl,
+            override val member: Member,
+        ) : MemberError {
+            override val code = "IDL103"
+            override val message = "Duplicate member name: $name"
+        }
+
+        data class DuplicateMemberTag(
+            val tag: Int,
+            override val decl: Decl,
+            override val member: Member,
+        ) : MemberError {
+            override val code = "IDL104"
+            override val message = "Duplicate member tag: $tag"
+        }
     }
 
     data class CyclicType(
