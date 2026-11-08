@@ -6,18 +6,20 @@ import xyz.malefic.parz.idl.Schema
 import xyz.malefic.parz.idl.Type
 
 interface PrettySyntax {
+    val span: SourceSpan
+
     fun pretty(): String
 }
 
-sealed interface TypeExpr : PrettySyntax {
-    val span: SourceSpan
+sealed interface TypeSyntax : PrettySyntax {
+    override val span: SourceSpan
 
     fun toType(): Type
 
     data class Primitive(
         val type: Type,
         override val span: SourceSpan,
-    ) : TypeExpr {
+    ) : TypeSyntax {
         override fun pretty(): String =
             when (type) {
                 is Type.Decimal -> "decimal(${type.min}, ${type.max}, ${type.scale}, ${type.rounding}, ${type.overflow})"
@@ -31,25 +33,25 @@ sealed interface TypeExpr : PrettySyntax {
     data class Named(
         val name: String,
         override val span: SourceSpan,
-    ) : TypeExpr {
+    ) : TypeSyntax {
         override fun pretty(): String = name
 
         override fun toType() = Type.Ref(name)
     }
 
     data class Option(
-        val inner: TypeExpr,
+        val inner: TypeSyntax,
         override val span: SourceSpan,
-    ) : TypeExpr {
+    ) : TypeSyntax {
         override fun pretty(): String = "option<${inner.pretty()}>"
 
         override fun toType() = Type.Option(inner.toType())
     }
 
     data class Seq(
-        val inner: TypeExpr,
+        val inner: TypeSyntax,
         override val span: SourceSpan,
-    ) : TypeExpr {
+    ) : TypeSyntax {
         override fun pretty(): String = "seq<${inner.pretty()}>"
 
         override fun toType() = Type.Seq(inner.toType())
@@ -58,15 +60,15 @@ sealed interface TypeExpr : PrettySyntax {
 
 data class FieldSyntax(
     val name: String,
-    val span: SourceSpan,
-    val type: TypeExpr,
+    override val span: SourceSpan,
+    val type: TypeSyntax,
 ) : PrettySyntax {
     override fun pretty(): String = "$name: ${type.pretty()} $span"
 }
 
 data class MemberSyntax(
     val name: String,
-    val span: SourceSpan,
+    override val span: SourceSpan,
     val tag: Int,
     val tagSpan: SourceSpan?,
 ) : PrettySyntax {
@@ -75,7 +77,7 @@ data class MemberSyntax(
 
 sealed interface DeclSyntax : PrettySyntax {
     val name: String
-    val span: SourceSpan
+    override val span: SourceSpan
 
     fun toDecl(): Decl
 
@@ -116,7 +118,7 @@ sealed interface DeclSyntax : PrettySyntax {
     data class Alias(
         override val name: String,
         override val span: SourceSpan,
-        val type: TypeExpr,
+        val type: TypeSyntax,
     ) : DeclSyntax {
         override fun pretty(): String =
             buildString {
@@ -130,6 +132,8 @@ sealed interface DeclSyntax : PrettySyntax {
 data class SchemaSyntax(
     val decls: List<DeclSyntax>,
 ) : PrettySyntax {
+    override val span: SourceSpan = if (decls.isEmpty()) SourceSpan(0, 0) else SourceSpan(decls.first().span.start, decls.last().span.end)
+
     override fun pretty(): String =
         buildString {
             for (decl in decls) {

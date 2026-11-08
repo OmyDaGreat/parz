@@ -72,17 +72,17 @@ internal class Parser(
         }
     }
 
-    private fun type(): TypeExpr {
+    private fun type(): TypeSyntax {
         val (text, span) = word()
         return when (text) {
-            "void" -> TypeExpr.Primitive(Type.Void, span)
-            "bool" -> TypeExpr.Primitive(Type.Bool, span)
+            "void" -> TypeSyntax.Primitive(Type.Void, span)
+            "bool" -> TypeSyntax.Primitive(Type.Bool, span)
             "string" -> str(span)
             "decimal" -> decimal(span)
-            "option" -> TypeExpr.Option(angled { type() }, span)
+            "option" -> TypeSyntax.Option(angled { type() }, span)
             "seq" -> seq(span)
             "record", "enum", "type" -> fail(InlineDecl(text), span)
-            else -> TypeExpr.Named(text, span)
+            else -> TypeSyntax.Named(text, span)
         }
     }
 
@@ -149,7 +149,7 @@ internal class Parser(
     }
 
     private fun str(span: SourceSpan) =
-        TypeExpr.Primitive(
+        TypeSyntax.Primitive(
             checkSyntax("string", span) {
                 if (accept('(')) Type.Str(int().exactLong().also { expect(')') }) else Type.Str()
             },
@@ -192,13 +192,13 @@ internal class Parser(
         return inner().also { expect('>') }
     }
 
-    private fun seq(keywordSpan: SourceSpan): TypeExpr.Seq {
+    private fun seq(keywordSpan: SourceSpan): TypeSyntax.Seq {
         val inner = angled { type() }
         val newSpan = SourceSpan(keywordSpan.start, inner.span.end)
-        return TypeExpr.Seq(inner, newSpan)
+        return TypeSyntax.Seq(inner, newSpan)
     }
 
-    private fun decimal(span: SourceSpan): TypeExpr.Primitive {
+    private fun decimal(span: SourceSpan): TypeSyntax.Primitive {
         expect('(')
         var signum = 1
         if (accept('-')) {
@@ -232,7 +232,7 @@ internal class Parser(
                     fail(ExpectedDecimalBounds(current), current.span)
                 }
             }
-        return TypeExpr.Primitive(type, SourceSpan(span.start, endSpan.end))
+        return TypeSyntax.Primitive(type, SourceSpan(span.start, endSpan.end))
     }
 
     private fun <T> checkSyntax(
