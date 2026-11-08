@@ -79,7 +79,7 @@ internal class Parser(
             "bool" -> TypeSyntax.Primitive(Type.Bool, span)
             "string" -> str(span)
             "decimal" -> decimal(span)
-            "option" -> TypeSyntax.Option(angled { type() }, span)
+            "option" -> TypeSyntax.Option(angled { type() }.second, span)
             "seq" -> seq(span)
             "record", "enum", "type" -> fail(InlineDecl(text), span)
             else -> TypeSyntax.Named(text, span)
@@ -189,15 +189,12 @@ internal class Parser(
         return MemberSyntax(name, span, int().exactInt(), tagSpan)
     }
 
-    private fun <T> angled(inner: () -> T): T {
-        expect('<')
-        return inner().also { expect('>') }
-    }
+    private fun <T> angled(inner: () -> T): Triple<Token.Symbol, T, Token.Symbol> = Triple(expect('<'), inner(), expect('>'))
 
     private fun seq(keywordSpan: SourceSpan): TypeSyntax.Seq {
-        val inner = angled { type() }
-        val newSpan = SourceSpan(keywordSpan.start, inner.span.end)
-        return TypeSyntax.Seq(inner, newSpan)
+        val type = angled { type() }
+        val newSpan = SourceSpan(keywordSpan.start, type.third.span.end)
+        return TypeSyntax.Seq(type.second, newSpan)
     }
 
     private fun decimal(span: SourceSpan): TypeSyntax.Primitive {
