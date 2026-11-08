@@ -108,9 +108,9 @@ internal class Parser(
     }
 
     @IgnorableReturnValue
-    private fun expect(c: Char): SourceSpan {
+    private fun expect(c: Char): Token.Symbol {
         if (!accept(c)) fail(ExpectedSymbol(c, current), current.span)
-        return current.span
+        return Token.Symbol(c, current.span)
     }
 
     private fun word(): Token.Word {
@@ -215,7 +215,7 @@ internal class Parser(
                     val scale = int()
                     val rounding = if (accept(',')) enumWord<Rounding>() else Rounding.TOWARDS_ZERO
                     val overflow = if (accept(',')) enumWord<Overflow>() else Overflow.ERROR
-                    endSpan = expect(')')
+                    endSpan = expect(')').span
                     if (precisionOrMin !in BigInteger.ZERO..BigInteger(38)) fail(PrecisionOutOfRange(precisionOrMin), precisionToken.span)
                     val bound = BigInteger.TEN.pow(precisionOrMin) - BigInteger.ONE
                     Type.Decimal(-bound, bound, scale.exactInt(), rounding, overflow)
@@ -226,7 +226,7 @@ internal class Parser(
                     val scale = int()
                     val rounding = if (accept(',')) enumWord<Rounding>() else Rounding.TOWARDS_ZERO
                     val overflow = if (accept(',')) enumWord<Overflow>() else Overflow.ERROR
-                    endSpan = expect(')')
+                    endSpan = expect(')').span
                     Type.Decimal(precisionOrMin, max, scale.exactInt(), rounding, overflow)
                 } else {
                     fail(ExpectedDecimalBounds(current), current.span)

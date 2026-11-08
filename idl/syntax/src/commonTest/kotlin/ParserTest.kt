@@ -19,7 +19,7 @@ class ParserTest {
                             FieldSyntax(
                                 "amount",
                                 SourceSpan(17, 23),
-                                TypeSyntax.Primitive(Type.Decimal(BigInteger(-999999999), BigInteger(999999999), 2), SourceSpan(25, 39)),
+                                TypeSyntax.Primitive(Type.Decimal(BigInteger(-999999999), BigInteger(999999999), 2), SourceSpan(25, 38)),
                             ),
                             FieldSyntax("status", SourceSpan(40, 46), TypeSyntax.Named("Status", SourceSpan(48, 54))),
                         ],
