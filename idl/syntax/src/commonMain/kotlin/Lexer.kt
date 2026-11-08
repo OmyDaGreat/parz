@@ -149,7 +149,7 @@ fun lex(source: String): List<Token> =
                 }
 
                 c in "(){}<>,;:=-." -> {
-                    add(Token.Symbol(c, SourceSpan(i, i++)))
+                    add(Token.Symbol(c, SourceSpan(i, ++i)))
                 }
 
                 else -> {

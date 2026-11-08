@@ -21,7 +21,7 @@ class ParserTest {
                                 SourceSpan(17, 23),
                                 TypeExpr.Primitive(Type.Decimal(BigInteger(-999999999), BigInteger(999999999), 2), SourceSpan(25, 39)),
                             ),
-                            FieldSyntax("status", SourceSpan(40, 46), TypeExpr.Named("Status", SourceSpan(40, 46))),
+                            FieldSyntax("status", SourceSpan(40, 46), TypeExpr.Named("Status", SourceSpan(48, 54))),
                         ],
                     ),
                     DeclSyntax.Enum(
@@ -35,7 +35,7 @@ class ParserTest {
                     DeclSyntax.Alias(
                         "Payments",
                         SourceSpan(94, 107),
-                        TypeExpr.Seq(TypeExpr.Named("Payment", SourceSpan(99, 107)), SourceSpan(94, 98)),
+                        TypeExpr.Seq(TypeExpr.Named("Payment", SourceSpan(114, 121)), SourceSpan(110, 121)),
                     ),
                 ],
             ),

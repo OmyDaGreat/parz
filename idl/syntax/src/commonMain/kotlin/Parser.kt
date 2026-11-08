@@ -206,13 +206,15 @@ internal class Parser(
         }
         val precisionOrMin = int().bigInt * signum
         val precisionToken = current
-        return TypeExpr.Primitive(
+        var endSpan: SourceSpan = span
+        val type =
             checkSyntax("decimal", span) {
                 if (accept(',')) {
                     val scale = int()
                     val rounding = if (accept(',')) enumWord<Rounding>() else Rounding.TOWARDS_ZERO
                     val overflow = if (accept(',')) enumWord<Overflow>() else Overflow.ERROR
                     expect(')')
+                    endSpan = SourceSpan(span.start, current.span.end)
                     if (precisionOrMin !in BigInteger.ZERO..BigInteger(38)) fail(PrecisionOutOfRange(precisionOrMin), precisionToken.span)
                     val bound = BigInteger.TEN.pow(precisionOrMin) - BigInteger.ONE
                     Type.Decimal(-bound, bound, scale.exactInt(), rounding, overflow)
@@ -224,13 +226,13 @@ internal class Parser(
                     val rounding = if (accept(',')) enumWord<Rounding>() else Rounding.TOWARDS_ZERO
                     val overflow = if (accept(',')) enumWord<Overflow>() else Overflow.ERROR
                     expect(')')
+                    endSpan = SourceSpan(span.start, current.span.end)
                     Type.Decimal(precisionOrMin, max, scale.exactInt(), rounding, overflow)
                 } else {
                     fail(ExpectedDecimalBounds(current), current.span)
                 }
-            },
-            span,
-        )
+            }
+        return TypeExpr.Primitive(type, SourceSpan(span.start, endSpan.end))
     }
 
     private fun <T> checkSyntax(
