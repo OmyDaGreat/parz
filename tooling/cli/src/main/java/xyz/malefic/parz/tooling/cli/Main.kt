@@ -31,10 +31,12 @@ private fun run(source: String) =
         var pending = schema.decls.map { it.toDecl() }
         while (true) {
             val problems = validate(session + pending)
-            val bad = problems.map { it.decl }.toSet()
+            val bad = problems.diagnostics.map { it.kind.decl.name }.toSet()
             val rejected = pending.filter { it.name in bad }
             if (rejected.isEmpty()) break
-            problems.filter { p -> rejected.any { it.name == p.decl } }.forEach { println("${it.decl}: ${it.message}") }
+            problems.diagnostics
+                .filter { p -> rejected.any { it == p.kind.decl } }
+                .forEach { println("${it.kind.decl.name}: ${it.kind.message}") }
             pending = pending - rejected.toSet()
         }
         session = session + pending

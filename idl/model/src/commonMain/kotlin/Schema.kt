@@ -1,5 +1,18 @@
 package xyz.malefic.parz.idl
 
+import xyz.malefic.parz.core.Checked
+import xyz.malefic.parz.core.Diagnostic
+import xyz.malefic.parz.core.DiagnosticKind
+import xyz.malefic.parz.core.Sink
+import xyz.malefic.parz.core.collecting
+import xyz.malefic.parz.idl.Decl.Enum.Member
+import xyz.malefic.parz.idl.Decl.Record.Field
+import xyz.malefic.parz.idl.SchemaErrorKind.CyclicType
+import xyz.malefic.parz.idl.SchemaErrorKind.DuplicateFieldName
+import xyz.malefic.parz.idl.SchemaErrorKind.DuplicateMemberName
+import xyz.malefic.parz.idl.SchemaErrorKind.DuplicateMemberTag
+import xyz.malefic.parz.idl.SchemaErrorKind.UnknownType
+
 sealed interface Decl {
     val name: String
 
@@ -67,7 +80,7 @@ data class Schema(
 
     init {
         val problems = validate()
-        require(problems.isEmpty()) { "Schema validation failed: ${problems.joinToString { it.message }}" }
+        require(problems.ok) { "Schema validation failed: ${problems.diagnostics.joinToString { it.kind.message }}" }
     }
 
     companion object {
@@ -100,6 +113,53 @@ data class SchemaProblem(
     val message: String,
 )
 
+sealed interface SchemaErrorKind : DiagnosticKind {
+    val decl: Decl
+
+    data class UnknownType(
+        val name: String,
+        override val decl: Decl,
+        val field: Field?,
+    ) : SchemaErrorKind {
+        override val code = "IDL101"
+        override val message = "Unknown type${if (field != null) " in field $field" else ""}: $name"
+    }
+
+    data class DuplicateFieldName(
+        val field: Field,
+        override val decl: Decl,
+    ) : SchemaErrorKind {
+        override val code = "IDL102"
+        override val message = "Duplicate field: ${field.name}"
+    }
+
+    data class DuplicateMemberName(
+        val name: String,
+        override val decl: Decl,
+        val member: Member?,
+    ) : SchemaErrorKind {
+        override val code = "IDL103"
+        override val message = "Duplicate member name: $name"
+    }
+
+    data class DuplicateMemberTag(
+        val tag: Int,
+        override val decl: Decl,
+        val member: Member?,
+    ) : SchemaErrorKind {
+        override val code = "IDL104"
+        override val message = "Duplicate member tag: $tag"
+    }
+
+    data class CyclicType(
+        val path: List<String>,
+        override val decl: Decl,
+    ) : SchemaErrorKind {
+        override val code = "IDL105"
+        override val message = "Cyclic type definition: ${path.joinToString(" -> ")}"
+    }
+}
+
 context(schemaProblems: MutableList<SchemaProblem>)
 fun List<Decl>.distinctSchema(): List<Decl> {
     val set = HashSet<String>()
@@ -109,14 +169,6 @@ fun List<Decl>.distinctSchema(): List<Decl> {
         if (set.add(key)) list.add(e) else schemaProblems.add(SchemaProblem(e.name, null, "Duplicate declaration name"))
     }
     return list
-}
-
-fun MutableList<SchemaProblem>.add(
-    decl: String,
-    field: String?,
-    message: String,
-) {
-    this.add(SchemaProblem(decl, field, message))
 }
 
 fun Type.refs(): List<String> =
@@ -142,16 +194,19 @@ fun Type.unguardedRefs(): List<String> =
 
 fun Decl.Record.unguardedRefs(): List<String> = fields.flatMap { it.type.unguardedRefs() }
 
-private fun Decl.Alias.isCyclic(byName: Map<String, Decl>): Boolean {
-    val seen = mutableSetOf<String>()
+/**
+ * Returns null if the type isn't cyclic and returns a `List<String>` of the path to the cycle otherwise.
+ */
+private fun Decl.Alias.isCyclic(byName: Map<String, Decl>): List<String>? {
+    val seen = mutableListOf<String>()
     val pending = ArrayDeque(type.refs())
     while (pending.isNotEmpty()) {
         val name = pending.removeLast()
-        if (name == this.name) return true
+        if (name == this.name) return seen + name
         if (!seen.add(name)) continue
         (byName[name] as? Decl.Alias)?.let { pending += it.type.refs() }
     }
-    return false
+    return null
 }
 
 private fun recordCycles(edges: Map<String, List<String>>): List<List<String>> {
@@ -193,62 +248,69 @@ fun edgeTargets(
         is Decl.Enum, null -> emptyList()
     }
 
-fun validate(decls: List<Decl>): List<SchemaProblem> =
-    buildList {
-        val distinct = decls.distinctSchema()
-        val declarations = distinct.mapTo(HashSet()) { it.name }
-        val declarationMap = distinct.associateBy { it.name }
-        var checkRecordCycles = true
-        distinct.forEach { decl ->
-            when (decl) {
-                is Decl.Record -> {
-                    decl.fields.forEach { field ->
-                        field.type
+fun validate(decls: List<Decl>): Checked<Unit, Diagnostic<SchemaErrorKind>> =
+    collecting {
+        val sink = contextOf<Sink<Diagnostic<SchemaErrorKind>>>()
+
+        fun report(kind: SchemaErrorKind) = sink.report(Diagnostic(kind, null))
+        buildList {
+            val distinct = decls.distinctSchema()
+            val declarations = distinct.mapTo(HashSet()) { it.name }
+            val declarationMap = distinct.associateBy { it.name }
+            var checkRecordCycles = true
+            distinct.forEach { decl ->
+                when (decl) {
+                    is Decl.Record -> {
+                        decl.fields.forEach { field ->
+                            field.type
+                                .refs()
+                                .filter { it !in declarations }
+                                .forEach {
+                                    report(UnknownType(it, decl, field))
+                                }
+                        }
+                        val fieldNames = mutableSetOf<String>()
+                        decl.fields.forEach { field ->
+                            if (!fieldNames.add(field.name.generatorDistinct())) {
+                                report(DuplicateFieldName(field, decl))
+                            }
+                        }
+                    }
+
+                    is Decl.Enum -> {
+                        val memberNames = mutableSetOf<String>()
+                        val memberTags = mutableSetOf<Int>()
+                        decl.members.forEach { member ->
+                            if (!memberNames.add(member.name.generatorDistinct())) {
+                                report(DuplicateMemberName(member.name, decl, member))
+                            }
+                            if (!memberTags.add(member.tag)) {
+                                report(DuplicateMemberTag(member.tag, decl, member))
+                            }
+                        }
+                    }
+
+                    is Decl.Alias -> {
+                        decl.isCyclic(declarationMap)?.let {
+                            report(CyclicType(it, decl))
+                            checkRecordCycles = false
+                        }
+                        decl.type
                             .refs()
                             .filter { it !in declarations }
-                            .forEach { add(decl.name, field.name, "Unknown type: $it") }
+                            .forEach { report(UnknownType(it, decl, null)) }
                     }
-                    val fieldNames = mutableSetOf<String>()
-                    decl.fields.forEach { field ->
-                        if (!fieldNames.add(field.name.generatorDistinct())) {
-                            add(decl.name, field.name, "Duplicate field name")
-                        }
-                    }
-                }
-
-                is Decl.Enum -> {
-                    val memberNames = mutableSetOf<String>()
-                    val memberTags = mutableSetOf<Int>()
-                    decl.members.forEach { member ->
-                        if (!memberNames.add(member.name.generatorDistinct())) {
-                            add(decl.name, member.name, "Duplicate member name")
-                        }
-                        if (!memberTags.add(member.tag)) {
-                            add(decl.name, member.name, "Duplicate member tag")
-                        }
-                    }
-                }
-
-                is Decl.Alias -> {
-                    if (decl.isCyclic(declarationMap)) {
-                        add(decl.name, null, "Cyclic type definition")
-                        checkRecordCycles = false
-                    }
-                    decl.type
-                        .refs()
-                        .filter { it !in declarations }
-                        .forEach { add(decl.name, null, "Unknown type: $it") }
                 }
             }
-        }
 
-        if (checkRecordCycles) {
-            val edges =
-                decls.filterIsInstance<Decl.Record>().associate { record ->
-                    record.name to record.unguardedRefs().flatMap { n -> edgeTargets(n, declarationMap) }
+            if (checkRecordCycles) {
+                val edges =
+                    decls.filterIsInstance<Decl.Record>().associate { record ->
+                        record.name to record.unguardedRefs().flatMap { n -> edgeTargets(n, declarationMap) }
+                    }
+                recordCycles(edges).forEach {
+                    report(CyclicType(it, decls.first { d -> d.name == it.first() }))
                 }
-            recordCycles(edges).forEach {
-                add(it.first(), null, "Cyclic type definition: ${it.joinToString(" -> ")}")
             }
         }
     }
