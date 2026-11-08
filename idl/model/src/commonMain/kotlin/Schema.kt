@@ -163,7 +163,7 @@ sealed interface SchemaErrorKind : DiagnosticKind {
 }
 
 context(sink: Sink<Diagnostic<SchemaErrorKind>>)
-fun List<Decl>.distinctSchema(): List<Decl> {
+fun List<Decl>.distinctDecls(): List<Decl> {
     val set = HashSet<String>()
     val list = ArrayList<Decl>()
     for (e in this) {
@@ -254,7 +254,7 @@ fun validate(decls: List<Decl>): Checked<Unit, Diagnostic<SchemaErrorKind>> =
     collecting {
         fun report(kind: SchemaErrorKind) = contextOf<Sink<Diagnostic<SchemaErrorKind>>>().report(Diagnostic(kind, null))
 
-        val distinct = decls.distinctSchema()
+        val distinct = decls.distinctDecls()
         val declarations = distinct.mapTo(HashSet()) { it.name }
         val declarationMap = distinct.associateBy { it.name }
         var checkRecordCycles = true

@@ -1,18 +1,20 @@
 package xyz.malefic.parz.tooling.cli
 
 import xyz.malefic.parz.idl.Decl
+import xyz.malefic.parz.idl.syntax.SchemaSyntax
 import xyz.malefic.parz.idl.syntax.lex
 import xyz.malefic.parz.idl.syntax.parse
 import xyz.malefic.parz.idl.validate
 
-fun main() {
+fun main(vararg args: String) {
+    val debug = args.contains("--debug") || args.contains("-d")
     val buffer = StringBuilder()
     while (true) {
         val line = readlnOrNull() ?: break
         val trimmed = line.trimEnd()
         if (trimmed.endsWith(";;")) {
             buffer.appendLine(trimmed.removeSuffix(";;"))
-            run(buffer.toString())
+            run(buffer.toString(), debug)
             buffer.clear()
         } else {
             buffer.appendLine(line)
@@ -23,24 +25,29 @@ fun main() {
 
 private var session = emptyList<Decl>()
 
-private fun run(source: String) =
-    try {
-        val (schema, syntaxErrors) = parse { lex(source) }
-        syntaxErrors.forEach { println(it.render(source)) }
+private fun run(
+    source: String,
+    debug: Boolean = false,
+) = try {
+    val (schema, syntaxErrors) = parse { lex(source) }
+    syntaxErrors.forEach { println(it.render(source)) }
 
-        var pending = schema.decls.map { it.toDecl() }
-        while (true) {
-            val problems = validate(session + pending)
-            val bad = problems.diagnostics.map { it.kind.decl.name }.toSet()
-            val rejected = pending.filter { it.name in bad }
-            if (rejected.isEmpty()) break
-            problems.diagnostics
-                .filter { p -> rejected.any { it == p.kind.decl } }
-                .forEach { println("${it.kind.decl.name}: ${it.kind.message}") }
-            pending = pending - rejected.toSet()
-        }
-        session = session + pending
-        println(schema.pretty())
-    } catch (e: IllegalArgumentException) {
-        println("error:  ${e.message}")
+    var pending = schema.decls.map { it to it.toDecl() }
+    while (true) {
+        val problems = validate(session + pending.map { it.second })
+        val rejected = pending.filter { (_, decl) -> problems.diagnostics.any { it.kind.decl == decl } }
+        if (rejected.isEmpty()) break
+        problems.diagnostics
+            .filter { p -> rejected.any { it.second === p.kind.decl } }
+            .forEach {
+                val code = if (debug) "[${it.kind.code}] " else ""
+                println("$code${it.kind.decl.name}: ${it.kind.message}")
+            }
+        pending = pending - rejected.toSet()
     }
+    session += pending.map { it.second }
+    val accepted = SchemaSyntax(pending.map { it.first })
+    println(if (debug) accepted else accepted.pretty())
+} catch (e: IllegalArgumentException) {
+    println("error:  ${e.message}")
+}
