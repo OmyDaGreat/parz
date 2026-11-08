@@ -17,7 +17,6 @@ kotlin {
     }
 
     android {
-        // :idl:model -> xyz.malefic.parz.idl.model
         namespace = "${project.group}${project.path.replace(':', '.')}"
         compileSdk =
             libs
@@ -51,5 +50,9 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.findLibrary("kotlin-test").get())
         }
+    }
+
+    compilerOptions {
+        freeCompilerArgs.add("-Xreturn-value-checker=full")
     }
 }

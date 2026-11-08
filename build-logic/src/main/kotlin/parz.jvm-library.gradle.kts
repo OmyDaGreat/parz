@@ -8,6 +8,10 @@ val libs = the<VersionCatalogsExtension>().named("libs")
 
 kotlin {
     jvmToolchain(25)
+
+    compilerOptions {
+        freeCompilerArgs.add("-Xreturn-value-checker=full")
+    }
 }
 
 dependencies {
