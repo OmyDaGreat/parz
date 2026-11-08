@@ -117,7 +117,7 @@ sealed interface SchemaErrorKind : DiagnosticKind {
         val field: Field?,
     ) : SchemaErrorKind {
         override val code = "IDL101"
-        override val message = "Unknown type${if (field != null) " in field $field" else ""}: $name"
+        override val message = "Unknown type${if (field != null) " in field ${field.name}" else ""}: $name"
     }
 
     data class DuplicateFieldName(
