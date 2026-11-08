@@ -38,6 +38,8 @@ data class SourceSpan(
         require(start >= 0) { "Invalid source span: start ($start) must be >= 0" }
         require(end >= 0) { "Invalid source span: end ($end) must be >= 0" }
     }
+
+    override fun toString() = "@$start..$end"
 }
 
 data class Diagnostic<out K : DiagnosticKind>(

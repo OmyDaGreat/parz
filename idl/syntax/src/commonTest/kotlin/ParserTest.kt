@@ -14,28 +14,28 @@ class ParserTest {
                 [
                     DeclSyntax.Record(
                         "Payment",
-                        SourceSpan(7, 13),
+                        SourceSpan(0, 14),
                         [
                             FieldSyntax(
                                 "amount",
-                                SourceSpan(17, 22),
+                                SourceSpan(17, 23),
                                 TypeExpr.Primitive(Type.Decimal(BigInteger(-999999999), BigInteger(999999999), 2), SourceSpan(25, 39)),
                             ),
-                            FieldSyntax("status", SourceSpan(40, 48), TypeExpr.Named("Status", SourceSpan(40, 48))),
+                            FieldSyntax("status", SourceSpan(40, 46), TypeExpr.Named("Status", SourceSpan(40, 46))),
                         ],
                     ),
                     DeclSyntax.Enum(
                         "Status",
-                        SourceSpan(62, 90),
+                        SourceSpan(57, 68),
                         [
                             MemberSyntax("pending", SourceSpan(71, 78), 0, null),
-                            MemberSyntax("settled", SourceSpan(80, 87), 5, SourceSpan(90, 90)),
+                            MemberSyntax("settled", SourceSpan(80, 87), 5, SourceSpan(90, 91)),
                         ],
                     ),
                     DeclSyntax.Alias(
                         "Payments",
-                        SourceSpan(99, 110),
-                        TypeExpr.Seq(TypeExpr.Named("Payment", SourceSpan(114, 121)), SourceSpan(110, 110)),
+                        SourceSpan(94, 107),
+                        TypeExpr.Seq(TypeExpr.Named("Payment", SourceSpan(99, 107)), SourceSpan(94, 98)),
                     ),
                 ],
             ),

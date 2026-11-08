@@ -18,7 +18,12 @@ sealed interface TypeExpr : PrettySyntax {
         val type: Type,
         override val span: SourceSpan,
     ) : TypeExpr {
-        override fun pretty(): String = type.kind
+        override fun pretty(): String =
+            when (type) {
+                is Type.Decimal -> "decimal(${type.min}, ${type.max}, ${type.scale}, ${type.rounding}, ${type.overflow})"
+                is Type.Str -> "string(${type.maxLen})"
+                else -> type.kind
+            }
 
         override fun toType() = type
     }
@@ -56,7 +61,7 @@ data class FieldSyntax(
     val span: SourceSpan,
     val type: TypeExpr,
 ) : PrettySyntax {
-    override fun pretty(): String = "$name: ${type.pretty()} @$span"
+    override fun pretty(): String = "$name: ${type.pretty()} $span"
 }
 
 data class MemberSyntax(
@@ -65,7 +70,7 @@ data class MemberSyntax(
     val tag: Int,
     val tagSpan: SourceSpan?,
 ) : PrettySyntax {
-    override fun pretty(): String = "$name = $tag @$span${tagSpan?.let { " @$it" } ?: ""}"
+    override fun pretty(): String = "$name = $tag"
 }
 
 sealed interface DeclSyntax : PrettySyntax {
@@ -82,8 +87,8 @@ sealed interface DeclSyntax : PrettySyntax {
         override fun pretty(): String =
             buildString {
                 appendLine("record $name {")
-                for ((name, span, type) in fields) {
-                    appendLine("  $name: ${type.pretty()} @$span")
+                for ((name, _, type) in fields) {
+                    appendLine("  $name: ${type.pretty()}")
                 }
                 appendLine("}")
             }
@@ -99,8 +104,8 @@ sealed interface DeclSyntax : PrettySyntax {
         override fun pretty(): String =
             buildString {
                 appendLine("enum $name {")
-                for ((name, span, tag, tagSpan) in members) {
-                    appendLine("  $name = $tag @$span${tagSpan?.let { " @$it" } ?: ""}")
+                for ((name, _, tag, _) in members) {
+                    appendLine("  $name = $tag")
                 }
                 appendLine("}")
             }
@@ -115,7 +120,7 @@ sealed interface DeclSyntax : PrettySyntax {
     ) : DeclSyntax {
         override fun pretty(): String =
             buildString {
-                appendLine("alias $name = ${type.pretty()} @$span")
+                appendLine("alias $name = ${type.pretty()}")
             }
 
         override fun toDecl() = Decl.Alias(name, type.toType())

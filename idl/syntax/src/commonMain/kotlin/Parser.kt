@@ -80,7 +80,7 @@ internal class Parser(
             "string" -> str(span)
             "decimal" -> decimal(span)
             "option" -> TypeExpr.Option(angled { type() }, span)
-            "seq" -> TypeExpr.Seq(angled { type() }, span)
+            "seq" -> seq(span)
             "record", "enum", "type" -> fail(InlineDecl(text), span)
             else -> TypeExpr.Named(text, span)
         }
@@ -190,6 +190,12 @@ internal class Parser(
     private fun <T> angled(inner: () -> T): T {
         expect('<')
         return inner().also { expect('>') }
+    }
+
+    private fun seq(keywordSpan: SourceSpan): TypeExpr.Seq {
+        val inner = angled { type() }
+        val newSpan = SourceSpan(keywordSpan.start, inner.span.end)
+        return TypeExpr.Seq(inner, newSpan)
     }
 
     private fun decimal(span: SourceSpan): TypeExpr.Primitive {
