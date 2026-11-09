@@ -3,6 +3,7 @@ package xyz.malefic.parz.tooling.cli
 import xyz.malefic.parz.core.AnyDiagnostic
 import xyz.malefic.parz.core.Sink
 import xyz.malefic.parz.core.collecting
+import xyz.malefic.parz.core.sink
 import xyz.malefic.parz.idl.Decl
 import xyz.malefic.parz.idl.Schema
 import xyz.malefic.parz.idl.syntax.DeclSyntax.Companion.locate
@@ -39,7 +40,6 @@ private fun run(
 ) {
     val (accepted, diagnostics) =
         collecting {
-            val sink = contextOf<Sink<AnyDiagnostic>>()
             val schema = parse(lex(source))
             var pending = schema.decls.mapNotNull { s -> s.toDecl()?.let { s to it } }
             while (true) {
@@ -49,7 +49,7 @@ private fun run(
                 problems.diagnostics
                     .filter { p -> rejected.any { it.second === p.kind.decl } }
                     .forEach {
-                        sink.report(it.copy(span = pending.locate(it.kind)))
+                        sink().report(it.copy(span = pending.locate(it.kind)))
                     }
                 pending = pending - rejected.toSet()
             }

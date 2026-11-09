@@ -62,3 +62,6 @@ data class Diagnostic<out K : DiagnosticKind>(
 }
 
 typealias AnyDiagnostic = Diagnostic<DiagnosticKind>
+
+context(sink: Sink<AnyDiagnostic>)
+fun sink() = sink
