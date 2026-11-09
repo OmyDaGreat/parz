@@ -6,6 +6,7 @@ import xyz.malefic.parz.core.Sink
 import xyz.malefic.parz.core.SourceSpan
 import xyz.malefic.parz.core.collecting
 import xyz.malefic.parz.idl.ShapeError
+import xyz.malefic.parz.idl.ShapeError.NonPositiveLength
 import xyz.malefic.parz.idl.Type
 import xyz.malefic.parz.idl.Type.Decimal.Overflow
 import xyz.malefic.parz.idl.Type.Decimal.Rounding
@@ -153,7 +154,15 @@ internal class Parser(
 
     private fun str(span: SourceSpan) =
         TypeSyntax.Primitive(
-            if (accept('(')) Type.Str(int().exactLong().also { expect(')') }) else Type.Str(),
+            if (accept('(')) {
+                val n = int()
+                val maxLen = n.exactLong()
+                NonPositiveLength.check(maxLen).firstOrNull()?.let { fail(InvalidType(it), n.span) }
+                expect(')')
+                Type.Str(maxLen)
+            } else {
+                Type.Str()
+            },
             span,
         )
 

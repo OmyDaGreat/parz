@@ -139,7 +139,8 @@ sealed interface DeclSyntax : PrettySyntax {
         override fun toDecl(): Decl.Enum? {
             var ok = EmptyEnum.check(members).reportAt(span)
             for ((name, span, tag, tagSpan) in members) {
-                ok = EmptyName.check(name).reportAt(span) && NegativeTag.check(tag).reportAt(tagSpan) && ok
+                ok = EmptyName.check(name).reportAt(span) && ok
+                ok = NegativeTag.check(tag).reportAt(tagSpan) && ok
             }
             return if (ok) Decl.Enum(name, members.map { Decl.Enum.Member(it.name, it.tag) }) else null
         }
