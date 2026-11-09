@@ -23,10 +23,10 @@ import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.PrecisionOutOfRange
 
 typealias SyntaxDiagnostic = Diagnostic<SyntaxErrorKind>
 
-fun parse(tokens: context(Sink<SyntaxDiagnostic>) () -> List<Token>) =
-    collecting<SchemaSyntax, SyntaxDiagnostic> {
-        Parser(tokens(), contextOf<Sink<SyntaxDiagnostic>>()).schema()
-    }
+context(sink: Sink<SyntaxDiagnostic>)
+fun parse(tokens: List<Token>) = Parser(tokens, sink).schema()
+
+fun parseSource(source: String) = collecting { parse(lex(source)) }
 
 @Suppress("ObjectInheritsException")
 private object Abort : Exception()
