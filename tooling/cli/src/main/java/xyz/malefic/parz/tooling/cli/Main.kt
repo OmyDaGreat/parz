@@ -45,7 +45,7 @@ private fun run(
             .filter { p -> rejected.any { it.second === p.kind.decl } }
             .map { it.copy(span = pending.locate(it.kind)) }
             .forEach {
-                val code = if (debug) "[${it.kind.code}] " else ""
+                val code = if (debug) "${it.kind.severity.name.lowercase()}[${it.kind.code}] " else ""
                 println("$code${it.render(source)}")
             }
         pending = pending - rejected.toSet()
