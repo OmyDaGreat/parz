@@ -54,7 +54,7 @@ data class Diagnostic<out K : DiagnosticKind>(
             val line = before.count { it == '\n' } + 1
             val lineStart = before.lastIndexOf('\n') + 1
             val column = span.start - lineStart + 1
-            val arrows = span.end - column + 1
+            val arrows = (span.end - span.start).coerceAtLeast(1)
             val text = source.substring(lineStart).substringBefore('\n')
             return "${kind.severity}: ${kind.message} at line $line:$column\n$text\n${" ".repeat(column - 1)}${"~".repeat(arrows)}"
         }
