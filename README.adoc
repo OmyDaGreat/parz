@@ -4,7 +4,7 @@ A centralized IDL implementation for a small subset of languages
 
 == Overview
 
-IDL & IR setup with (planned) support for a variety of languages. Input and output is going to be designed to be any language (hopefully) as the ideal design is something of an intermediate language.
+IDL & IR setup with (planned) support for a variety of languages. Input and output is going to be designed to be any language (hopefully) as the ideal product is something of an intermediate language.
 
 === Features
 * IDL through Kotlin
@@ -26,18 +26,17 @@ IDL & IR setup with (planned) support for a variety of languages. Input and outp
 implementation(platform("xyz.malefic.parz:bom:<version>"))
 implementation("xyz.malefic.parz:idl-model")  // types, values and schemas
 implementation("xyz.malefic.parz:idl-syntax") // the schema text format
+implementation("xyz.malefic.parz:core") // diagnostics management
 ----
 
 The BOM keeps the module versions aligned. Without it, give each dependency a version. See the https://github.com/OmyDaGreat/parz/releases[releases] for the latest one.
-
-NOTE: Up to 0.1.0, the IDL model was published as `xyz.malefic.parz:idl`.
 
 * Create a compiler converting your language's typedefs into the link:idl/model/src/commonMain/kotlin/Value.kt[Value.kt] types.
 * Declare records, enums and aliases in a link:idl/model/src/commonMain/kotlin/Schema.kt[Schema], and type-check values against the link:idl/model/src/commonMain/kotlin/Type.kt[Type.kt] types (like in link:idl/model/src/commonTest/[commonTest] right now), which is a basic validation system.
 * Parse schema text with `parse(lex(source))` from `idl-syntax`, which returns the syntax tree for the schema.
 
 ==== CLI
-Each https://github.com/OmyDaGreat/parz/releases[release] has a `parz-<version>.zip` attached, which needs Java to run (25 recommended). Unzip it and run `bin/parz` (`bin\parz.bat` on Windows). It reads a schema from standard input and prints its syntax tree, or the error with its line and column:
+Each https://github.com/OmyDaGreat/parz/releases[release] has a `parz-<version>.zip` attached, which needs Java 25 or newer to run. Unzip it and run `bin/parz` (`bin\parz.bat` on Windows). It reads a schema from standard input and prints its syntax tree, or the error with its line and column:
 
 [source,shell]
 ----
@@ -52,7 +51,7 @@ record Payment { amount: decimal(9, 2), status: Status }
 enum Status { pending, settled = 5 };;
 ----
 
-For line editing and history, run it through `rlwrap bin/parz`.
+Line editing and history (kept in `~/.parz_history`) are built in.
 
 == License
 

@@ -19,7 +19,7 @@ private class EntryParser : Parser {
         cursor: Int,
         context: Parser.ParseContext,
     ): ParsedLine {
-        val done = line.isBlank() || line.trimEnd().endsWith(";;") || line.trimStart().startsWith(";;")
+        val done = line.isBlank() || line.trimEnd().endsWith(";;") || line.trimStart().startsWith("#")
         if (context == Parser.ParseContext.ACCEPT_LINE && !done) throw EOFError(-1, -1, "entry not finished", ";;")
         return words.parse(line, cursor, context)
     }
@@ -63,6 +63,10 @@ private fun piped() =
         while (true) {
             val line = readlnOrNull() ?: break
             val trimmed = line.trimEnd()
+            if (buffer.isBlank() && trimmed.trimStart().startsWith("#")) {
+                yield(trimmed)
+                continue
+            }
             if (trimmed.endsWith(";;")) {
                 buffer.appendLine(trimmed.removeSuffix(";;"))
                 yield(buffer.toString())

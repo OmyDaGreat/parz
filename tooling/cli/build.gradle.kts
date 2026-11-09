@@ -11,10 +11,5 @@ dependencies {
 application {
     mainClass.set("xyz.malefic.parz.tooling.cli.MainKt")
     applicationName = "parz"
-}
-
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(25))
-    }
+    applicationDefaultJvmArgs = listOf("--enable-native-access=ALL-UNNAMED")
 }

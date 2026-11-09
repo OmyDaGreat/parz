@@ -39,15 +39,13 @@ class ParserTest {
                     ),
                 ],
             ),
-            parse {
-                lex(
-                    """
-                    record Payment { amount: decimal(9, 2), status: Status }
-                    enum Status { pending, settled = 5 }
-                    type Payments = seq<Payment>
-                    """.trimIndent(),
-                )
-            }.value,
+            parseSource(
+                """
+                record Payment { amount: decimal(9, 2), status: Status }
+                enum Status { pending, settled = 5 }
+                type Payments = seq<Payment>
+                """.trimIndent(),
+            ).value,
         )
     }
 }
