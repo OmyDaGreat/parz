@@ -117,7 +117,7 @@ sealed interface DeclSyntax : PrettySyntax {
         override fun toDecl(): Decl.Record? {
             var ok = EmptyRecord.check(fields).reportAt(span)
             for ((name, span) in fields) ok = EmptyName.check(name).reportAt(span) && ok
-            return Decl.Record(name, fields.map { Decl.Record.Field(it.name, it.type.toType()) }).takeIf { ok }
+            return if (ok) Decl.Record(name, fields.map { Decl.Record.Field(it.name, it.type.toType()) }) else null
         }
     }
 
@@ -141,7 +141,7 @@ sealed interface DeclSyntax : PrettySyntax {
             for ((name, span, tag, tagSpan) in members) {
                 ok = EmptyName.check(name).reportAt(span) && NegativeTag.check(tag).reportAt(tagSpan) && ok
             }
-            return Decl.Enum(name, members.map { Decl.Enum.Member(it.name, it.tag) }).takeIf { ok }
+            return if (ok) Decl.Enum(name, members.map { Decl.Enum.Member(it.name, it.tag) }) else null
         }
     }
 
