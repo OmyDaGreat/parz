@@ -1,35 +1,17 @@
 package xyz.malefic.parz.tooling.cli
 
-import xyz.malefic.parz.core.AnyDiagnostic
-import xyz.malefic.parz.core.Sink
 import xyz.malefic.parz.core.collecting
 import xyz.malefic.parz.core.sink
 import xyz.malefic.parz.idl.Decl
-import xyz.malefic.parz.idl.Schema
 import xyz.malefic.parz.idl.syntax.DeclSyntax.Companion.locate
 import xyz.malefic.parz.idl.syntax.SchemaSyntax
 import xyz.malefic.parz.idl.syntax.lex
 import xyz.malefic.parz.idl.syntax.parse
 import xyz.malefic.parz.idl.validate
-import kotlin.collections.component1
-import kotlin.collections.component2
-import kotlin.collections.plusAssign
 
 fun main(vararg args: String) {
     val debug = args.contains("--debug") || args.contains("-d")
-    val buffer = StringBuilder()
-    while (true) {
-        val line = readlnOrNull() ?: break
-        val trimmed = line.trimEnd()
-        if (trimmed.endsWith(";;")) {
-            buffer.appendLine(trimmed.removeSuffix(";;"))
-            run(buffer.toString(), debug)
-            buffer.clear()
-        } else {
-            buffer.appendLine(line)
-        }
-    }
-    if (buffer.isNotBlank()) run(buffer.toString())
+    for (entry in entries()) run(entry, debug)
 }
 
 private var session = emptyList<Decl>()
@@ -59,4 +41,5 @@ private fun run(
 
     diagnostics.sortedWith(compareBy(nullsLast()) { it.span?.start }).forEach { println(it.render(source)) }
     println(SchemaSyntax(accepted).let { if (debug) it else it.pretty() })
+    println()
 }

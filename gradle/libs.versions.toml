@@ -8,10 +8,13 @@ dokka = "2.3.0"
 vanniktech = "0.37.0"
 bignum = "0.3.10"
 jetbrainsKotlinJvm = "2.4.21"
+jline = "4.5.0"
 
 [libraries]
 kotlin-test = { group = "org.jetbrains.kotlin", name = "kotlin-test", version.ref = "kotlin" }
 bignum = { group = "com.ionspin.kotlin", name = "bignum", version.ref = "bignum" }
+jline-reader = { group = "org.jline", name = "jline-reader", version.ref = "jline" }
+jline-terminal-jni = { group = "org.jline", name = "jline-terminal-jni", version.ref = "jline" }
 
 # Plugin artifacts for build-logic
 kotlin-gradle-plugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
@@ -27,3 +30,6 @@ maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "vanniktech
 kotlinter = { id = "org.jmailen.kotlinter", version.ref = "kotlinter" }
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "jetbrainsKotlinJvm" }
+
+[bundles]
+jline = ["jline-reader", "jline-terminal-jni"]

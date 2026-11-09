@@ -5,6 +5,7 @@ plugins {
 
 dependencies {
     implementation(project(":idl:syntax"))
+    implementation(libs.bundles.jline)
 }
 
 application {
