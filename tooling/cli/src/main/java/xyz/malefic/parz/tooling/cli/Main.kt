@@ -1,5 +1,6 @@
 package xyz.malefic.parz.tooling.cli
 
+import xyz.malefic.parz.core.collecting
 import xyz.malefic.parz.idl.Decl
 import xyz.malefic.parz.idl.syntax.DeclSyntax.Companion.locate
 import xyz.malefic.parz.idl.syntax.SchemaSyntax
@@ -33,7 +34,9 @@ private fun run(
     val (schema, syntaxErrors) = parse { lex(source) }
     syntaxErrors.forEach { println(it.render(source)) }
 
-    var pending = schema.decls.map { it to it.toDecl() }
+    val (initial, shapeErrors) = collecting { schema.decls.mapNotNull { s -> s.toDecl()?.let { s to it } } }
+    shapeErrors.forEach { println(it.render(source)) }
+    var pending = initial
     while (true) {
         val problems = validate(session + pending.map { it.second })
         val rejected = pending.filter { (_, decl) -> problems.diagnostics.any { it.kind.decl == decl } }

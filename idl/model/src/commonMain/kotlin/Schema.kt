@@ -1,10 +1,12 @@
 package xyz.malefic.parz.idl
 
 import com.ionspin.kotlin.bignum.integer.BigInteger
+import xyz.malefic.parz.core.AnyDiagnostic
 import xyz.malefic.parz.core.Checked
 import xyz.malefic.parz.core.Diagnostic
 import xyz.malefic.parz.core.DiagnosticKind
 import xyz.malefic.parz.core.Sink
+import xyz.malefic.parz.core.SourceSpan
 import xyz.malefic.parz.core.collecting
 import xyz.malefic.parz.idl.Decl.Enum.Member
 import xyz.malefic.parz.idl.Decl.Record.Field
@@ -77,10 +79,14 @@ sealed interface ShapeError : DiagnosticKind {
             fun check(maxLen: Long) = listOfNotNull(NonPositiveLength(maxLen).takeIf { maxLen <= 0 })
         }
     }
+
+    companion object {
+        context(sink: Sink<AnyDiagnostic>)
+        fun List<ShapeError>.reportAt(span: SourceSpan?) = isEmpty().also { forEach { sink.report(Diagnostic(it, span)) } }
+    }
 }
 
-private fun requireShape(errors: List<ShapeError>) =
-    require(errors.isEmpty()) { "Shape validation failed: ${errors.joinToString { it.message }}" }
+fun requireShape(errors: List<ShapeError>) = require(errors.isEmpty()) { "Shape validation failed: ${errors.joinToString { it.message }}" }
 
 sealed interface Decl {
     val name: String

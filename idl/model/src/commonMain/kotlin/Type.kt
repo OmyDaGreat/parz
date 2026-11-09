@@ -1,6 +1,8 @@
 package xyz.malefic.parz.idl
 
 import com.ionspin.kotlin.bignum.integer.BigInteger
+import xyz.malefic.parz.idl.ShapeError.EmptyRange
+import xyz.malefic.parz.idl.ShapeError.NonPositiveLength
 
 /**
  * The type system for the IDL.
@@ -49,7 +51,7 @@ sealed interface Type {
         override val kind = "string"
 
         init {
-            require(maxLen > 0) { "maxLen must be positive" }
+            requireShape(NonPositiveLength.check(maxLen))
         }
     }
 
@@ -68,7 +70,7 @@ sealed interface Type {
         override val kind = "decimal"
 
         init {
-            require(min <= max) { "min must be less than or equal to max" }
+            requireShape(EmptyRange.check(min, max))
         }
 
         /**

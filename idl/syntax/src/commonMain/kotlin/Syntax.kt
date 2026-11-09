@@ -1,9 +1,17 @@
 package xyz.malefic.parz.idl.syntax
 
+import xyz.malefic.parz.core.AnyDiagnostic
+import xyz.malefic.parz.core.Sink
 import xyz.malefic.parz.core.SourceSpan
 import xyz.malefic.parz.idl.Decl
 import xyz.malefic.parz.idl.Schema
 import xyz.malefic.parz.idl.SchemaErrorKind
+import xyz.malefic.parz.idl.ShapeError
+import xyz.malefic.parz.idl.ShapeError.Companion.reportAt
+import xyz.malefic.parz.idl.ShapeError.EmptyEnum
+import xyz.malefic.parz.idl.ShapeError.EmptyName
+import xyz.malefic.parz.idl.ShapeError.EmptyRecord
+import xyz.malefic.parz.idl.ShapeError.NegativeTag
 import xyz.malefic.parz.idl.Type
 
 interface PrettySyntax {
@@ -88,7 +96,8 @@ sealed interface DeclSyntax : PrettySyntax {
     val name: String
     override val span: SourceSpan
 
-    fun toDecl(): Decl
+    context(sink: Sink<AnyDiagnostic>)
+    fun toDecl(): Decl?
 
     data class Record(
         override val name: String,
@@ -104,7 +113,12 @@ sealed interface DeclSyntax : PrettySyntax {
                 appendLine("}")
             }
 
-        override fun toDecl() = Decl.Record(name, fields.map { Decl.Record.Field(it.name, it.type.toType()) })
+        context(sink: Sink<AnyDiagnostic>)
+        override fun toDecl(): Decl.Record? {
+            var ok = EmptyRecord.check(fields).reportAt(span)
+            for ((name, span) in fields) ok = EmptyName.check(name).reportAt(span) && ok
+            return Decl.Record(name, fields.map { Decl.Record.Field(it.name, it.type.toType()) }).takeIf { ok }
+        }
     }
 
     data class Enum(
@@ -121,7 +135,14 @@ sealed interface DeclSyntax : PrettySyntax {
                 appendLine("}")
             }
 
-        override fun toDecl() = Decl.Enum(name, members.map { Decl.Enum.Member(it.name, it.tag) })
+        context(sink: Sink<AnyDiagnostic>)
+        override fun toDecl(): Decl.Enum? {
+            var ok = EmptyEnum.check(members).reportAt(span)
+            for ((name, span, tag, tagSpan) in members) {
+                ok = EmptyName.check(name).reportAt(span) && NegativeTag.check(tag).reportAt(tagSpan) && ok
+            }
+            return Decl.Enum(name, members.map { Decl.Enum.Member(it.name, it.tag) }).takeIf { ok }
+        }
     }
 
     data class Alias(
@@ -134,6 +155,7 @@ sealed interface DeclSyntax : PrettySyntax {
                 appendLine("type $name = ${type.pretty()}")
             }
 
+        context(sink: Sink<AnyDiagnostic>)
         override fun toDecl() = Decl.Alias(name, type.toType())
     }
 
@@ -177,6 +199,4 @@ data class SchemaSyntax(
                 appendLine(decl.pretty())
             }
         }
-
-    fun toSchema() = Schema(decls.map { it.toDecl() })
 }
