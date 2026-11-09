@@ -1,5 +1,6 @@
 package xyz.malefic.parz.idl
 
+import com.ionspin.kotlin.bignum.integer.BigInteger
 import xyz.malefic.parz.core.Checked
 import xyz.malefic.parz.core.Diagnostic
 import xyz.malefic.parz.core.DiagnosticKind
@@ -13,6 +14,73 @@ import xyz.malefic.parz.idl.SchemaErrorKind.DuplicateFieldName
 import xyz.malefic.parz.idl.SchemaErrorKind.MemberError.DuplicateMemberName
 import xyz.malefic.parz.idl.SchemaErrorKind.MemberError.DuplicateMemberTag
 import xyz.malefic.parz.idl.SchemaErrorKind.UnknownType
+import xyz.malefic.parz.idl.ShapeError.EmptyEnum
+import xyz.malefic.parz.idl.ShapeError.EmptyName
+import xyz.malefic.parz.idl.ShapeError.EmptyRecord
+import xyz.malefic.parz.idl.ShapeError.NegativeTag
+
+sealed interface ShapeError : DiagnosticKind {
+    data object EmptyRecord : ShapeError {
+        override val code = "IDL120"
+        override val message = "Record must have at least one field"
+
+        fun check(fields: List<*>) = listOfNotNull(EmptyRecord.takeIf { fields.isEmpty() })
+    }
+
+    data object EmptyEnum : ShapeError {
+        override val code = "IDL121"
+        override val message = "Enum must have at least one member"
+
+        fun check(members: List<*>) = listOfNotNull(EmptyEnum.takeIf { members.isEmpty() })
+    }
+
+    data object EmptyName : ShapeError {
+        override val code = "IDL122"
+        override val message = "Name must not be empty"
+
+        fun check(name: String) = listOfNotNull(EmptyName.takeIf { name.isBlank() })
+    }
+
+    data class NegativeTag(
+        val tag: Int,
+    ) : ShapeError {
+        override val code = "IDL123"
+        override val message = "Enum member tag $tag must be non-negative"
+
+        companion object {
+            fun check(tag: Int) = listOfNotNull(NegativeTag(tag).takeIf { tag < 0 })
+        }
+    }
+
+    data class EmptyRange(
+        val min: BigInteger,
+        val max: BigInteger,
+    ) : ShapeError {
+        override val code = "IDL124"
+        override val message = "Range must not be empty or negative: [$min, $max]"
+
+        companion object {
+            fun check(
+                min: BigInteger,
+                max: BigInteger,
+            ) = listOfNotNull(EmptyRange(min, max).takeIf { min > max })
+        }
+    }
+
+    data class NonPositiveLength(
+        val maxLen: Long,
+    ) : ShapeError {
+        override val code = "IDL125"
+        override val message = "Length $maxLen must be positive"
+
+        companion object {
+            fun check(maxLen: Long) = listOfNotNull(NonPositiveLength(maxLen).takeIf { maxLen <= 0 })
+        }
+    }
+}
+
+private fun requireShape(errors: List<ShapeError>) =
+    require(errors.isEmpty()) { "Shape validation failed: ${errors.joinToString { it.message }}" }
 
 sealed interface Decl {
     val name: String
@@ -22,7 +90,7 @@ sealed interface Decl {
         val fields: List<Field>,
     ) : Decl {
         init {
-            require(fields.isNotEmpty()) { "Record must have at least one field" }
+            requireShape(EmptyRecord.check(fields))
         }
 
         data class Field(
@@ -30,7 +98,7 @@ sealed interface Decl {
             val type: Type,
         ) {
             init {
-                require(name.isNotEmpty()) { "Record field name must not be empty" }
+                requireShape(EmptyName.check(name))
             }
         }
     }
@@ -40,7 +108,7 @@ sealed interface Decl {
         val members: List<Member>,
     ) : Decl {
         init {
-            require(members.isNotEmpty()) { "Enum must have at least one member" }
+            requireShape(EmptyEnum.check(members))
         }
 
         data class Member(
@@ -48,8 +116,7 @@ sealed interface Decl {
             val tag: Int,
         ) {
             init {
-                require(name.isNotEmpty()) { "Enum member name must not be empty" }
-                require(tag >= 0) { "Enum member tag must be non-negative" }
+                requireShape(EmptyName.check(name) + NegativeTag.check(tag))
             }
         }
     }
