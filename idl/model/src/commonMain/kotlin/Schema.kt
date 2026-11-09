@@ -317,15 +317,19 @@ private fun recordCycles(edges: Map<String, List<String>>): List<List<String>> {
     return cycles
 }
 
-fun edgeTargets(
-    name: String,
-    declarationMap: Map<String, Decl>,
-): List<String> =
-    when (val decl = declarationMap[name]) {
-        is Decl.Record -> listOf(name)
-        is Decl.Alias -> decl.type.unguardedRefs().flatMap { edgeTargets(it, declarationMap) }
-        is Decl.Enum, null -> emptyList()
+fun Decl.unguardedEdges(): List<String> =
+    when (this) {
+        is Decl.Record -> unguardedRefs()
+        is Decl.Alias -> type.unguardedRefs()
+        is Decl.Enum -> emptyList()
     }
+
+/** Rotates a closed cycle (`[a, b, c, a]`) so it starts at the first node matching [predicate]. */
+private fun List<String>.rotateCycleTo(predicate: (String) -> Boolean): List<String> {
+    val open = dropLast(1)
+    val start = open.indexOfFirst(predicate).takeIf { it >= 0 } ?: return this
+    return open.drop(start) + open.take(start) + open[start]
+}
 
 fun validate(decls: List<Decl>): Checked<Unit, Diagnostic<SchemaErrorKind>> =
     collecting {
@@ -382,11 +386,12 @@ fun validate(decls: List<Decl>): Checked<Unit, Diagnostic<SchemaErrorKind>> =
 
         if (checkRecordCycles) {
             val edges =
-                decls.filterIsInstance<Decl.Record>().associate { record ->
-                    record.name to record.unguardedRefs().flatMap { n -> edgeTargets(n, declarationMap) }
+                distinct.associate { decl ->
+                    decl.name to decl.unguardedEdges().filter { it in declarationMap }
                 }
-            recordCycles(edges).forEach {
-                report(CyclicType(it, decls.first { d -> d.name == it.first() }))
+            recordCycles(edges).forEach { cycle ->
+                val path = cycle.rotateCycleTo { declarationMap[it] is Decl.Record }
+                report(CyclicType(path, declarationMap.getValue(path.first())))
             }
         }
     }
