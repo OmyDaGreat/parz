@@ -5,6 +5,7 @@ import xyz.malefic.parz.core.Diagnostic
 import xyz.malefic.parz.core.DiagnosticKind
 import xyz.malefic.parz.core.Sink
 import xyz.malefic.parz.core.SourceSpan
+import xyz.malefic.parz.idl.ShapeError
 
 sealed interface Token {
     val span: SourceSpan
@@ -110,11 +111,10 @@ sealed interface SyntaxErrorKind : DiagnosticKind {
     }
 
     data class InvalidType(
-        val typeName: String,
-        val reason: String?,
+        val error: ShapeError,
     ) : SyntaxErrorKind {
-        override val code = "IDL010"
-        override val message = "Invalid $typeName${if (reason != null) ": $reason" else ""}"
+        override val code = error.code
+        override val message = error.message
     }
 
     data class IntegerOutOfRange(

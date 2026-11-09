@@ -5,6 +5,7 @@ import xyz.malefic.parz.core.Diagnostic
 import xyz.malefic.parz.core.Sink
 import xyz.malefic.parz.core.SourceSpan
 import xyz.malefic.parz.core.collecting
+import xyz.malefic.parz.idl.ShapeError
 import xyz.malefic.parz.idl.Type
 import xyz.malefic.parz.idl.Type.Decimal.Overflow
 import xyz.malefic.parz.idl.Type.Decimal.Rounding
@@ -152,9 +153,7 @@ internal class Parser(
 
     private fun str(span: SourceSpan) =
         TypeSyntax.Primitive(
-            checkSyntax("string", span) {
-                if (accept('(')) Type.Str(int().exactLong().also { expect(')') }) else Type.Str()
-            },
+            if (accept('(')) Type.Str(int().exactLong().also { expect(')') }) else Type.Str(),
             span,
         )
 
@@ -205,43 +204,34 @@ internal class Parser(
         }
         val precisionOrMin = int().bigInt * signum
         val precisionToken = current
-        var endSpan: SourceSpan = span
+        var endSpan: SourceSpan
         val type =
-            checkSyntax("decimal", span) {
-                if (accept(',')) {
-                    val scale = int()
-                    val rounding = if (accept(',')) enumWord<Rounding>() else Rounding.TOWARDS_ZERO
-                    val overflow = if (accept(',')) enumWord<Overflow>() else Overflow.ERROR
-                    endSpan = expect(')').span
-                    if (precisionOrMin !in BigInteger.ZERO..BigInteger(38)) fail(PrecisionOutOfRange(precisionOrMin), precisionToken.span)
-                    val bound = BigInteger.TEN.pow(precisionOrMin) - BigInteger.ONE
-                    Type.Decimal(-bound, bound, scale.exactInt(), rounding, overflow)
-                } else if (accept('.') && accept('.') && accept('.')) {
-                    signum = if (accept('-')) -1 else 1
-                    val max = int().bigInt * signum
-                    expect(',')
-                    val scale = int()
-                    val rounding = if (accept(',')) enumWord<Rounding>() else Rounding.TOWARDS_ZERO
-                    val overflow = if (accept(',')) enumWord<Overflow>() else Overflow.ERROR
-                    endSpan = expect(')').span
-                    Type.Decimal(precisionOrMin, max, scale.exactInt(), rounding, overflow)
-                } else {
-                    fail(ExpectedDecimalBounds(current), current.span)
-                }
+            if (accept(',')) {
+                val scale = int()
+                val rounding = if (accept(',')) enumWord<Rounding>() else Rounding.TOWARDS_ZERO
+                val overflow = if (accept(',')) enumWord<Overflow>() else Overflow.ERROR
+                endSpan = expect(')').span
+                if (precisionOrMin !in BigInteger.ZERO..BigInteger(38)) fail(PrecisionOutOfRange(precisionOrMin), precisionToken.span)
+                val bound = BigInteger.TEN.pow(precisionOrMin) - BigInteger.ONE
+                Type.Decimal(-bound, bound, scale.exactInt(), rounding, overflow)
+            } else if (accept('.') && accept('.') && accept('.')) {
+                signum = if (accept('-')) -1 else 1
+                val max = int().bigInt * signum
+                expect(',')
+                val scale = int()
+                val rounding = if (accept(',')) enumWord<Rounding>() else Rounding.TOWARDS_ZERO
+                val overflow = if (accept(',')) enumWord<Overflow>() else Overflow.ERROR
+                endSpan = expect(')').span
+                ShapeError.EmptyRange
+                    .check(precisionOrMin, max)
+                    .firstOrNull()
+                    ?.let { fail(InvalidType(it), precisionToken.span) }
+                Type.Decimal(precisionOrMin, max, scale.exactInt(), rounding, overflow)
+            } else {
+                fail(ExpectedDecimalBounds(current), current.span)
             }
         return TypeSyntax.Primitive(type, SourceSpan(span.start, endSpan.end))
     }
-
-    private fun <T> checkSyntax(
-        name: String,
-        span: SourceSpan,
-        type: () -> T,
-    ): T =
-        try {
-            type()
-        } catch (e: IllegalArgumentException) {
-            fail(InvalidType(name, e.message), span)
-        }
 
     private fun Token.Number.exactInt(): Int =
         bigInt.let {
