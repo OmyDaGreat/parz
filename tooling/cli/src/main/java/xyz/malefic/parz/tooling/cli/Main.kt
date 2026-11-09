@@ -5,5 +5,6 @@ fun main(vararg args: String) {
     for (entry in entries()) {
         if (entry.trimStart().startsWith("#")) session.directive(entry) else session.run(entry)
         if (!session.running) break
+        println()
     }
 }

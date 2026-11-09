@@ -37,7 +37,10 @@ class Session {
             }
 
         diagnostics.sortedWith(compareBy(nullsLast()) { it.span?.start }).forEach { println(it.render(source)) }
-        println(SchemaSyntax(accepted).let { if (debug) it else it.pretty() })
-        println()
+        val output = if (debug) SchemaSyntax(accepted).toString() else SchemaSyntax(accepted).pretty()
+        val blocks =
+            diagnostics.sortedWith(compareBy(nullsLast()) { it.span?.start }).map { it.render(source) } +
+                listOf(output).filter { it.isNotEmpty() }
+        if (blocks.isNotEmpty()) println(blocks.joinToString("\n\n"))
     }
 }

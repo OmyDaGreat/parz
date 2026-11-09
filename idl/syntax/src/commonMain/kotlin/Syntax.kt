@@ -110,7 +110,7 @@ sealed interface DeclSyntax : PrettySyntax {
                 for ((name, _, type) in fields) {
                     appendLine("  $name: ${type.pretty()}")
                 }
-                appendLine("}")
+                append("}")
             }
 
         context(sink: Sink<AnyDiagnostic>)
@@ -132,7 +132,7 @@ sealed interface DeclSyntax : PrettySyntax {
                 for ((name, _, tag, _) in members) {
                     appendLine("  $name = $tag")
                 }
-                appendLine("}")
+                append("}")
             }
 
         context(sink: Sink<AnyDiagnostic>)
@@ -151,10 +151,7 @@ sealed interface DeclSyntax : PrettySyntax {
         override val span: SourceSpan,
         val type: TypeSyntax,
     ) : DeclSyntax {
-        override fun pretty(): String =
-            buildString {
-                appendLine("type $name = ${type.pretty()}")
-            }
+        override fun pretty(): String = "type $name = ${type.pretty()}"
 
         context(sink: Sink<AnyDiagnostic>)
         override fun toDecl() = Decl.Alias(name, type.toType())
@@ -194,10 +191,5 @@ data class SchemaSyntax(
 ) : PrettySyntax {
     override val span: SourceSpan = if (decls.isEmpty()) SourceSpan(0, 0) else SourceSpan(decls.first().span.start, decls.last().span.end)
 
-    override fun pretty(): String =
-        buildString {
-            for (decl in decls) {
-                appendLine(decl.pretty())
-            }
-        }
+    override fun pretty(): String = decls.joinToString("\n\n") { it.pretty() }
 }

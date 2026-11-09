@@ -17,7 +17,7 @@ val directives: Map<String, Directive> =
             directives.values.forEach { println("  ${it.usage.padEnd(16)} ${it.help}") }
         },
         Directive("list", "#list", "List declarations in the session") {
-            decls.keys.forEach(::println)
+            decls.keys.forEach { println("  $it") }
         },
         Directive("show", "#show <name>", "Print a declaration") { args ->
             val name = args.singleOrNull() ?: return@Directive println("usage: #show <name>")
