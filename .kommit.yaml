@@ -16,6 +16,7 @@ scopes:
     - deps
     - gradle
     - license
+    - actions
   docs:
     - readme
 

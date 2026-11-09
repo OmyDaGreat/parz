@@ -78,6 +78,9 @@ jobs:
           echo "ORG_GRADLE_PROJECT_mavenCentralUsername=$USERNAME" >> $GITHUB_ENV
           echo "ORG_GRADLE_PROJECT_mavenCentralPassword=$PASSWORD" >> $GITHUB_ENV
 
+      - name: Build CLI
+        run: ./gradlew :tooling:cli:distZip
+
       - name: Publish to MavenCentral
         run: ./gradlew publishAllPublicationsToMavenCentralRepository --no-configuration-cache
         env:
@@ -103,9 +106,6 @@ jobs:
           echo "changelog<<EOF" >> $GITHUB_OUTPUT
           echo "$changelog" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-
-      - name: Build CLI
-        run: ./gradlew :tooling:cli:distZip
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3

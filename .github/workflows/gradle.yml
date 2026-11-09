@@ -22,6 +22,8 @@ jobs:
             os: ubuntu-latest
           - target: testAndroid
             os: ubuntu-latest
+          - target: :tooling:cli:check :tooling:cli:distZip
+            os: ubuntu-latest
     runs-on: ${{ matrix.os }}
 
     steps:
