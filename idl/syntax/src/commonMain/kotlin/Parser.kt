@@ -89,14 +89,15 @@ internal class Parser(
     }
 
     private fun decl(): DeclSyntax {
-        val (keyword, kSpan) = word()
+        val keywordToken = word()
+        val (keyword, kSpan) = keywordToken
         val (name, nSpan) = word()
         val newSpan = SourceSpan(kSpan.start, nSpan.end)
         return when (keyword) {
             "record" -> DeclSyntax.Record(name, newSpan, fields())
             "enum" -> DeclSyntax.Enum(name, newSpan, members())
             "type" -> expect('=').let { DeclSyntax.Alias(name, newSpan, type()) }
-            else -> fail(ExpectedDeclKeyword(current), kSpan)
+            else -> fail(ExpectedDeclKeyword(keywordToken), kSpan)
         }
     }
 
