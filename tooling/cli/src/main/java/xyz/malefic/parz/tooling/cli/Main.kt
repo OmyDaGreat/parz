@@ -39,7 +39,7 @@ private fun run(
     var pending = initial
     while (true) {
         val problems = validate(session + pending.map { it.second })
-        val rejected = pending.filter { (_, decl) -> problems.diagnostics.any { it.kind.decl == decl } }
+        val rejected = pending.filter { (_, decl) -> problems.diagnostics.any { it.kind.decl === decl } }
         if (rejected.isEmpty()) break
         problems.diagnostics
             .filter { p -> rejected.any { it.second === p.kind.decl } }
