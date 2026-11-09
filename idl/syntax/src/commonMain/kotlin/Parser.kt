@@ -112,7 +112,7 @@ internal class Parser(
     @IgnorableReturnValue
     private fun expect(c: Char): Token.Symbol {
         if (!accept(c)) fail(ExpectedSymbol(c, current), current.span)
-        return Token.Symbol(c, current.span)
+        return tokens[pos - 1] as Token.Symbol
     }
 
     private fun word(): Token.Word {
