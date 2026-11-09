@@ -60,3 +60,5 @@ data class Diagnostic<out K : DiagnosticKind>(
         }
     }
 }
+
+typealias AnyDiagnostic = Diagnostic<DiagnosticKind>
