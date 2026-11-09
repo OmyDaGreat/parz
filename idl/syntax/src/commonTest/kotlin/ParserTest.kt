@@ -35,7 +35,7 @@ class ParserTest {
                     DeclSyntax.Alias(
                         "Payments",
                         SourceSpan(94, 107),
-                        TypeSyntax.Seq(TypeSyntax.Named("Payment", SourceSpan(114, 121)), SourceSpan(110, 121)),
+                        TypeSyntax.Seq(TypeSyntax.Named("Payment", SourceSpan(114, 121)), SourceSpan(110, 122)),
                     ),
                 ],
             ),
