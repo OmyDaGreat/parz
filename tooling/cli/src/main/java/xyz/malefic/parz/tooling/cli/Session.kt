@@ -36,7 +36,6 @@ class Session {
                 pending.map { it.first }
             }
 
-        diagnostics.sortedWith(compareBy(nullsLast()) { it.span?.start }).forEach { println(it.render(source)) }
         val output = if (debug) SchemaSyntax(accepted).toString() else SchemaSyntax(accepted).pretty()
         val blocks =
             diagnostics.sortedWith(compareBy(nullsLast()) { it.span?.start }).map { it.render(source) } +
