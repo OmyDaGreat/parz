@@ -8,7 +8,7 @@ dokka = "2.3.0"
 vanniktech = "0.37.0"
 bignum = "0.3.10"
 jetbrainsKotlinJvm = "2.4.21"
-jline = "4.5.0"
+jline = "4.7.0"
 
 [libraries]
 kotlin-test = { group = "org.jetbrains.kotlin", name = "kotlin-test", version.ref = "kotlin" }
