@@ -21,6 +21,10 @@ permissions:
   contents: write
   actions: write
 
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
 jobs:
   ci:
     name: Test and Build Native CLI
@@ -80,6 +84,9 @@ jobs:
           echo "${{ secrets.SONATYPE_TOKEN_XML }}" > server.xml
           USERNAME=$(xmllint --xpath "string(//username)" server.xml)
           PASSWORD=$(xmllint --xpath "string(//password)" server.xml)
+          rm server.xml
+          echo "::add-mask::$USERNAME"
+          echo "::add-mask::$PASSWORD"
           echo "ORG_GRADLE_PROJECT_mavenCentralUsername=$USERNAME" >> $GITHUB_ENV
           echo "ORG_GRADLE_PROJECT_mavenCentralPassword=$PASSWORD" >> $GITHUB_ENV
 
@@ -99,6 +106,12 @@ jobs:
           ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.GPG_KEY_ID }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.GPG_PASSPHRASE }}
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.GPG_PRIVATE_KEY }}
+
+      - name: Rebase onto latest branch
+        run: |
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            pull --rebase --autostash origin "${{ github.ref_name }}"
 
       - name: Commit and push version bump
         uses: stefanzweifel/git-auto-commit-action@v7
