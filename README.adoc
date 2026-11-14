@@ -47,7 +47,9 @@ Currently, only the implementation of a typedef-based backend is supported, as t
 ** Refer to link:tooling/cli/src/main/kotlin/[tooling/cli] for a basic implementation of a schema parser (specifically for text-based implementations).
 
 ==== CLI
-Each https://github.com/OmyDaGreat/parz/releases[release] has a `parz-<version>.zip` attached, which requires Java 25 or newer to run. Unzip it and run `bin/parz` (`bin\parz.bat` on Windows) through the terminal. It reads a schema from standard input and prints its syntax tree, or the error with its line and column.
+Each https://github.com/OmyDaGreat/parz/releases[release] has a `parz-<version>.zip` attached, which requires Java 25 or newer to run. Unzip it and run `bin/parz` (`bin\parz.bat` on Windows) through the terminal.
+
+If you don't have Java installed, then you may use the GraalVM-generated native binaries also accessible through the https://github.com/OmyDaGreat/parz/releases[Release] page. They have less support and may be a bit finicky as a result of the differing setup, but should still work.
 
 If you run it with a file, it prints the output of running that file as if it were input.
 
