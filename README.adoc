@@ -1,14 +1,14 @@
 = parz
 
-A shared intermediate representation (IR) and interface definition language (IDL) for business code, old and new.
+A shared intermediate representation (IR) and interface definition language (IDL) for programming languages across the field.
 
 == Overview
 
-parz aims to let legacy and modern code be translated into each other and run side by side safely:
+parz aims to let different languages be translated into each other and, more importantly, be run side by side safely:
 
-* *One IR, many languages.* Each language gets a frontend that reads it into a common, high-level IR that keeps names, structure and exact decimal semantics. Backends emit source (Kotlin, COBOL, TypeScript) or bytecode. N frontends + M backends instead of N × M translators.
-* *A checked boundary.* A small IDL describes the records, decimals and calls that cross between separately built pieces (e.g. a React site + a COBOL/Kotlin server). Code for each side is generated from it, so a mismatch fails at build time, not at runtime.
-* *Verifiable, not just translated.* A reference interpreter defines what the IR means, so any translation, _including AI-generated ones_, can be checked against the original.
+* Each language gets a frontend (converting language into IR) and a backend (converting IR into language). Rather than having to create a ton of translators for each specific pathway between each language pair, only one set is necessary for each language and 3+ languages can be used with the exact same structure.
+* The IDL defines any types that cross between languages, and that can be really easily verified in terms of safety both at compile time and at runtime.
+* AI optimization and translation can be verified using this system as a basis, through conversions of the IR and checking of IDL edge cases.
 
 [[Features]]
 === Features
@@ -20,6 +20,9 @@ parz aims to let legacy and modern code be translated into each other and run si
 ** Checking parsed schemas and reporting errors with their position
 * Planned:
 ** IR schema defined through the IDL
+** Verification tool
+*** Guarantee code equivalence
+*** Check stability of weird edge cases
 
 === Usage
 
@@ -34,21 +37,26 @@ implementation("xyz.malefic.parz:idl-syntax") // the schema text format
 implementation("xyz.malefic.parz:core") // diagnostics management
 ----
 
-The BOM keeps the module versions aligned. Without it, give each dependency a version. See the https://github.com/OmyDaGreat/parz/releases[releases] for the latest one.
+It's recommended to use the BOM for version alignment. See the https://github.com/OmyDaGreat/parz/releases[Releases] page for the latest version, assigned either to the BOM or directly to each package.
 
-* Create a compiler converting your language's typedefs into the link:idl/model/src/commonMain/kotlin/Value.kt[Value.kt] types.
-* Declare records, enums and aliases in a link:idl/model/src/commonMain/kotlin/Schema.kt[Schema], and type-check values against the link:idl/model/src/commonMain/kotlin/Type.kt[Type.kt] types (like in link:idl/model/src/commonTest/[commonTest] right now), which is a basic validation system.
+Currently, only the implementation of a typedef-based backend is supported, as the IR has not yet been created.
+
+* Create a compiler converting your language's typedefs into the link:idl/model/src/commonMain/kotlin/Type.kt[Type.kt] types.
+* Declare records, enums and aliases in a link:idl/model/src/commonMain/kotlin/Schema.kt[Schema].
 * Parse schema text with `parse(lex(source))` from `idl-syntax`, which returns the syntax tree for the schema.
+** Refer to link:tooling/cli/src/main/kotlin/[tooling/cli] for a basic implementation of a schema parser (specifically for text-based implementations).
 
 ==== CLI
-Each https://github.com/OmyDaGreat/parz/releases[release] has a `parz-<version>.zip` attached, which needs Java 25 or newer to run. Unzip it and run `bin/parz` (`bin\parz.bat` on Windows). It reads a schema from standard input and prints its syntax tree, or the error with its line and column:
+Each https://github.com/OmyDaGreat/parz/releases[release] has a `parz-<version>.zip` attached, which requires Java 25 or newer to run. Unzip it and run `bin/parz` (`bin\parz.bat` on Windows) through the terminal. It reads a schema from standard input and prints its syntax tree, or the error with its line and column.
+
+If you run it with a file, it prints the output of running that file as if it were input.
 
 [source,shell]
 ----
 bin/parz < payment.idl
 ----
 
-Run it without input to type schemas in directly. End each one with `;;` to parse it (inspired by OCaml's `utop`):
+Run it without input to type schemas in directly. End each one with `;;` to parse it:
 
 [source]
 ----
@@ -58,6 +66,8 @@ enum Status { pending, settled = 5 };;
 
 Line editing and history (kept in `~/.parz_history`) are built in.
 
+As you could probably tell, most of the idea for the tooling cli came from OCaml's UTop tool. However, this implementation only supports types and not values for now (as the IR has not yet been created).
+
 == License
 
 This project is licensed under the GNU AGPLv3. View the link:LICENSE[LICENSE] file for more information.
@@ -66,9 +76,10 @@ This project is licensed under the GNU AGPLv3. View the link:LICENSE[LICENSE] fi
 
 1. Fork the repository
 2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Submit a pull request
+3. Use https://github.com/OmyDaGreat/Kommit[Kommit] to write commit messages (for consistency)
+4. Make your changes
+5. Add tests for new functionality
+6. Submit a pull request
 
 == Resources
 
