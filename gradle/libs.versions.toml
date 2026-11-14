@@ -6,7 +6,7 @@ android-compileSdk = "37"
 kotlinter = "5.7.0"
 dokka = "2.3.0"
 vanniktech = "0.37.0"
-bignum = "0.3.10"
+bignum = "0.4.0"
 jetbrainsKotlinJvm = "2.4.21"
 jline = "4.5.0"
 
