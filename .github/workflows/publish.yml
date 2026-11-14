@@ -87,7 +87,7 @@ jobs:
         run: ./gradlew :tooling:cli:distZip
 
       - name: Download native CLI builds
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           pattern: parz-*
           path: dist
