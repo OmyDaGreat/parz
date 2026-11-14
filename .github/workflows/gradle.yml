@@ -12,6 +12,7 @@ permissions:
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         include:
           - target: iosSimulatorArm64Test
@@ -38,14 +39,66 @@ jobs:
           ~/.konan
         key: ${{ runner.os }}-${{ hashFiles('**/.lock') }}
 
-    - name: Set up JDK 25
-      uses: actions/setup-java@v6
+    - name: Set up GraalVM 25
+      uses: graalvm/setup-graalvm@v1
       with:
         java-version: '25'
-        distribution: 'temurin'
+        distribution: 'graalvm-community'
+        github-token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Build with Gradle
       uses: gradle/actions/setup-gradle@v6
 
     - name: Run matrix target
       run: ./gradlew ${{ matrix.target }}
+
+  native:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            native: linux-x64
+          - os: ubuntu-24.04-arm
+            native: linux-arm64
+          - os: macos-latest
+            native: macos-arm64
+          - os: windows-latest
+            native: windows-x64
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+    - uses: actions/checkout@v7
+
+    - name: Set up GraalVM 25
+      uses: graalvm/setup-graalvm@v1
+      with:
+        java-version: '25'
+        distribution: 'graalvm-community'
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build with Gradle
+      uses: gradle/actions/setup-gradle@v6
+
+    - name: Build native CLI
+      run: ./gradlew :tooling:cli:nativeCompile
+
+    - name: Package native CLI
+      working-directory: tooling/cli/build/native/nativeCompile
+      run: |
+        mkdir -p "$GITHUB_WORKSPACE/dist"
+        if [ -f parz.exe ]; then
+          7z a "$GITHUB_WORKSPACE/dist/parz-${{ matrix.native }}.zip" parz.exe
+        else
+          tar -czf "$GITHUB_WORKSPACE/dist/parz-${{ matrix.native }}.tar.gz" parz
+        fi
+
+    - name: Upload native CLI
+      uses: actions/upload-artifact@v5
+      with:
+        name: parz-${{ matrix.native }}
+        path: dist/*
+        if-no-files-found: error
