@@ -1,5 +1,10 @@
 = parz
 
+image:https://github.com/OmyDaGreat/parz/actions/workflows/gradle.yml/badge.svg[Gradle Build]
+image:https://github.com/OmyDaGreat/parz/actions/workflows/publish.yml/badge.svg[Publish]
+image:https://img.shields.io/maven-central/v/xyz.malefic.parz/bom[Maven Central Version]
+image:https://img.shields.io/scoop/v/parz?bucket=https%3A%2F%2Fgithub.com%2FOmyDaGreat%2FMaleficBucket[Scoop Version]
+
 A shared intermediate representation (IR) and interface definition language (IDL) for programming languages.
 
 == Overview
@@ -17,6 +22,8 @@ parz aims to let different languages be translated into each other and, more imp
 * CLI program for parsing schemas from the terminal/scripts
 ** Checking parsed schemas and reporting errors with their position
 * Planned:
+** IDL schema
+*** Shorthand types
 ** IR schema defined through the IDL
 ** Verification tool
 *** Guarantee code equivalence
@@ -73,13 +80,14 @@ Run it without input to type schemas in directly. End each one with `;;` to pars
 [source]
 ----
 [user@pc ~] parz
-parz> record Payment { amount: decimal(9, 2), status: Status }
-  ..> enum Status { pending, settled = 5 };;
+parz> type money = decimal(9, 2)
+  ..> record Payment { amount: money, status: status }
+  ..> enum status { pending, settled = 5 };;
 ----
 
 Line editing and history (kept in `~/.parz_history`) are built in.
 
-As you could probably tell, most of the idea for the tooling cli came from OCaml's UTop tool. However, this implementation only supports types and not values for now (as the IR has not yet been created).
+As you could probably tell, the inspiration for the tooling cli came from OCaml's UTop. However, this implementation only supports types and not values for now (as the IR has not yet been created).
 
 Here's an example run:
 
@@ -95,7 +103,7 @@ This project is licensed under the GNU AGPLv3. View the link:LICENSE[LICENSE] fi
 2. Create a feature branch
 3. Use https://github.com/OmyDaGreat/Kommit[Kommit] to write commit messages (for consistency)
 4. Make your changes
-5. Add tests for new functionality
+5. Add tests for new functionality, with one file per feature
 6. Submit a pull request
 
 == Resources
