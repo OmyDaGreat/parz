@@ -98,6 +98,11 @@ sealed interface ShapeErrorKind : DiagnosticKind {
     }
 
     companion object {
+        /**
+         * Reports a list of shape errors.
+         * @param span The span to report the errors at.
+         * @return `true` if the list is empty, `false` otherwise.
+         */
         context(sink: Sink<AnyDiagnostic>)
         fun List<ShapeErrorKind>.reportAt(span: SourceSpan?) = isEmpty().also { forEach { sink.report(Diagnostic(it, span)) } }
     }
@@ -116,7 +121,7 @@ sealed interface Decl {
         val fields: List<Field>,
     ) : Decl {
         init {
-            requireShape(EmptyRecord.check(fields))
+            requireShape(EmptyName.check(name) + EmptyRecord.check(fields))
         }
 
         data class Field(
@@ -136,7 +141,8 @@ sealed interface Decl {
     ) : Decl {
         init {
             requireShape(
-                EmptyVariant.check(members) + if (isEnum) members.flatMap { ShapeErrorKind.EnumPayload.check(it) } else emptyList(),
+                EmptyName.check(name) + EmptyVariant.check(members) +
+                    if (isEnum) members.flatMap { ShapeErrorKind.EnumPayload.check(it) } else emptyList(),
             )
         }
 
@@ -154,7 +160,11 @@ sealed interface Decl {
     data class Alias(
         override val name: String,
         val type: Type,
-    ) : Decl
+    ) : Decl {
+        init {
+            requireShape(EmptyName.check(name))
+        }
+    }
 }
 
 sealed interface Resolved {
@@ -408,7 +418,7 @@ fun validate(decls: List<Decl>): Errors<Diagnostic<SchemaErrorKind>> =
         val distinct = decls.distinctDecls()
         val declarations = distinct.mapTo(HashSet()) { it.name }
         val declarationMap = distinct.associateBy { it.name }
-        var secondRoundCycles = true
+        val reportedCycles = HashSet<String>()
         distinct.forEach { decl ->
             when (decl) {
                 is Record -> {
@@ -430,13 +440,11 @@ fun validate(decls: List<Decl>): Errors<Diagnostic<SchemaErrorKind>> =
                 }
 
                 is Alias -> {
-                    val reported = HashSet<String>()
                     decl.isCyclic(declarationMap)?.let { it ->
-                        if (it.none { it in reported }) {
-                            reported += it
+                        if (it.none { it in reportedCycles }) {
+                            reportedCycles += it
                             report(CyclicType(it, decl))
                         }
-                        secondRoundCycles = false
                     }
                     decl.type
                         .refs()
@@ -446,22 +454,19 @@ fun validate(decls: List<Decl>): Errors<Diagnostic<SchemaErrorKind>> =
             }
         }
 
-        if (secondRoundCycles) {
-            val known = buildable(distinct)
-            val reported = HashSet<String>()
-            for (start in distinct.map { it.name }.filter { it !in known }) {
-                val path = mutableListOf<String>()
-                var current = start
-                while (current !in path) {
-                    path += current
-                    current = declarationMap.getValue(current).blame(known, declarations)!!
-                }
-                val cycle = path.drop(path.indexOf(current)) + current
-                if (cycle.none { it in reported }) {
-                    reported += cycle
-                    val rotated = cycle.rotateCycleTo { declarationMap[it] is Record }
-                    report(CyclicType(rotated, declarationMap.getValue(rotated.first())))
-                }
+        val known = buildable(distinct)
+        for (start in distinct.map { it.name }.filter { it !in known }) {
+            val path = mutableListOf<String>()
+            var current = start
+            while (current !in path) {
+                path += current
+                current = declarationMap.getValue(current).blame(known, declarations)!!
+            }
+            val cycle = path.drop(path.indexOf(current)) + current
+            if (cycle.none { it in reportedCycles }) {
+                reportedCycles += cycle
+                val rotated = cycle.rotateCycleTo { declarationMap[it] is Record }
+                report(CyclicType(rotated, declarationMap.getValue(rotated.first())))
             }
         }
     }

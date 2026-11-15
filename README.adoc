@@ -10,11 +10,9 @@ parz aims to let different languages be translated into each other and, more imp
 * The IDL defines any types that cross between languages, and that can be really easily verified in terms of safety both at compile time and at runtime.
 * AI optimization and translation can be verified using this system as a basis, through conversions of the IR and checking of IDL edge cases.
 
-[[Features]]
 === Features
 * IDL through Kotlin
 ** Records, variants, enums and aliases declared in a schema
-** Testing
 * IDL schema text format, parsed into a syntax tree
 * CLI program for parsing schemas from the terminal/scripts
 ** Checking parsed schemas and reporting errors with their position
@@ -23,6 +21,7 @@ parz aims to let different languages be translated into each other and, more imp
 ** Verification tool
 *** Guarantee code equivalence
 *** Check stability of weird edge cases
+** More concrete testing
 
 === Usage
 
@@ -42,7 +41,7 @@ It's recommended to use the BOM for version alignment. See the https://github.co
 Currently, only the implementation of a typedef-based backend is supported, as the IR has not yet been created.
 
 * Create a compiler converting your language's typedefs into the link:idl/model/src/commonMain/kotlin/Type.kt[Type.kt] types.
-* Declare records, enums and aliases in a link:idl/model/src/commonMain/kotlin/Schema.kt[Schema].
+* Declare records, variants and aliases in a link:idl/model/src/commonMain/kotlin/Schema.kt[Schema].
 * Parse schema text with `parse(lex(source))` from `idl-syntax`, which returns the syntax tree for the schema.
 ** Refer to link:tooling/cli/src/main/kotlin/[tooling/cli] for a basic implementation of a schema parser (specifically for text-based implementations).
 

@@ -38,6 +38,7 @@ internal class Parser(
     private var pos = 0
 
     private val current get() = tokens[pos]
+    private val prior get() = tokens[pos - 1]
     private val here get() = current.span
     private val done get() = current is Token.EOF
 
@@ -81,7 +82,7 @@ internal class Parser(
             "bool" -> TypeSyntax.Primitive(Type.Bool, span)
             "string" -> str(span)
             "decimal" -> decimal(span)
-            "option" -> TypeSyntax.Option(angled { type() }.second, span)
+            "option" -> angled { type() }.let { TypeSyntax.Option(it.second, SourceSpan(span.start, it.third.span.end)) }
             "seq" -> seq(span)
             in declKeywords -> fail(InlineDecl(text), span)
             else -> TypeSyntax.Named(text, span)
@@ -109,7 +110,7 @@ internal class Parser(
     @IgnorableReturnValue
     private fun expect(c: Char): Token.Symbol {
         if (!accept(c)) fail(ExpectedSymbol(c, current), current.span)
-        return tokens[pos - 1] as Token.Symbol
+        return prior as Token.Symbol
     }
 
     private fun word(): Token.Word {
@@ -149,19 +150,21 @@ internal class Parser(
         return result
     }
 
-    private fun str(span: SourceSpan) =
-        TypeSyntax.Primitive(
+    private fun str(span: SourceSpan): TypeSyntax.Primitive {
+        var endSpan = span.end
+        return TypeSyntax.Primitive(
             if (accept('(')) {
                 val n = int()
                 val maxLen = n.exactLong()
                 NonPositiveLength.check(maxLen).firstOrNull()?.let { fail(InvalidType(it), n.span) }
-                expect(')')
+                endSpan = expect(')').span.end
                 Type.Str(maxLen)
             } else {
                 Type.Str()
             },
-            span,
+            SourceSpan(span.start, endSpan),
         )
+    }
 
     private fun fields(delimiter: Pair<Char, Char>): List<FieldSyntax> = delimited(delimiter.first, delimiter.second) { field() }
 
@@ -190,7 +193,11 @@ internal class Parser(
     private fun member(autoTag: Int): MemberSyntax {
         val (name, span) = word()
         var payload: List<FieldSyntax> = emptyList()
-        if (peek('(')) payload = fields('(' to ')').ifEmpty { fail(SyntaxErrorKind.EmptyPayload(name), here) }
+        val emptyPayloadSpanStart = here.start
+        if (peek('(')) {
+            payload =
+                fields('(' to ')').ifEmpty { fail(SyntaxErrorKind.EmptyPayload(name), SourceSpan(emptyPayloadSpanStart, prior.span.end)) }
+        }
         if (!accept('=')) return MemberSyntax(name, span, autoTag, null, payload)
         val tagSpan = here
         return MemberSyntax(name, span, int().exactInt(), tagSpan, payload)
@@ -210,8 +217,8 @@ internal class Parser(
         if (accept('-')) {
             signum = -1
         }
+        val precisionSpan = here
         val precisionOrMin = int().bigInt * signum
-        val precisionToken = current
         var endSpan: SourceSpan
         val type =
             if (accept(',')) {
@@ -219,10 +226,11 @@ internal class Parser(
                 val rounding = if (accept(',')) enumWord<Rounding>() else Rounding.TOWARDS_ZERO
                 val overflow = if (accept(',')) enumWord<Overflow>() else Overflow.ERROR
                 endSpan = expect(')').span
-                if (precisionOrMin !in BigInteger.ZERO..BigInteger(38)) fail(PrecisionOutOfRange(precisionOrMin), precisionToken.span)
+                if (precisionOrMin !in BigInteger.ZERO..BigInteger(38)) fail(PrecisionOutOfRange(precisionOrMin), precisionSpan)
                 val bound = BigInteger.TEN.pow(precisionOrMin) - BigInteger.ONE
                 Type.Decimal(-bound, bound, scale.exactInt(), rounding, overflow)
-            } else if (accept('.') && accept('.') && accept('.')) {
+            } else if (accept('.') && accept('.')) {
+                if (peek('.')) fail(ExpectedDecimalBounds(current), current.span)
                 signum = if (accept('-')) -1 else 1
                 val max = int().bigInt * signum
                 expect(',')
@@ -233,7 +241,7 @@ internal class Parser(
                 ShapeErrorKind.EmptyRange
                     .check(precisionOrMin, max)
                     .firstOrNull()
-                    ?.let { fail(InvalidType(it), precisionToken.span) }
+                    ?.let { fail(InvalidType(it), precisionSpan) }
                 Type.Decimal(precisionOrMin, max, scale.exactInt(), rounding, overflow)
             } else {
                 fail(ExpectedDecimalBounds(current), current.span)

@@ -31,7 +31,7 @@ sealed interface TypeSyntax : PrettySyntax {
     ) : TypeSyntax {
         override fun pretty(): String =
             when (type) {
-                is Type.Decimal -> "decimal(${type.min}, ${type.max}, ${type.scale}, ${type.rounding}, ${type.overflow})"
+                is Type.Decimal -> "decimal(${type.min}..${type.max}, ${type.scale}, ${type.rounding}, ${type.overflow})"
                 is Type.Str -> "string(${type.maxLen})"
                 else -> type.kind
             }
@@ -116,15 +116,14 @@ sealed interface DeclSyntax : PrettySyntax {
         override fun pretty(): String =
             buildString {
                 appendLine("record $name {")
-                for ((name, _, type) in fields) {
-                    appendLine("  $name: ${type.pretty()}")
-                }
+                fields.forEach { field -> appendLine("  ${field.pretty()},") }
                 append("}")
             }
 
         context(sink: Sink<AnyDiagnostic>)
         override fun toDecl(): Decl.Record? {
-            var ok = EmptyRecord.check(fields).reportAt(span)
+            var ok = EmptyName.check(name).reportAt(span)
+            ok = EmptyRecord.check(fields).reportAt(span) && ok
             for ((name, span) in fields) ok = EmptyName.check(name).reportAt(span) && ok
             return if (ok) Decl.Record(name, fields.map { it.toField() }) else null
         }
@@ -139,13 +138,14 @@ sealed interface DeclSyntax : PrettySyntax {
         override fun pretty(): String =
             buildString {
                 appendLine("${if (isEnum) "enum" else "variant"} $name {")
-                members.forEach { appendLine("  ${it.pretty()}") }
+                members.forEach { appendLine("  ${it.pretty()},") }
                 append("}")
             }
 
         context(sink: Sink<AnyDiagnostic>)
         override fun toDecl(): Decl.Variant? {
-            var ok = EmptyVariant.check(members).reportAt(span)
+            var ok = EmptyName.check(name).reportAt(span)
+            ok = EmptyVariant.check(members).reportAt(span) && ok
             members.forEach {
                 ok = EmptyName.check(it.name).reportAt(it.span) && ok
                 ok = NegativeTag.check(it.tag).reportAt(it.tagSpan) && ok
@@ -169,7 +169,7 @@ sealed interface DeclSyntax : PrettySyntax {
         override fun pretty(): String = "type $name = ${type.pretty()}"
 
         context(sink: Sink<AnyDiagnostic>)
-        override fun toDecl() = Decl.Alias(name, type.toType())
+        override fun toDecl() = if (EmptyName.check(name).reportAt(span)) Decl.Alias(name, type.toType()) else null
     }
 
     companion object {

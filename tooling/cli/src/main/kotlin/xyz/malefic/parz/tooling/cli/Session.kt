@@ -3,13 +3,13 @@ package xyz.malefic.parz.tooling.cli
 import xyz.malefic.parz.core.collecting
 import xyz.malefic.parz.core.sink
 import xyz.malefic.parz.idl.Decl
+import xyz.malefic.parz.idl.SchemaErrorKind
 import xyz.malefic.parz.idl.syntax.DeclSyntax
 import xyz.malefic.parz.idl.syntax.DeclSyntax.Companion.locate
 import xyz.malefic.parz.idl.syntax.SchemaSyntax
 import xyz.malefic.parz.idl.syntax.lex
 import xyz.malefic.parz.idl.syntax.parse
 import xyz.malefic.parz.idl.validate
-import kotlin.collections.plus
 
 class Session {
     val decls = linkedMapOf<String, Pair<DeclSyntax, Decl>>()
@@ -23,7 +23,12 @@ class Session {
                 var pending = schema.decls.mapNotNull { s -> s.toDecl()?.let { s to it } }
                 while (true) {
                     val problems = validate(decls.values.map { it.second } + pending.map { it.second })
-                    val rejected = pending.filter { (_, decl) -> problems.diagnostics.any { it.kind.decl === decl } }
+                    val rejected =
+                        pending.filter { (_, decl) ->
+                            problems.diagnostics.any {
+                                it.kind.decl === decl || (it.kind as? SchemaErrorKind.CyclicType)?.path?.contains(decl.name) == true
+                            }
+                        }
                     if (rejected.isEmpty()) break
                     problems.diagnostics
                         .filter { p -> rejected.any { it.second === p.kind.decl } }

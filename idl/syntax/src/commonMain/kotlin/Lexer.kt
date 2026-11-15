@@ -108,7 +108,7 @@ sealed interface SyntaxErrorKind : DiagnosticKind {
         val found: Token,
     ) : SyntaxErrorKind {
         override val code = "IDL009"
-        override val message = "Expected ',' or '...' in the decimal type, but instead found ${found.pretty()}"
+        override val message = "Expected ',' or '..' in the decimal type, but instead found ${found.pretty()}"
     }
 
     data class InvalidType(
@@ -152,7 +152,7 @@ fun lex(source: String): List<Token> =
                 }
 
                 c in '0'..'9' -> {
-                    while (i < source.length && source[i].isDigit()) i++
+                    while (i < source.length && source[i] in '0'..'9') i++
                     add(Token.Number(source.substring(start, i), SourceSpan(start, i)))
                 }
 
