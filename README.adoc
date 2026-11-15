@@ -1,6 +1,6 @@
 = parz
 
-A shared intermediate representation (IR) and interface definition language (IDL) for programming languages across the field.
+A shared intermediate representation (IR) and interface definition language (IDL) for programming languages.
 
 == Overview
 
@@ -46,23 +46,35 @@ Currently, only the implementation of a typedef-based backend is supported, as t
 ** Refer to link:tooling/cli/src/main/kotlin/[tooling/cli] for a basic implementation of a schema parser (specifically for text-based implementations).
 
 ==== CLI
-Each https://github.com/OmyDaGreat/parz/releases[release] has a `parz-<version>.zip` attached, which requires Java 25 or newer to run. Unzip it and run `bin/parz` (`bin\parz.bat` on Windows) through the terminal.
+The CLI tool can be obtained through a package manager:
 
-If you don't have Java installed, then you may use the GraalVM-generated native binaries also accessible through the https://github.com/OmyDaGreat/parz/releases[Release] page. They have less support and may be a bit finicky as a result of the differing setup, but should still work.
+[source, shell]
+----
+# Homebrew (mac & linux)
+brew install OmyDaGreat/malefic/parz
 
-If you run it with a file, it prints the output of running that file as if it were input.
+# Scoop (windows)
+scoop bucket add malefic https://github.com/OmyDaGreat/MaleficBucket
+scoop install parz
+----
+
+NOTE: Make sure you have the package manager installed first! You can install them through https://brew.sh/[Homebrew] or https://scoop.sh/[Scoop].
+If you don't want to use a package manager, you can also install the packages on the https://github.com/OmyDaGreat/parz/releases[Releases] page.
+
+If you run the program with a file, it prints the output of running that file as if it were input.
 
 [source,shell]
 ----
-bin/parz < payment.idl
+parz < payment.idl
 ----
 
 Run it without input to type schemas in directly. End each one with `;;` to parse it:
 
 [source]
 ----
-record Payment { amount: decimal(9, 2), status: Status }
-enum Status { pending, settled = 5 };;
+[user@pc ~] parz
+parz> record Payment { amount: decimal(9, 2), status: Status }
+  ..> enum Status { pending, settled = 5 };;
 ----
 
 Line editing and history (kept in `~/.parz_history`) are built in.
