@@ -69,6 +69,10 @@ Line editing and history (kept in `~/.parz_history`) are built in.
 
 As you could probably tell, most of the idea for the tooling cli came from OCaml's UTop tool. However, this implementation only supports types and not values for now (as the IR has not yet been created).
 
+Here's an example run:
+
+image::run.png[Example Run]
+
 == License
 
 This project is licensed under the GNU AGPLv3. View the link:LICENSE[LICENSE] file for more information.
