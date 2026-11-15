@@ -5,10 +5,14 @@ import xyz.malefic.parz.core.AnyDiagnostic
 import xyz.malefic.parz.core.Checked
 import xyz.malefic.parz.core.Diagnostic
 import xyz.malefic.parz.core.DiagnosticKind
+import xyz.malefic.parz.core.Errors
 import xyz.malefic.parz.core.Sink
 import xyz.malefic.parz.core.SourceSpan
 import xyz.malefic.parz.core.collecting
+import xyz.malefic.parz.idl.Decl.Alias
+import xyz.malefic.parz.idl.Decl.Record
 import xyz.malefic.parz.idl.Decl.Record.Field
+import xyz.malefic.parz.idl.Decl.Variant
 import xyz.malefic.parz.idl.Decl.Variant.Member
 import xyz.malefic.parz.idl.SchemaErrorKind.CyclicType
 import xyz.malefic.parz.idl.SchemaErrorKind.DuplicateDecl
@@ -184,9 +188,9 @@ data class Schema(
         when (type) {
             is Type.Ref -> {
                 when (val decl = get(type.name) ?: error("Unresolved type reference in schema: ${type.name}")) {
-                    is Decl.Record -> Resolved.Record(decl)
-                    is Decl.Variant -> Resolved.Variant(decl)
-                    is Decl.Alias -> resolve(decl.type)
+                    is Record -> Resolved.Record(decl)
+                    is Variant -> Resolved.Variant(decl)
+                    is Alias -> resolve(decl.type)
                 }
             }
 
@@ -298,11 +302,11 @@ fun Type.unguardedRefs(): Set<String> =
         else -> emptySet()
     }
 
-fun Decl.Record.unguardedRefs(): Set<String> = fields.flatMapTo(HashSet()) { it.type.unguardedRefs() }
+fun Record.unguardedRefs(): Set<String> = fields.flatMapTo(HashSet()) { it.type.unguardedRefs() }
 
 private fun Set<Set<String>>.intersect(): Set<String> = if (isEmpty()) emptySet() else fold(first()) { acc, list -> acc.intersect(list) }
 
-fun Decl.Variant.unguardedRefs(): Set<String> =
+fun Variant.unguardedRefs(): Set<String> =
     members
         .mapTo(HashSet()) { member ->
             member.payload
@@ -314,14 +318,14 @@ fun Decl.Variant.unguardedRefs(): Set<String> =
 /**
  * Returns null if the type isn't cyclic and returns a `List<String>` of the path to the cycle otherwise.
  */
-private fun Decl.Alias.isCyclic(byName: Map<String, Decl>): List<String>? {
+private fun Alias.isCyclic(byName: Map<String, Decl>): List<String>? {
     val seen = mutableListOf<String>()
     val pending = ArrayDeque(type.refs())
     while (pending.isNotEmpty()) {
         val name = pending.removeLast()
         if (name == this.name) return seen + name
         if (!seen.add(name)) continue
-        (byName[name] as? Decl.Alias)?.let { pending += it.type.refs() }
+        (byName[name] as? Alias)?.let { pending += it.type.refs() }
     }
     return null
 }
@@ -357,9 +361,9 @@ private fun recordCycles(edges: Map<String, List<String>>): List<List<String>> {
 
 fun Decl.unguardedEdges(): Set<String> =
     when (this) {
-        is Decl.Record -> unguardedRefs()
-        is Decl.Alias -> type.unguardedRefs()
-        is Decl.Variant -> unguardedRefs()
+        is Record -> unguardedRefs()
+        is Alias -> type.unguardedRefs()
+        is Variant -> unguardedRefs()
     }
 
 /** Rotates a closed cycle (`[a, b, c, a]`) so it starts at the first node matching [predicate]. */
@@ -369,7 +373,34 @@ private fun List<String>.rotateCycleTo(predicate: (String) -> Boolean): List<Str
     return open.drop(start) + open.take(start) + open[start]
 }
 
-fun validate(decls: List<Decl>): Checked<Unit, Diagnostic<SchemaErrorKind>> =
+context(sink: Sink<Diagnostic<SchemaErrorKind>>)
+private fun checkFieldDecls(
+    decl: Decl,
+    fields: List<Field>,
+    declarations: Set<String>,
+    pathOf: (Field) -> SchemaErrorKind.FieldPath,
+) {
+    fun report(kind: SchemaErrorKind) = sink.report(Diagnostic(kind, null))
+    val fieldNames = mutableSetOf<String>()
+    fields.forEach { field ->
+        field.type
+            .refs()
+            .filter { it !in declarations }
+            .forEach {
+                report(UnknownType(it, decl, pathOf(field)))
+            }
+        if (!fieldNames.add(field.name.generatorDistinct())) {
+            report(DuplicateFieldName(pathOf(field), decl))
+        }
+    }
+}
+
+/**
+ * Validates a list of declarations, reporting any errors found.
+ * @param decls The declarations to validate
+ * @return A list of errors found within the declarations through [Checked]
+ */
+fun validate(decls: List<Decl>): Errors<Diagnostic<SchemaErrorKind>> =
     collecting {
         fun report(kind: SchemaErrorKind) = contextOf<Sink<Diagnostic<SchemaErrorKind>>>().report(Diagnostic(kind, null))
 
@@ -379,37 +410,15 @@ fun validate(decls: List<Decl>): Checked<Unit, Diagnostic<SchemaErrorKind>> =
         var secondRoundCycles = true
         distinct.forEach { decl ->
             when (decl) {
-                is Decl.Record -> {
-                    val fieldNames = mutableSetOf<String>()
-                    decl.fields.forEach { field ->
-                        field.type
-                            .refs()
-                            .filter { it !in declarations }
-                            .forEach {
-                                report(UnknownType(it, decl, RecordPath(field)))
-                            }
-                        if (!fieldNames.add(field.name.generatorDistinct())) {
-                            report(DuplicateFieldName(RecordPath(field), decl))
-                        }
-                    }
+                is Record -> {
+                    checkFieldDecls(decl, decl.fields, declarations, ::RecordPath)
                 }
 
-                is Decl.Variant -> {
+                is Variant -> {
                     val memberNames = mutableSetOf<String>()
                     val memberTags = mutableSetOf<Int>()
                     decl.members.forEach { member ->
-                        val fieldNames = mutableSetOf<String>()
-                        member.payload.forEach { payload ->
-                            payload.type
-                                .refs()
-                                .filter { it !in declarations }
-                                .forEach {
-                                    report(UnknownType(it, decl, VariantPath(member, payload)))
-                                }
-                            if (!fieldNames.add(payload.name.generatorDistinct())) {
-                                report(DuplicateFieldName(VariantPath(member, payload), decl))
-                            }
-                        }
+                        checkFieldDecls(decl, member.payload, declarations) { VariantPath(member, it) }
                         if (!memberNames.add(member.name.generatorDistinct())) {
                             report(DuplicateMemberName(member.name, decl, member))
                         }
@@ -419,7 +428,7 @@ fun validate(decls: List<Decl>): Checked<Unit, Diagnostic<SchemaErrorKind>> =
                     }
                 }
 
-                is Decl.Alias -> {
+                is Alias -> {
                     decl.isCyclic(declarationMap)?.let {
                         report(CyclicType(it, decl))
                         secondRoundCycles = false
@@ -438,7 +447,7 @@ fun validate(decls: List<Decl>): Checked<Unit, Diagnostic<SchemaErrorKind>> =
                     decl.name to decl.unguardedEdges().filter { it in declarationMap }
                 }
             recordCycles(edges).forEach { cycle ->
-                val path = cycle.rotateCycleTo { declarationMap[it] is Decl.Record }
+                val path = cycle.rotateCycleTo { declarationMap[it] is Record }
                 report(CyclicType(path, declarationMap.getValue(path.first())))
             }
         }

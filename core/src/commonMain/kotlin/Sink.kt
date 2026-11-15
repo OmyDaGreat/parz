@@ -11,6 +11,8 @@ data class Checked<out R, out E>(
     val ok get() = diagnostics.isEmpty()
 }
 
+typealias Errors<E> = Checked<Unit, E>
+
 fun <R, E> collecting(block: context(Sink<E>) () -> R): Checked<R, E> {
     val diagnostics = mutableListOf<E>()
     val result = block { diagnostics += it }
