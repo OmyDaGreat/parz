@@ -280,23 +280,33 @@ fun List<Decl>.distinctDecls(): List<Decl> {
     return list
 }
 
-fun Type.refs(): List<String> =
+fun Type.refs(): Set<String> =
     when (this) {
-        is Type.Ref -> listOf(name)
+        is Type.Ref -> setOf(name)
         is Type.Option -> inner.refs()
         is Type.Seq -> inner.refs()
-        else -> emptyList()
+        else -> emptySet()
     }
 
-fun Type.unguardedRefs(): List<String> =
+fun Type.unguardedRefs(): Set<String> =
     when (this) {
-        is Type.Ref -> listOf(name)
-        else -> emptyList()
+        is Type.Ref -> setOf(name)
+        else -> emptySet()
     }
 
-fun Decl.Record.unguardedRefs(): List<String> = fields.flatMap { it.type.unguardedRefs() }
+fun Decl.Record.unguardedRefs(): Set<String> = fields.flatMap { it.type.unguardedRefs() }.toSet()
 
-fun Decl.Variant.unguardedRefs(): List<String> = members.flatMap { member -> member.payload.flatMap { it.type.unguardedRefs() } }
+fun Set<Set<String>>.intersect(): Set<String> = if (isEmpty()) emptySet() else fold(first()) { acc, list -> acc.intersect(list) }
+
+fun Decl.Variant.unguardedRefs(): Set<String> =
+    members
+        .map { member ->
+            member.payload
+                .flatMap {
+                    it.type.unguardedRefs()
+                }.toSet()
+        }.toSet()
+        .intersect()
 
 /**
  * Returns null if the type isn't cyclic and returns a `List<String>` of the path to the cycle otherwise.
@@ -342,7 +352,7 @@ private fun recordCycles(edges: Map<String, List<String>>): List<List<String>> {
     return cycles
 }
 
-fun Decl.unguardedEdges(): List<String> =
+fun Decl.unguardedEdges(): Set<String> =
     when (this) {
         is Decl.Record -> unguardedRefs()
         is Decl.Alias -> type.unguardedRefs()

@@ -178,14 +178,13 @@ sealed interface DeclSyntax : PrettySyntax {
             return when (kind) {
                 is SchemaErrorKind.UnknownType -> {
                     val path = kind.path ?: return (syntax as Alias).type.find(kind.name)
-                    when (kind.decl) {
+                    when (val decl = kind.decl) {
                         is Decl.Record -> {
-                            val i = (kind.decl as Decl.Record).fields.indexOfFirst { it === path.field }
+                            val i = decl.fields.indexOfFirst { it === path.field }
                             (syntax as Record).fields[i].type.find(kind.name)
                         }
 
                         is Decl.Variant -> {
-                            val decl = kind.decl as Decl.Variant
                             val im = decl.members.indexOfFirst { it === (path as VariantPath).member }
                             val ip = decl.members[im].payload.indexOfFirst { it === path.field }
                             (syntax as Variant)
@@ -202,14 +201,13 @@ sealed interface DeclSyntax : PrettySyntax {
                 }
 
                 is SchemaErrorKind.DuplicateFieldName -> {
-                    when (kind.decl) {
+                    when (val decl = kind.decl) {
                         is Decl.Record -> {
-                            val i = (kind.decl as Decl.Record).fields.indexOfFirst { it === kind.path.field }
+                            val i = decl.fields.indexOfFirst { it === kind.path.field }
                             (syntax as Record).fields[i].span
                         }
 
                         is Decl.Variant -> {
-                            val decl = kind.decl as Decl.Variant
                             val im = decl.members.indexOfFirst { it === (kind.path as VariantPath).member }
                             val ip = decl.members[im].payload.indexOfFirst { it === kind.path.field }
                             (syntax as Variant)

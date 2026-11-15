@@ -269,7 +269,7 @@ private fun Decl.Variant.check(
                 if (value == null) {
                     add(listOf(Segment.Field(field.name)), MissingField(field.name))
                 } else {
-                    field.type.check(variant.payload[field.name] ?: Value.None, schema).forEach {
+                    field.type.check(value, schema).forEach {
                         add(listOf(Segment.MemberField(field.name, member.name)) + it.path, it.reason)
                     }
                 }
