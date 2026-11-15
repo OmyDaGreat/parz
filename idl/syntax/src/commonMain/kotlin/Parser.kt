@@ -67,6 +67,18 @@ internal class Parser(
 
     private val declKeywords = listOf("record", "variant", "enum", "type")
 
+    private val integerShorthandMap =
+        mapOf(
+            "u8" to (BigInteger.ZERO to BigInteger(2).pow(8).dec()),
+            "u16" to (BigInteger.ZERO to BigInteger(2).pow(16).dec()),
+            "u32" to (BigInteger.ZERO to BigInteger(2).pow(32).dec()),
+            "u64" to (BigInteger.ZERO to BigInteger(2).pow(64).dec()),
+            "i8" to (BigInteger(2).pow(7).negate() to BigInteger(2).pow(7).dec()),
+            "i16" to (BigInteger(2).pow(15).negate() to BigInteger(2).pow(15).dec()),
+            "i32" to (BigInteger(2).pow(31).negate() to BigInteger(2).pow(31).dec()),
+            "i64" to (BigInteger(2).pow(63).negate() to BigInteger(2).pow(63).dec()),
+        )
+
     private fun skipToNext() {
         while (!done) {
             val token = current
@@ -82,6 +94,7 @@ internal class Parser(
             "bool" -> TypeSyntax.Primitive(Type.Bool, span)
             "string" -> str(span)
             "decimal" -> decimal(span)
+            in integerShorthandMap.keys -> integerShorthandMap[text]!!.let { decimalShorthand(span, it.first, it.second) }
             "option" -> angled { type() }.let { TypeSyntax.Option(it.second, SourceSpan(span.start, it.third.span.end)) }
             "seq" -> seq(span)
             in declKeywords -> fail(InlineDecl(text), span)
@@ -211,7 +224,7 @@ internal class Parser(
         return TypeSyntax.Seq(type.second, newSpan)
     }
 
-    private fun decimal(span: SourceSpan): TypeSyntax.Primitive {
+    private fun decimal(keywordSpan: SourceSpan): TypeSyntax.Primitive {
         expect('(')
         var signum = 1
         if (accept('-')) {
@@ -219,13 +232,13 @@ internal class Parser(
         }
         val precisionSpan = here
         val precisionOrMin = int().bigInt * signum
-        var endSpan: SourceSpan
+        var endSpan: Int
         val type =
             if (accept(',')) {
                 val scale = int()
-                val rounding = if (accept(',')) enumWord<Rounding>() else Rounding.TOWARDS_ZERO
-                val overflow = if (accept(',')) enumWord<Overflow>() else Overflow.ERROR
-                endSpan = expect(')').span
+                val rounding = if (accept(',')) rounding() else Rounding.TOWARDS_ZERO
+                val overflow = if (accept(',')) overflow() else Overflow.ERROR
+                endSpan = expect(')').span.end
                 if (precisionOrMin !in BigInteger.ZERO..BigInteger(38)) fail(PrecisionOutOfRange(precisionOrMin), precisionSpan)
                 val bound = BigInteger.TEN.pow(precisionOrMin) - BigInteger.ONE
                 Type.Decimal(-bound, bound, scale.exactInt(), rounding, overflow)
@@ -235,9 +248,9 @@ internal class Parser(
                 val max = int().bigInt * signum
                 expect(',')
                 val scale = int()
-                val rounding = if (accept(',')) enumWord<Rounding>() else Rounding.TOWARDS_ZERO
-                val overflow = if (accept(',')) enumWord<Overflow>() else Overflow.ERROR
-                endSpan = expect(')').span
+                val rounding = if (accept(',')) rounding() else Rounding.TOWARDS_ZERO
+                val overflow = if (accept(',')) overflow() else Overflow.ERROR
+                endSpan = expect(')').span.end
                 ShapeErrorKind.EmptyRange
                     .check(precisionOrMin, max)
                     .firstOrNull()
@@ -246,8 +259,31 @@ internal class Parser(
             } else {
                 fail(ExpectedDecimalBounds(current), current.span)
             }
-        return TypeSyntax.Primitive(type, SourceSpan(span.start, endSpan.end))
+        return TypeSyntax.Primitive(type, SourceSpan(keywordSpan.start, endSpan))
     }
+
+    private fun decimalShorthand(
+        keywordSpan: SourceSpan,
+        min: BigInteger,
+        max: BigInteger,
+        scale: Int = 0,
+    ): TypeSyntax.Primitive {
+        var endSpan = keywordSpan.end
+        val type =
+            if (accept('(')) {
+                val rounding = if (accept(',')) rounding() else Rounding.TOWARDS_ZERO
+                val overflow = if (accept(',')) overflow() else Overflow.ERROR
+                endSpan = expect(')').span.end
+                Type.Decimal(min, max, scale, rounding, overflow)
+            } else {
+                Type.Decimal(min, max, scale, Rounding.TOWARDS_ZERO, Overflow.ERROR)
+            }
+        return TypeSyntax.Primitive(type, SourceSpan(keywordSpan.start, endSpan))
+    }
+
+    private fun rounding() = enumWord<Rounding>()
+
+    private fun overflow() = enumWord<Overflow>()
 
     private fun Token.Number.exactInt(): Int =
         bigInt.let {
