@@ -349,11 +349,11 @@ fun Type.refs(): Set<String> =
  * @return A `List<String>` of the path to the cycle, or null if the type isn't cyclic.
  */
 private fun Alias.isCyclic(byName: Map<String, Decl>): List<String>? {
-    val seen = mutableListOf<String>()
+    val seen = LinkedHashSet<String>()
     val pending = ArrayDeque(type.refs())
     while (pending.isNotEmpty()) {
         val name = pending.removeLast()
-        if (name == this.name) return seen + name
+        if (name == this.name) return listOf(this.name) + seen + name
         if (!seen.add(name)) continue
         (byName[name] as? Alias)?.let { pending += it.type.refs() }
     }
