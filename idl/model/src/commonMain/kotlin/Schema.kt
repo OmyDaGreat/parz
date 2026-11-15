@@ -278,7 +278,7 @@ sealed interface SchemaErrorKind : DiagnosticKind {
 }
 
 context(sink: Sink<Diagnostic<SchemaErrorKind>>)
-fun List<Decl>.distinctDecls(): List<Decl> {
+private fun List<Decl>.distinctDecls(): List<Decl> {
     val set = HashSet<String>()
     val list = ArrayList<Decl>()
     for (e in this) {
@@ -286,6 +286,53 @@ fun List<Decl>.distinctDecls(): List<Decl> {
         if (set.add(key)) list.add(e) else sink.report(Diagnostic(DuplicateDecl(e), null))
     }
     return list
+}
+
+private fun Type.buildable(
+    known: Set<String>,
+    declared: Set<String>,
+) = this !is Type.Ref || name in known || name !in declared
+
+private fun Decl.buildable(
+    known: Set<String>,
+    declared: Set<String>,
+) = when (this) {
+    is Record -> fields.all { it.type.buildable(known, declared) }
+    is Variant -> members.any { m -> m.payload.all { it.type.buildable(known, declared) } }
+    is Alias -> type.buildable(known, declared)
+}
+
+/**
+ * Returns the names of every declaration a finite value can be built for.
+ * @param decls The list of declarations to check.
+ * @return A set of names of the buildable declarations.
+ */
+fun buildable(decls: List<Decl>): Set<String> {
+    val declared = decls.mapTo(HashSet()) { it.name }
+    val known = HashSet<String>()
+    do {
+        val added = decls.filter { it.name !in known && it.buildable(known, declared) }
+        added.mapTo(known) { it.name }
+    } while (added.isNotEmpty())
+    return known
+}
+
+/**
+ * Returns the name of the first declaration that blocks the creation of a finite value.
+ * @param known The set of known declaration names.
+ * @param declared The set of declared declaration names.
+ * @return The name of the first blocking declaration, or null if none exists.
+ */
+fun Decl.blame(
+    known: Set<String>,
+    declared: Set<String>,
+): String? {
+    fun Type.blocked() = (this as? Type.Ref)?.name?.takeIf { it !in known && it in declared }
+    return when (this) {
+        is Record -> fields.firstNotNullOf { it.type.blocked() }
+        is Variant -> members.first().payload.firstNotNullOf { it.type.blocked() }
+        is Alias -> type.blocked()
+    }
 }
 
 fun Type.refs(): Set<String> =
@@ -296,27 +343,10 @@ fun Type.refs(): Set<String> =
         else -> emptySet()
     }
 
-fun Type.unguardedRefs(): Set<String> =
-    when (this) {
-        is Type.Ref -> setOf(name)
-        else -> emptySet()
-    }
-
-fun Record.unguardedRefs(): Set<String> = fields.flatMapTo(HashSet()) { it.type.unguardedRefs() }
-
-private fun Set<Set<String>>.intersect(): Set<String> = if (isEmpty()) emptySet() else fold(first()) { acc, list -> acc.intersect(list) }
-
-fun Variant.unguardedRefs(): Set<String> =
-    members
-        .mapTo(HashSet()) { member ->
-            member.payload
-                .flatMapTo(HashSet()) {
-                    it.type.unguardedRefs()
-                }
-        }.intersect()
-
 /**
  * Returns null if the type isn't cyclic and returns a `List<String>` of the path to the cycle otherwise.
+ * @param byName A map of declaration names to declarations.
+ * @return A `List<String>` of the path to the cycle, or null if the type isn't cyclic.
  */
 private fun Alias.isCyclic(byName: Map<String, Decl>): List<String>? {
     val seen = mutableListOf<String>()
@@ -330,43 +360,11 @@ private fun Alias.isCyclic(byName: Map<String, Decl>): List<String>? {
     return null
 }
 
-private fun recordCycles(edges: Map<String, List<String>>): List<List<String>> {
-    val state = mutableMapOf<String, Boolean>()
-    val path = ArrayDeque<String>()
-    val cycles = mutableListOf<List<String>>()
-
-    fun visit(name: String) {
-        when (state[name]) {
-            true -> {
-                return
-            }
-
-            false -> {
-                cycles += path.dropWhile { it != name } + name
-                return
-            }
-
-            null -> {}
-        }
-        state[name] = false
-        path.addLast(name)
-        edges[name].orEmpty().forEach(::visit)
-        path.removeLast()
-        state[name] = true
-    }
-
-    edges.keys.forEach(::visit)
-    return cycles
-}
-
-fun Decl.unguardedEdges(): Set<String> =
-    when (this) {
-        is Record -> unguardedRefs()
-        is Alias -> type.unguardedRefs()
-        is Variant -> unguardedRefs()
-    }
-
-/** Rotates a closed cycle (`[a, b, c, a]`) so it starts at the first node matching [predicate]. */
+/**
+ * Rotates a closed cycle (`[a, b, c, a]`) so it starts at the first node matching [predicate].
+ * @param predicate The predicate to match.
+ * @return The rotated cycle.
+ */
 private fun List<String>.rotateCycleTo(predicate: (String) -> Boolean): List<String> {
     val open = dropLast(1)
     val start = open.indexOfFirst(predicate).takeIf { it >= 0 } ?: return this
@@ -442,13 +440,21 @@ fun validate(decls: List<Decl>): Errors<Diagnostic<SchemaErrorKind>> =
         }
 
         if (secondRoundCycles) {
-            val edges =
-                distinct.associate { decl ->
-                    decl.name to decl.unguardedEdges().filter { it in declarationMap }
+            val known = buildable(distinct)
+            val reported = HashSet<String>()
+            for (start in distinct.map { it.name }.filter { it !in known }) {
+                val path = mutableListOf<String>()
+                var current = start
+                while (current !in path) {
+                    path += current
+                    current = declarationMap.getValue(current).blame(known, declarations)!!
                 }
-            recordCycles(edges).forEach { cycle ->
-                val path = cycle.rotateCycleTo { declarationMap[it] is Record }
-                report(CyclicType(path, declarationMap.getValue(path.first())))
+                val cycle = path.drop(path.indexOf(current)) + current
+                if (cycle.none { it in reported }) {
+                    reported += cycle
+                    val rotated = cycle.rotateCycleTo { declarationMap[it] is Record }
+                    report(CyclicType(rotated, declarationMap.getValue(rotated.first())))
+                }
             }
         }
     }

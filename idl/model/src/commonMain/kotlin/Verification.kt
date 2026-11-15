@@ -36,7 +36,7 @@ sealed interface Segment {
      * A member in a Variant.
      */
     data class Member(
-        val member: String,
+        val name: String,
     ) : Segment
 
     /**
@@ -229,9 +229,11 @@ private fun checkFields(
     declared.forEach { field ->
         val path = prefix + Segment.Field(field.name)
         val value = actual[field.name]
-        value?.let {
+        if (value != null) {
             field.type.check(value, schema).forEach { add(path + it.path, it.reason) }
-        } ?: add(path, MissingField(field.name))
+        } else {
+            add(path, MissingField(field.name))
+        }
     }
     val names = declared.mapTo(HashSet()) { it.name }
     actual.keys.filter { it !in names }.forEach { add(prefix + Segment.Field(it), ExtraField(it)) }
