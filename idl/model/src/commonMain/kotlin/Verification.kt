@@ -242,7 +242,7 @@ private fun Decl.Record.check(
             }
         }
 
-        val names = fields.map { it.name }
+        val names = fields.map { it.name }.toSet()
         record.fields.keys
             .filter { it !in names }
             .forEach { add(listOf(Segment.Field(it)), ExtraField(it)) }
@@ -275,7 +275,7 @@ private fun Decl.Variant.check(
                 }
             }
 
-            val names = members.map { it.name }
+            val names = member.payload.map { it.name }.toSet()
             variant.payload.keys
                 .filter { it !in names }
                 .forEach { add(listOf(Segment.Field(it)), ExtraField(it)) }
