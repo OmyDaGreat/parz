@@ -47,6 +47,18 @@ Currently, only the implementation of a typedef-based backend is supported, as t
 ** Refer to link:tooling/cli/src/main/kotlin/[tooling/cli] for a basic implementation of a schema parser (specifically for text-based implementations).
 
 ==== CLI
+The easiest way to get the CLI is through a package manager, which installs the native binary (no Java needed):
+
+[source,shell]
+----
+# Homebrew (macOS arm64, Linux x64/arm64)
+brew install OmyDaGreat/malefic/parz
+
+# Scoop (Windows x64)
+scoop bucket add malefic https://github.com/OmyDaGreat/MaleficBucket
+scoop install parz
+----
+
 Each https://github.com/OmyDaGreat/parz/releases[release] has a `parz-<version>.zip` attached, which requires Java 25 or newer to run. Unzip it and run `bin/parz` (`bin\parz.bat` on Windows) through the terminal.
 
 If you don't have Java installed, then you may use the GraalVM-generated native binaries also accessible through the https://github.com/OmyDaGreat/parz/releases[Release] page. They have less support and may be a bit finicky as a result of the differing setup, but should still work.
