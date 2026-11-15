@@ -296,7 +296,7 @@ fun Type.unguardedRefs(): Set<String> =
 
 fun Decl.Record.unguardedRefs(): Set<String> = fields.flatMap { it.type.unguardedRefs() }.toSet()
 
-fun Set<Set<String>>.intersect(): Set<String> = if (isEmpty()) emptySet() else fold(first()) { acc, list -> acc.intersect(list) }
+private fun Set<Set<String>>.intersect(): Set<String> = if (isEmpty()) emptySet() else fold(first()) { acc, list -> acc.intersect(list) }
 
 fun Decl.Variant.unguardedRefs(): Set<String> =
     members

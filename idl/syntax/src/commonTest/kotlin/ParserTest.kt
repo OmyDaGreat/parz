@@ -31,6 +31,7 @@ class ParserTest {
                             MemberSyntax("pending", SourceSpan(71, 78), 0, null),
                             MemberSyntax("settled", SourceSpan(80, 87), 5, SourceSpan(90, 91)),
                         ],
+                        isEnum = true,
                     ),
                     DeclSyntax.Alias(
                         "Payments",

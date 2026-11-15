@@ -102,14 +102,9 @@ internal class Parser(
         }
     }
 
-    private fun accept(c: Char): Boolean {
-        val token = current
-        if (token is Token.Symbol && token.char == c) {
-            pos++
-            return true
-        }
-        return false
-    }
+    private fun peek(c: Char): Boolean = current.let { token -> token is Token.Symbol && token.char == c }
+
+    private fun accept(c: Char): Boolean = peek(c).also { if (it) pos++ }
 
     @IgnorableReturnValue
     private fun expect(c: Char): Token.Symbol {
@@ -195,10 +190,7 @@ internal class Parser(
     private fun member(autoTag: Int): MemberSyntax {
         val (name, span) = word()
         var payload: List<FieldSyntax> = emptyList()
-        if (accept('(')) {
-            pos--
-            payload = fields('(' to ')')
-        }
+        if (peek('(')) payload = fields('(' to ')')
         if (!accept('=')) return MemberSyntax(name, span, autoTag, null, payload)
         val tagSpan = here
         return MemberSyntax(name, span, int().exactInt(), tagSpan, payload)
