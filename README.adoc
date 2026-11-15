@@ -9,30 +9,33 @@ A shared intermediate representation (IR) and interface definition language (IDL
 
 == Overview
 
-parz aims to let different languages be translated into each other and, more importantly, be run side by side safely:
+parz aims to let different languages be translated into each other and, more importantly, be run side by side safely.
 
-* Each language gets a frontend (converting language into IR) and a backend (converting IR into language). Rather than having to create a ton of translators for each specific pathway between each language pair, only one set is necessary for each language and 3+ languages can be used with the exact same structure.
-* The IDL defines any types that cross between languages, and that can be really easily verified in terms of safety both at compile time and at runtime.
-* AI optimization and translation can be verified using this system as a basis, through conversions of the IR and checking of IDL edge cases.
+=== Current Features
 
-=== Features
-* IDL through Kotlin
-** Records, variants, enums and aliases declared in a schema
-* IDL schema text format, parsed into a syntax tree
-* CLI program for parsing schemas from the terminal/scripts
-** Checking parsed schemas and reporting errors with their position
-* Planned:
-** IDL schema
-*** Shorthand types
-** IR schema defined through the IDL
-** Verification tool
-*** Guarantee code equivalence
-*** Check stability of weird edge cases
-** More concrete testing
+An IDL system, implemented through a Kotlin model and a text format with parsing and verification.
 
-=== Usage
+A CLI program, serving as a schema checking tool for the IDL system and packaged through Scoop and Homebrew.
 
-==== Libraries
+[source]
+----
+type Money = decimal(9, 2, round_half_to_even)
+record Payment { id: decimal(18, 0), amount: Money, status: Status }
+enum Status { pending, settled = 5 }
+variant Result { ok(payment: Payment), rejected(reason: string(200)) }
+----
+
+=== Goals
+
+A generic IR defined through the IDL, wide enough that any language can use it but narrow enough that it supports really old languages (possibly using scoped compilers to lock out new features).
+
+A large set of frontends and backends for programming languages.
+
+A verification tool that tests edge cases of the IDL and code equivalence while using the compilers. Also allows translation, including non-deterministic translation with AI, to be verified extremely easily.
+
+== Usage
+
+=== Libraries
 * Get from Maven Central:
 
 [source,kotlin]
@@ -43,16 +46,18 @@ implementation("xyz.malefic.parz:idl-syntax") // the schema text format
 implementation("xyz.malefic.parz:core") // diagnostics management
 ----
 
+NOTE: All currently published libraries support JVM, Android, iOS, & js through Kotlin Multiplatform
+
 It's recommended to use the BOM for version alignment. See the https://github.com/OmyDaGreat/parz/releases[Releases] page for the latest version, assigned either to the BOM or directly to each package.
 
-Currently, only the implementation of a typedef-based backend is supported, as the IR has not yet been created.
+Currently, you can describe your types through the IDL and check values against them.
 
 * Create a compiler converting your language's typedefs into the link:idl/model/src/commonMain/kotlin/Type.kt[Type.kt] types.
 * Declare records, variants and aliases in a link:idl/model/src/commonMain/kotlin/Schema.kt[Schema].
-* Parse schema text with `parse(lex(source))` from `idl-syntax`, which returns the syntax tree for the schema.
+* Parse schema text with `parseSource(source)` from `idl-syntax`, which returns the syntax tree for the schema.
 ** Refer to link:tooling/cli/src/main/kotlin/[tooling/cli] for a basic implementation of a schema parser (specifically for text-based implementations).
 
-==== CLI
+=== CLI
 The CLI tool can be obtained through a package manager:
 
 [source, shell]
@@ -65,8 +70,8 @@ scoop bucket add malefic https://github.com/OmyDaGreat/MaleficBucket
 scoop install parz
 ----
 
-NOTE: Make sure you have the package manager installed first! You can install them through https://brew.sh/[Homebrew] or https://scoop.sh/[Scoop].
-If you don't want to use a package manager, you can also install the packages on the https://github.com/OmyDaGreat/parz/releases[Releases] page.
+NOTE: Make sure you have the package manager installed first! You can install it through https://brew.sh/[Homebrew] or https://scoop.sh/[Scoop].
+If you don't want to use a package manager, you can also install the packages from the https://github.com/OmyDaGreat/parz/releases[Releases] page.
 
 If you run the program with a file, it prints the output of running that file as if it were input.
 
