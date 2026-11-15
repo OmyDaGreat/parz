@@ -34,6 +34,8 @@ jobs:
     name: Release Build and Publish
     needs: ci
     runs-on: macos-latest
+    outputs:
+      version: ${{ steps.bump_version.outputs.new_version }}
     steps:
       - name: Check out code
         uses: actions/checkout@v7
@@ -143,3 +145,122 @@ jobs:
             tooling/cli/build/distributions/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  package-managers:
+    name: Update Homebrew Tap and Scoop Bucket
+    needs: publish
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.publish.outputs.version }}
+      TAG: v${{ needs.publish.outputs.version }}
+      RELEASES: https://github.com/OmyDaGreat/parz/releases/download/v${{ needs.publish.outputs.version }}
+      REPO_ACCESS_TOKEN: ${{ secrets.REPO_ACCESS_TOKEN }}
+    steps:
+      - name: Check for repository token
+        id: token
+        run: |
+          if [ -z "$REPO_ACCESS_TOKEN" ]; then
+            echo "::warning::REPO_ACCESS_TOKEN is not set; skipping Homebrew and Scoop updates."
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download native CLI builds
+        if: steps.token.outputs.present == 'true'
+        uses: actions/download-artifact@v8
+        with:
+          pattern: parz-*
+          path: dist
+          merge-multiple: true
+
+      - name: Calculate SHA256 checksums
+        if: steps.token.outputs.present == 'true'
+        id: sha
+        working-directory: dist
+        run: |
+          echo "linux_x64=$(sha256sum parz-linux-x64.tar.gz | awk '{print $1}')" >> "$GITHUB_OUTPUT"
+          echo "linux_arm64=$(sha256sum parz-linux-arm64.tar.gz | awk '{print $1}')" >> "$GITHUB_OUTPUT"
+          echo "macos_arm64=$(sha256sum parz-macos-arm64.tar.gz | awk '{print $1}')" >> "$GITHUB_OUTPUT"
+          echo "windows_x64=$(sha256sum parz-windows-x64.zip | awk '{print $1}')" >> "$GITHUB_OUTPUT"
+
+      - name: Update Homebrew formula
+        if: steps.token.outputs.present == 'true'
+        run: |
+          git clone "https://x-access-token:${REPO_ACCESS_TOKEN}@github.com/OmyDaGreat/homebrew-malefic.git"
+          cd homebrew-malefic
+          mkdir -p Formula
+          cat > Formula/parz.rb << EOF
+          class Parz < Formula
+            desc "Shared IR and IDL for programming languages, with a schema REPL"
+            homepage "https://github.com/OmyDaGreat/parz"
+            version "${VERSION}"
+            license "AGPL-3.0-only"
+
+            on_macos do
+              on_arm do
+                url "${RELEASES}/parz-macos-arm64.tar.gz"
+                sha256 "${{ steps.sha.outputs.macos_arm64 }}"
+              end
+            end
+
+            on_linux do
+              on_intel do
+                url "${RELEASES}/parz-linux-x64.tar.gz"
+                sha256 "${{ steps.sha.outputs.linux_x64 }}"
+              end
+              on_arm do
+                url "${RELEASES}/parz-linux-arm64.tar.gz"
+                sha256 "${{ steps.sha.outputs.linux_arm64 }}"
+              end
+            end
+
+            def install
+              bin.install "parz"
+            end
+
+            test do
+              assert_match "Status", pipe_output(bin/"parz", "enum Status { pending, settled };;")
+            end
+          end
+          EOF
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Formula/parz.rb
+          git commit -m "parz: update to ${VERSION}"
+          git push
+
+      - name: Update Scoop manifest
+        if: steps.token.outputs.present == 'true'
+        run: |
+          git clone "https://x-access-token:${REPO_ACCESS_TOKEN}@github.com/OmyDaGreat/MaleficBucket.git"
+          cd MaleficBucket
+          mkdir -p bucket
+          cat > bucket/parz.json << EOF
+          {
+              "version": "${VERSION}",
+              "description": "Shared IR and IDL for programming languages, with a schema REPL",
+              "homepage": "https://github.com/OmyDaGreat/parz",
+              "license": "AGPL-3.0-only",
+              "architecture": {
+                  "64bit": {
+                      "url": "${RELEASES}/parz-windows-x64.zip",
+                      "hash": "${{ steps.sha.outputs.windows_x64 }}"
+                  }
+              },
+              "bin": "parz.exe",
+              "checkver": "github",
+              "autoupdate": {
+                  "architecture": {
+                      "64bit": {
+                          "url": "https://github.com/OmyDaGreat/parz/releases/download/v\$version/parz-windows-x64.zip"
+                      }
+                  }
+              }
+          }
+          EOF
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add bucket/parz.json
+          git commit -m "parz: update to ${VERSION}"
+          git push
