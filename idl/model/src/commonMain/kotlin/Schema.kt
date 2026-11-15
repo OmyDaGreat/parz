@@ -430,8 +430,12 @@ fun validate(decls: List<Decl>): Errors<Diagnostic<SchemaErrorKind>> =
                 }
 
                 is Alias -> {
-                    decl.isCyclic(declarationMap)?.let {
-                        report(CyclicType(it, decl))
+                    val reported = HashSet<String>()
+                    decl.isCyclic(declarationMap)?.let { it ->
+                        if (it.none { it in reported }) {
+                            reported += it
+                            report(CyclicType(it, decl))
+                        }
                         secondRoundCycles = false
                     }
                     decl.type
