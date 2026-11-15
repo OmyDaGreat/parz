@@ -56,22 +56,11 @@ sealed interface ShapeError : DiagnosticKind {
         }
     }
 
-    data class EnumPayload(
-        val payload: List<Field>,
-    ) : ShapeError {
-        override val code = "IDL124"
-        override val message = "Variant member payload must be empty when declared as enum"
-
-        companion object {
-            fun check(payload: List<Field>) = listOfNotNull(EnumPayload(payload).takeIf { payload.isNotEmpty() })
-        }
-    }
-
     data class EmptyRange(
         val min: BigInteger,
         val max: BigInteger,
     ) : ShapeError {
-        override val code = "IDL125"
+        override val code = "IDL124"
         override val message = "Range must not be empty or negative: [$min, $max]"
 
         companion object {
@@ -85,11 +74,22 @@ sealed interface ShapeError : DiagnosticKind {
     data class NonPositiveLength(
         val maxLen: Long,
     ) : ShapeError {
-        override val code = "IDL126"
+        override val code = "IDL125"
         override val message = "Length $maxLen must be positive"
 
         companion object {
             fun check(maxLen: Long) = listOfNotNull(NonPositiveLength(maxLen).takeIf { maxLen <= 0 })
+        }
+    }
+
+    data class EnumPayload(
+        val member: Member,
+    ) : ShapeError {
+        override val code = "IDL126"
+        override val message = "Payload of variant member '${member.name}' must be empty when declared as enum"
+
+        companion object {
+            fun check(member: Member) = listOfNotNull(EnumPayload(member).takeIf { member.payload.isNotEmpty() })
         }
     }
 
@@ -129,7 +129,7 @@ sealed interface Decl {
     ) : Decl {
         init {
             requireShape(
-                EmptyVariant.check(members) + if (isEnum) ShapeError.EnumPayload.check(members.flatMap { it.payload }) else emptyList(),
+                EmptyVariant.check(members) + if (isEnum) members.flatMap { ShapeError.EnumPayload.check(it) } else emptyList(),
             )
         }
 

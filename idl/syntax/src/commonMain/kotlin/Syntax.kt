@@ -146,11 +146,11 @@ sealed interface DeclSyntax : PrettySyntax {
         context(sink: Sink<AnyDiagnostic>)
         override fun toDecl(): Decl.Variant? {
             var ok = EmptyVariant.check(members).reportAt(span)
-            for ((name, span, tag, tagSpan, payload) in members) {
-                ok = EmptyName.check(name).reportAt(span) && ok
-                ok = NegativeTag.check(tag).reportAt(tagSpan) && ok
+            members.forEach {
+                ok = EmptyName.check(it.name).reportAt(it.span) && ok
+                ok = NegativeTag.check(it.tag).reportAt(it.tagSpan) && ok
                 if (isEnum) {
-                    ok = ShapeError.EnumPayload.check(payload.map { it.toField() }).reportAt(span) && ok
+                    ok = ShapeError.EnumPayload.check(it.toMember()).reportAt(it.span) && ok
                 }
             }
             return if (ok) {
