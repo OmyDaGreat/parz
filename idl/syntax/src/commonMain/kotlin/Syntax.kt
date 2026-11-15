@@ -95,7 +95,8 @@ data class MemberSyntax(
     val tagSpan: SourceSpan?,
     val payload: List<FieldSyntax> = emptyList(),
 ) : PrettySyntax {
-    override fun pretty(): String = "$name${payload.takeIf { it.isNotEmpty() }?.let { " (${it.joinToString(", ")})" } ?: ""} = $tag"
+    override fun pretty(): String =
+        "$name${payload.takeIf { it.isNotEmpty() }?.let { fields -> " (${ fields.joinToString(", ") { it.pretty() } })" } ?: ""} = $tag"
 
     fun toMember() = Decl.Variant.Member(name, tag, payload.map { it.toField() })
 }
@@ -137,7 +138,7 @@ sealed interface DeclSyntax : PrettySyntax {
     ) : DeclSyntax {
         override fun pretty(): String =
             buildString {
-                appendLine("variant $name {")
+                appendLine("${if (isEnum) "enum" else "variant"} $name {")
                 members.forEach { appendLine("  ${it.pretty()}") }
                 append("}")
             }
@@ -153,7 +154,7 @@ sealed interface DeclSyntax : PrettySyntax {
                 }
             }
             return if (ok) {
-                Decl.Variant(name, members.map { it.toMember() })
+                Decl.Variant(name, members.map { it.toMember() }, isEnum)
             } else {
                 null
             }
