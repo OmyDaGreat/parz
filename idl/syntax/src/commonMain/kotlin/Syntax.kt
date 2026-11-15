@@ -83,7 +83,7 @@ data class FieldSyntax(
     override val span: SourceSpan,
     val type: TypeSyntax,
 ) : PrettySyntax {
-    override fun pretty(): String = "$name: ${type.pretty()} $span"
+    override fun pretty(): String = "$name: ${type.pretty()}"
 
     fun toField() = Decl.Record.Field(name, type.toType())
 }
