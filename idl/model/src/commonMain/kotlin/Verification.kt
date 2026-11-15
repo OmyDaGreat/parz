@@ -26,17 +26,16 @@ data class Mismatch(
  */
 sealed interface Segment {
     /**
-     * A field in a Record.
+     * A field in a Record or Variant member payload.
      */
     data class Field(
         val name: String,
     ) : Segment
 
     /**
-     * A field in a Variant's member's payload.
+     * A member in a Variant.
      */
-    data class MemberField(
-        val name: String,
+    data class Member(
         val member: String,
     ) : Segment
 
@@ -220,6 +219,24 @@ fun Type.check(
         }
     }
 
+context(m: MutableList<Mismatch>)
+private fun checkFields(
+    declared: List<Decl.Record.Field>,
+    actual: Value.Fields,
+    schema: Schema,
+    prefix: List<Segment> = emptyList(),
+) {
+    declared.forEach { field ->
+        val path = prefix + Segment.Field(field.name)
+        val value = actual[field.name]
+        value?.let {
+            field.type.check(value, schema).forEach { add(path + it.path, it.reason) }
+        } ?: add(path, MissingField(field.name))
+    }
+    val names = declared.mapTo(HashSet()) { it.name }
+    actual.keys.filter { it !in names }.forEach { add(prefix + Segment.Field(it), ExtraField(it)) }
+}
+
 /**
  * Check a value against a record declaration:
  * - Every field must be present
@@ -229,24 +246,7 @@ fun Type.check(
 private fun Decl.Record.check(
     v: Value,
     schema: Schema,
-): List<Mismatch> =
-    expect<Value.Record>("record", v) { record ->
-        fields.forEach { field ->
-            val value = record.fields[field.name]
-            if (value == null) {
-                add(listOf(Segment.Field(field.name)), MissingField(field.name))
-            } else {
-                field.type.check(value, schema).forEach {
-                    add(listOf(Segment.Field(field.name)) + it.path, it.reason)
-                }
-            }
-        }
-
-        val names = fields.map { it.name }.toSet()
-        record.fields.keys
-            .filter { it !in names }
-            .forEach { add(listOf(Segment.Field(it)), ExtraField(it)) }
-    }
+): List<Mismatch> = expect<Value.Record>("record", v) { checkFields(fields, it.fields, schema) }
 
 /**
  * Check a value against a variant declaration:
@@ -264,21 +264,7 @@ private fun Decl.Variant.check(
         if (member == null) {
             add(listOf(), UnknownMember(variant.name))
         } else {
-            member.payload.forEach { field ->
-                val value = variant.payload[field.name]
-                if (value == null) {
-                    add(listOf(Segment.Field(field.name)), MissingField(field.name))
-                } else {
-                    field.type.check(value, schema).forEach {
-                        add(listOf(Segment.MemberField(field.name, member.name)) + it.path, it.reason)
-                    }
-                }
-            }
-
-            val names = member.payload.map { it.name }.toSet()
-            variant.payload.keys
-                .filter { it !in names }
-                .forEach { add(listOf(Segment.Field(it)), ExtraField(it)) }
+            checkFields(member.payload, variant.payload, schema, listOf(Segment.Member(member.name)))
         }
     }
 

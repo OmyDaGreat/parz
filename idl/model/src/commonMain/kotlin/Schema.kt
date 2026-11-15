@@ -298,19 +298,18 @@ fun Type.unguardedRefs(): Set<String> =
         else -> emptySet()
     }
 
-fun Decl.Record.unguardedRefs(): Set<String> = fields.flatMap { it.type.unguardedRefs() }.toSet()
+fun Decl.Record.unguardedRefs(): Set<String> = fields.flatMapTo(HashSet()) { it.type.unguardedRefs() }
 
 private fun Set<Set<String>>.intersect(): Set<String> = if (isEmpty()) emptySet() else fold(first()) { acc, list -> acc.intersect(list) }
 
 fun Decl.Variant.unguardedRefs(): Set<String> =
     members
-        .map { member ->
+        .mapTo(HashSet()) { member ->
             member.payload
-                .flatMap {
+                .flatMapTo(HashSet()) {
                     it.type.unguardedRefs()
-                }.toSet()
-        }.toSet()
-        .intersect()
+                }
+        }.intersect()
 
 /**
  * Returns null if the type isn't cyclic and returns a `List<String>` of the path to the cycle otherwise.
