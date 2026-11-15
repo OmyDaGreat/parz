@@ -1,8 +1,8 @@
 package xyz.malefic.parz.idl
 
 import com.ionspin.kotlin.bignum.integer.BigInteger
-import xyz.malefic.parz.idl.ShapeError.EmptyRange
-import xyz.malefic.parz.idl.ShapeError.NonPositiveLength
+import xyz.malefic.parz.idl.ShapeErrorKind.EmptyRange
+import xyz.malefic.parz.idl.ShapeErrorKind.NonPositiveLength
 
 /**
  * The type system for the IDL.

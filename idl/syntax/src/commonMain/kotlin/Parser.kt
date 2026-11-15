@@ -5,8 +5,8 @@ import xyz.malefic.parz.core.Diagnostic
 import xyz.malefic.parz.core.Sink
 import xyz.malefic.parz.core.SourceSpan
 import xyz.malefic.parz.core.collecting
-import xyz.malefic.parz.idl.ShapeError
-import xyz.malefic.parz.idl.ShapeError.NonPositiveLength
+import xyz.malefic.parz.idl.ShapeErrorKind
+import xyz.malefic.parz.idl.ShapeErrorKind.NonPositiveLength
 import xyz.malefic.parz.idl.Type
 import xyz.malefic.parz.idl.Type.Decimal.Overflow
 import xyz.malefic.parz.idl.Type.Decimal.Rounding
@@ -190,7 +190,7 @@ internal class Parser(
     private fun member(autoTag: Int): MemberSyntax {
         val (name, span) = word()
         var payload: List<FieldSyntax> = emptyList()
-        if (peek('(')) payload = fields('(' to ')')
+        if (peek('(')) payload = fields('(' to ')').ifEmpty { fail(SyntaxErrorKind.EmptyPayload(name), here) }
         if (!accept('=')) return MemberSyntax(name, span, autoTag, null, payload)
         val tagSpan = here
         return MemberSyntax(name, span, int().exactInt(), tagSpan, payload)
@@ -230,7 +230,7 @@ internal class Parser(
                 val rounding = if (accept(',')) enumWord<Rounding>() else Rounding.TOWARDS_ZERO
                 val overflow = if (accept(',')) enumWord<Overflow>() else Overflow.ERROR
                 endSpan = expect(')').span
-                ShapeError.EmptyRange
+                ShapeErrorKind.EmptyRange
                     .check(precisionOrMin, max)
                     .firstOrNull()
                     ?.let { fail(InvalidType(it), precisionToken.span) }

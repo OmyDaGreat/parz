@@ -5,7 +5,8 @@ import xyz.malefic.parz.core.Diagnostic
 import xyz.malefic.parz.core.DiagnosticKind
 import xyz.malefic.parz.core.Sink
 import xyz.malefic.parz.core.SourceSpan
-import xyz.malefic.parz.idl.ShapeError
+import xyz.malefic.parz.idl.Decl.Variant.Member
+import xyz.malefic.parz.idl.ShapeErrorKind
 
 sealed interface Token {
     val span: SourceSpan
@@ -111,7 +112,7 @@ sealed interface SyntaxErrorKind : DiagnosticKind {
     }
 
     data class InvalidType(
-        val error: ShapeError,
+        val error: ShapeErrorKind,
     ) : SyntaxErrorKind {
         override val code = error.code
         override val message = error.message
@@ -123,6 +124,13 @@ sealed interface SyntaxErrorKind : DiagnosticKind {
     ) : SyntaxErrorKind {
         override val code = "IDL011"
         override val message = "Integer value $value is out of range for $target"
+    }
+
+    data class EmptyPayload(
+        val memberName: String,
+    ) : SyntaxErrorKind {
+        override val code = "IDL012"
+        override val message = "Payload of variant member '$memberName' must not be empty if parentheses are used"
     }
 }
 

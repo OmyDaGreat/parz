@@ -22,27 +22,27 @@ import xyz.malefic.parz.idl.SchemaErrorKind.FieldPath.VariantPath
 import xyz.malefic.parz.idl.SchemaErrorKind.MemberError.DuplicateMemberName
 import xyz.malefic.parz.idl.SchemaErrorKind.MemberError.DuplicateMemberTag
 import xyz.malefic.parz.idl.SchemaErrorKind.UnknownType
-import xyz.malefic.parz.idl.ShapeError.EmptyName
-import xyz.malefic.parz.idl.ShapeError.EmptyRecord
-import xyz.malefic.parz.idl.ShapeError.EmptyVariant
-import xyz.malefic.parz.idl.ShapeError.NegativeTag
+import xyz.malefic.parz.idl.ShapeErrorKind.EmptyName
+import xyz.malefic.parz.idl.ShapeErrorKind.EmptyRecord
+import xyz.malefic.parz.idl.ShapeErrorKind.EmptyVariant
+import xyz.malefic.parz.idl.ShapeErrorKind.NegativeTag
 
-sealed interface ShapeError : DiagnosticKind {
-    data object EmptyRecord : ShapeError {
+sealed interface ShapeErrorKind : DiagnosticKind {
+    data object EmptyRecord : ShapeErrorKind {
         override val code = "IDL120"
         override val message = "Record must have at least one field"
 
         fun check(fields: List<*>) = listOfNotNull(EmptyRecord.takeIf { fields.isEmpty() })
     }
 
-    data object EmptyVariant : ShapeError {
+    data object EmptyVariant : ShapeErrorKind {
         override val code = "IDL121"
         override val message = "Variant must have at least one member"
 
         fun check(members: List<*>) = listOfNotNull(EmptyVariant.takeIf { members.isEmpty() })
     }
 
-    data object EmptyName : ShapeError {
+    data object EmptyName : ShapeErrorKind {
         override val code = "IDL122"
         override val message = "Name must not be empty"
 
@@ -51,7 +51,7 @@ sealed interface ShapeError : DiagnosticKind {
 
     data class NegativeTag(
         val tag: Int,
-    ) : ShapeError {
+    ) : ShapeErrorKind {
         override val code = "IDL123"
         override val message = "Variant member tag $tag must be non-negative"
 
@@ -63,7 +63,7 @@ sealed interface ShapeError : DiagnosticKind {
     data class EmptyRange(
         val min: BigInteger,
         val max: BigInteger,
-    ) : ShapeError {
+    ) : ShapeErrorKind {
         override val code = "IDL124"
         override val message = "Range must not be empty or negative: [$min, $max]"
 
@@ -77,7 +77,7 @@ sealed interface ShapeError : DiagnosticKind {
 
     data class NonPositiveLength(
         val maxLen: Long,
-    ) : ShapeError {
+    ) : ShapeErrorKind {
         override val code = "IDL125"
         override val message = "Length $maxLen must be positive"
 
@@ -88,7 +88,7 @@ sealed interface ShapeError : DiagnosticKind {
 
     data class EnumPayload(
         val member: Member,
-    ) : ShapeError {
+    ) : ShapeErrorKind {
         override val code = "IDL126"
         override val message = "Payload of variant member '${member.name}' must be empty when declared as enum"
 
@@ -99,11 +99,14 @@ sealed interface ShapeError : DiagnosticKind {
 
     companion object {
         context(sink: Sink<AnyDiagnostic>)
-        fun List<ShapeError>.reportAt(span: SourceSpan?) = isEmpty().also { forEach { sink.report(Diagnostic(it, span)) } }
+        fun List<ShapeErrorKind>.reportAt(span: SourceSpan?) = isEmpty().also { forEach { sink.report(Diagnostic(it, span)) } }
     }
 }
 
-fun requireShape(errors: List<ShapeError>) = require(errors.isEmpty()) { "Shape validation failed: ${errors.joinToString { it.message }}" }
+fun requireShape(errors: List<ShapeErrorKind>) =
+    require(errors.isEmpty()) {
+        "Shape validation failed: ${errors.joinToString { it.message }}"
+    }
 
 sealed interface Decl {
     val name: String
@@ -133,7 +136,7 @@ sealed interface Decl {
     ) : Decl {
         init {
             requireShape(
-                EmptyVariant.check(members) + if (isEnum) members.flatMap { ShapeError.EnumPayload.check(it) } else emptyList(),
+                EmptyVariant.check(members) + if (isEnum) members.flatMap { ShapeErrorKind.EnumPayload.check(it) } else emptyList(),
             )
         }
 

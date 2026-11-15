@@ -6,12 +6,12 @@ import xyz.malefic.parz.core.SourceSpan
 import xyz.malefic.parz.idl.Decl
 import xyz.malefic.parz.idl.SchemaErrorKind
 import xyz.malefic.parz.idl.SchemaErrorKind.FieldPath.VariantPath
-import xyz.malefic.parz.idl.ShapeError
-import xyz.malefic.parz.idl.ShapeError.Companion.reportAt
-import xyz.malefic.parz.idl.ShapeError.EmptyName
-import xyz.malefic.parz.idl.ShapeError.EmptyRecord
-import xyz.malefic.parz.idl.ShapeError.EmptyVariant
-import xyz.malefic.parz.idl.ShapeError.NegativeTag
+import xyz.malefic.parz.idl.ShapeErrorKind
+import xyz.malefic.parz.idl.ShapeErrorKind.Companion.reportAt
+import xyz.malefic.parz.idl.ShapeErrorKind.EmptyName
+import xyz.malefic.parz.idl.ShapeErrorKind.EmptyRecord
+import xyz.malefic.parz.idl.ShapeErrorKind.EmptyVariant
+import xyz.malefic.parz.idl.ShapeErrorKind.NegativeTag
 import xyz.malefic.parz.idl.Type
 
 interface PrettySyntax {
@@ -150,7 +150,7 @@ sealed interface DeclSyntax : PrettySyntax {
                 ok = EmptyName.check(it.name).reportAt(it.span) && ok
                 ok = NegativeTag.check(it.tag).reportAt(it.tagSpan) && ok
                 if (isEnum) {
-                    ok = ShapeError.EnumPayload.check(it.toMember()).reportAt(it.span) && ok
+                    ok = ShapeErrorKind.EnumPayload.check(it.toMember()).reportAt(it.span) && ok
                 }
             }
             return if (ok) {
