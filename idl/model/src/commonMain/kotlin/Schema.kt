@@ -8,17 +8,19 @@ import xyz.malefic.parz.core.DiagnosticKind
 import xyz.malefic.parz.core.Sink
 import xyz.malefic.parz.core.SourceSpan
 import xyz.malefic.parz.core.collecting
-import xyz.malefic.parz.idl.Decl.Enum.Member
 import xyz.malefic.parz.idl.Decl.Record.Field
+import xyz.malefic.parz.idl.Decl.Variant.Member
 import xyz.malefic.parz.idl.SchemaErrorKind.CyclicType
 import xyz.malefic.parz.idl.SchemaErrorKind.DuplicateDecl
 import xyz.malefic.parz.idl.SchemaErrorKind.DuplicateFieldName
+import xyz.malefic.parz.idl.SchemaErrorKind.FieldPath.RecordPath
+import xyz.malefic.parz.idl.SchemaErrorKind.FieldPath.VariantPath
 import xyz.malefic.parz.idl.SchemaErrorKind.MemberError.DuplicateMemberName
 import xyz.malefic.parz.idl.SchemaErrorKind.MemberError.DuplicateMemberTag
 import xyz.malefic.parz.idl.SchemaErrorKind.UnknownType
-import xyz.malefic.parz.idl.ShapeError.EmptyEnum
 import xyz.malefic.parz.idl.ShapeError.EmptyName
 import xyz.malefic.parz.idl.ShapeError.EmptyRecord
+import xyz.malefic.parz.idl.ShapeError.EmptyVariant
 import xyz.malefic.parz.idl.ShapeError.NegativeTag
 
 sealed interface ShapeError : DiagnosticKind {
@@ -29,11 +31,11 @@ sealed interface ShapeError : DiagnosticKind {
         fun check(fields: List<*>) = listOfNotNull(EmptyRecord.takeIf { fields.isEmpty() })
     }
 
-    data object EmptyEnum : ShapeError {
+    data object EmptyVariant : ShapeError {
         override val code = "IDL121"
-        override val message = "Enum must have at least one member"
+        override val message = "Variant must have at least one member"
 
-        fun check(members: List<*>) = listOfNotNull(EmptyEnum.takeIf { members.isEmpty() })
+        fun check(members: List<*>) = listOfNotNull(EmptyVariant.takeIf { members.isEmpty() })
     }
 
     data object EmptyName : ShapeError {
@@ -47,10 +49,21 @@ sealed interface ShapeError : DiagnosticKind {
         val tag: Int,
     ) : ShapeError {
         override val code = "IDL123"
-        override val message = "Enum member tag $tag must be non-negative"
+        override val message = "Variant member tag $tag must be non-negative"
 
         companion object {
             fun check(tag: Int) = listOfNotNull(NegativeTag(tag).takeIf { tag < 0 })
+        }
+    }
+
+    data class EnumPayload(
+        val payload: List<Field>,
+    ) : ShapeError {
+        override val code = "IDL124"
+        override val message = "Variant member payload must be empty when declared as enum"
+
+        companion object {
+            fun check(payload: List<Field>) = listOfNotNull(EnumPayload(payload).takeIf { payload.isNotEmpty() })
         }
     }
 
@@ -109,17 +122,21 @@ sealed interface Decl {
         }
     }
 
-    data class Enum(
+    data class Variant(
         override val name: String,
         val members: List<Member>,
+        val isEnum: Boolean = false,
     ) : Decl {
         init {
-            requireShape(EmptyEnum.check(members))
+            requireShape(
+                EmptyVariant.check(members) + if (isEnum) ShapeError.EnumPayload.check(members.flatMap { it.payload }) else emptyList(),
+            )
         }
 
         data class Member(
             val name: String,
             val tag: Int,
+            val payload: List<Field> = emptyList(),
         ) {
             init {
                 requireShape(EmptyName.check(name) + NegativeTag.check(tag))
@@ -138,8 +155,8 @@ sealed interface Resolved {
         val decl: Decl.Record,
     ) : Resolved
 
-    data class Enum(
-        val decl: Decl.Enum,
+    data class Variant(
+        val decl: Decl.Variant,
     ) : Resolved
 
     data class Other(
@@ -168,7 +185,7 @@ data class Schema(
             is Type.Ref -> {
                 when (val decl = get(type.name) ?: error("Unresolved type reference in schema: ${type.name}")) {
                     is Decl.Record -> Resolved.Record(decl)
-                    is Decl.Enum -> Resolved.Enum(decl)
+                    is Decl.Variant -> Resolved.Variant(decl)
                     is Decl.Alias -> resolve(decl.type)
                 }
             }
@@ -184,21 +201,34 @@ data class Schema(
 sealed interface SchemaErrorKind : DiagnosticKind {
     val decl: Decl
 
+    sealed interface FieldPath {
+        val field: Field
+
+        data class RecordPath(
+            override val field: Field,
+        ) : FieldPath
+
+        data class VariantPath(
+            val member: Member,
+            override val field: Field,
+        ) : FieldPath
+    }
+
     data class UnknownType(
         val name: String,
         override val decl: Decl,
-        val field: Field?,
+        val path: FieldPath?,
     ) : SchemaErrorKind {
         override val code = "IDL101"
-        override val message = "Unknown type${if (field != null) " in field ${field.name}" else ""}: $name"
+        override val message = "Unknown type${if (path != null) " in field ${path.field.name}" else ""}: $name"
     }
 
     data class DuplicateFieldName(
-        val field: Field,
+        val path: FieldPath,
         override val decl: Decl,
     ) : SchemaErrorKind {
         override val code = "IDL102"
-        override val message = "Duplicate field: ${field.name}"
+        override val message = "Duplicate field ${path.field.name} in ${decl.name}"
     }
 
     sealed interface MemberError : SchemaErrorKind {
@@ -258,13 +288,6 @@ fun Type.refs(): List<String> =
         else -> emptyList()
     }
 
-fun Decl.refs(): List<String> =
-    when (this) {
-        is Decl.Record -> fields.flatMap { it.type.refs() }
-        is Decl.Enum -> emptyList()
-        is Decl.Alias -> type.refs()
-    }
-
 fun Type.unguardedRefs(): List<String> =
     when (this) {
         is Type.Ref -> listOf(name)
@@ -272,6 +295,8 @@ fun Type.unguardedRefs(): List<String> =
     }
 
 fun Decl.Record.unguardedRefs(): List<String> = fields.flatMap { it.type.unguardedRefs() }
+
+fun Decl.Variant.unguardedRefs(): List<String> = members.flatMap { member -> member.payload.flatMap { it.type.unguardedRefs() } }
 
 /**
  * Returns null if the type isn't cyclic and returns a `List<String>` of the path to the cycle otherwise.
@@ -321,7 +346,7 @@ fun Decl.unguardedEdges(): List<String> =
     when (this) {
         is Decl.Record -> unguardedRefs()
         is Decl.Alias -> type.unguardedRefs()
-        is Decl.Enum -> emptyList()
+        is Decl.Variant -> unguardedRefs()
     }
 
 /** Rotates a closed cycle (`[a, b, c, a]`) so it starts at the first node matching [predicate]. */
@@ -338,30 +363,40 @@ fun validate(decls: List<Decl>): Checked<Unit, Diagnostic<SchemaErrorKind>> =
         val distinct = decls.distinctDecls()
         val declarations = distinct.mapTo(HashSet()) { it.name }
         val declarationMap = distinct.associateBy { it.name }
-        var checkRecordCycles = true
+        var secondRoundCycles = true
         distinct.forEach { decl ->
             when (decl) {
                 is Decl.Record -> {
+                    val fieldNames = mutableSetOf<String>()
                     decl.fields.forEach { field ->
                         field.type
                             .refs()
                             .filter { it !in declarations }
                             .forEach {
-                                report(UnknownType(it, decl, field))
+                                report(UnknownType(it, decl, RecordPath(field)))
                             }
-                    }
-                    val fieldNames = mutableSetOf<String>()
-                    decl.fields.forEach { field ->
                         if (!fieldNames.add(field.name.generatorDistinct())) {
-                            report(DuplicateFieldName(field, decl))
+                            report(DuplicateFieldName(RecordPath(field), decl))
                         }
                     }
                 }
 
-                is Decl.Enum -> {
+                is Decl.Variant -> {
                     val memberNames = mutableSetOf<String>()
                     val memberTags = mutableSetOf<Int>()
                     decl.members.forEach { member ->
+                        val fieldNames = mutableSetOf<String>()
+                        member.payload.forEach { payload ->
+                            payload.type
+                                .refs()
+                                .filter { it !in declarations }
+                                .forEach {
+                                    report(UnknownType(it, decl, VariantPath(member, payload)))
+                                }
+                            if (!fieldNames.add(payload.name.generatorDistinct())) {
+                                report(DuplicateFieldName(VariantPath(member, payload), decl))
+                            }
+                        }
                         if (!memberNames.add(member.name.generatorDistinct())) {
                             report(DuplicateMemberName(member.name, decl, member))
                         }
@@ -374,7 +409,7 @@ fun validate(decls: List<Decl>): Checked<Unit, Diagnostic<SchemaErrorKind>> =
                 is Decl.Alias -> {
                     decl.isCyclic(declarationMap)?.let {
                         report(CyclicType(it, decl))
-                        checkRecordCycles = false
+                        secondRoundCycles = false
                     }
                     decl.type
                         .refs()
@@ -384,7 +419,7 @@ fun validate(decls: List<Decl>): Checked<Unit, Diagnostic<SchemaErrorKind>> =
             }
         }
 
-        if (checkRecordCycles) {
+        if (secondRoundCycles) {
             val edges =
                 distinct.associate { decl ->
                     decl.name to decl.unguardedEdges().filter { it in declarationMap }

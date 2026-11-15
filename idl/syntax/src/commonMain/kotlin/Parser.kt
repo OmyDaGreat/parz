@@ -64,7 +64,7 @@ internal class Parser(
             },
         )
 
-    private val declKeywords = listOf("record", "enum", "type")
+    private val declKeywords = listOf("record", "variant", "enum", "type")
 
     private fun skipToNext() {
         while (!done) {
@@ -83,7 +83,7 @@ internal class Parser(
             "decimal" -> decimal(span)
             "option" -> TypeSyntax.Option(angled { type() }.second, span)
             "seq" -> seq(span)
-            "record", "enum", "type" -> fail(InlineDecl(text), span)
+            in declKeywords -> fail(InlineDecl(text), span)
             else -> TypeSyntax.Named(text, span)
         }
     }
@@ -94,8 +94,9 @@ internal class Parser(
         val (name, nSpan) = word()
         val newSpan = SourceSpan(kSpan.start, nSpan.end)
         return when (keyword) {
-            "record" -> DeclSyntax.Record(name, newSpan, fields())
-            "enum" -> DeclSyntax.Enum(name, newSpan, members())
+            "record" -> DeclSyntax.Record(name, newSpan, fields('{' to '}'))
+            "variant" -> DeclSyntax.Variant(name, newSpan, members())
+            "enum" -> DeclSyntax.Variant(name, newSpan, members(), true)
             "type" -> expect('=').let { DeclSyntax.Alias(name, newSpan, type()) }
             else -> fail(ExpectedDeclKeyword(keywordToken), kSpan)
         }
@@ -167,7 +168,7 @@ internal class Parser(
             span,
         )
 
-    private fun fields(): List<FieldSyntax> = delimited('{', '}') { field() }
+    private fun fields(delimiter: Pair<Char, Char>): List<FieldSyntax> = delimited(delimiter.first, delimiter.second) { field() }
 
     private fun members(): List<MemberSyntax> {
         expect('{')
@@ -193,9 +194,14 @@ internal class Parser(
 
     private fun member(autoTag: Int): MemberSyntax {
         val (name, span) = word()
-        if (!accept('=')) return MemberSyntax(name, span, autoTag, null)
+        var payload: List<FieldSyntax> = emptyList()
+        if (accept('(')) {
+            pos--
+            payload = fields('(' to ')')
+        }
+        if (!accept('=')) return MemberSyntax(name, span, autoTag, null, payload)
         val tagSpan = here
-        return MemberSyntax(name, span, int().exactInt(), tagSpan)
+        return MemberSyntax(name, span, int().exactInt(), tagSpan, payload)
     }
 
     private fun <T> angled(inner: () -> T): Triple<Token.Symbol, T, Token.Symbol> = Triple(expect('<'), inner(), expect('>'))

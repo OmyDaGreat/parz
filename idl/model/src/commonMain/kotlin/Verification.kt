@@ -33,6 +33,14 @@ sealed interface Segment {
     ) : Segment
 
     /**
+     * A field in a Variant's member's payload.
+     */
+    data class MemberField(
+        val name: String,
+        val member: String,
+    ) : Segment
+
+    /**
      * An index in a [Type.Seq].
      */
     data class Index(
@@ -206,7 +214,7 @@ fun Type.check(
         is Type.Ref -> {
             when (val resolved = schema.resolve(this)) {
                 is Resolved.Record -> resolved.decl.check(v, schema)
-                is Resolved.Enum -> resolved.decl.check(v)
+                is Resolved.Variant -> resolved.decl.check(v, schema)
                 is Resolved.Other -> resolved.type.check(v, schema)
             }
         }
@@ -233,6 +241,7 @@ private fun Decl.Record.check(
                 }
             }
         }
+
         val names = fields.map { it.name }
         record.fields.keys
             .filter { it !in names }
@@ -240,13 +249,36 @@ private fun Decl.Record.check(
     }
 
 /**
- * Check a value against an enum declaration:
+ * Check a value against a variant declaration:
  * - Its name must be one of the members
+ * - Every field must be present
+ * - No extra fields may be present
+ * - Each field must match up
  */
-private fun Decl.Enum.check(v: Value): List<Mismatch> =
-    expect<Value.Enum>("enum", v) { enum ->
-        if (members.none { it.name == enum.name }) {
-            add(listOf(), UnknownMember(enum.name))
+private fun Decl.Variant.check(
+    v: Value,
+    schema: Schema,
+): List<Mismatch> =
+    expect<Value.Variant>("variant", v) { variant ->
+        val member = members.find { it.name == variant.name }
+        if (member == null) {
+            add(listOf(), UnknownMember(variant.name))
+        } else {
+            member.payload.forEach { field ->
+                val value = variant.payload[field.name]
+                if (value == null) {
+                    add(listOf(Segment.Field(field.name)), MissingField(field.name))
+                } else {
+                    field.type.check(variant.payload[field.name] ?: Value.None, schema).forEach {
+                        add(listOf(Segment.MemberField(field.name, member.name)) + it.path, it.reason)
+                    }
+                }
+            }
+
+            val names = members.map { it.name }
+            variant.payload.keys
+                .filter { it !in names }
+                .forEach { add(listOf(Segment.Field(it)), ExtraField(it)) }
         }
     }
 

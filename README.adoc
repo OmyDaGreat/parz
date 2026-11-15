@@ -13,7 +13,7 @@ parz aims to let different languages be translated into each other and, more imp
 [[Features]]
 === Features
 * IDL through Kotlin
-** Records, enums and aliases declared in a schema
+** Records, variants, enums and aliases declared in a schema
 ** Testing
 * IDL schema text format, parsed into a syntax tree
 * CLI program for parsing schemas from the terminal/scripts

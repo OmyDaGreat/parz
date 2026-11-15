@@ -4,13 +4,13 @@ import xyz.malefic.parz.core.AnyDiagnostic
 import xyz.malefic.parz.core.Sink
 import xyz.malefic.parz.core.SourceSpan
 import xyz.malefic.parz.idl.Decl
-import xyz.malefic.parz.idl.Schema
 import xyz.malefic.parz.idl.SchemaErrorKind
+import xyz.malefic.parz.idl.SchemaErrorKind.FieldPath.VariantPath
 import xyz.malefic.parz.idl.ShapeError
 import xyz.malefic.parz.idl.ShapeError.Companion.reportAt
-import xyz.malefic.parz.idl.ShapeError.EmptyEnum
 import xyz.malefic.parz.idl.ShapeError.EmptyName
 import xyz.malefic.parz.idl.ShapeError.EmptyRecord
+import xyz.malefic.parz.idl.ShapeError.EmptyVariant
 import xyz.malefic.parz.idl.ShapeError.NegativeTag
 import xyz.malefic.parz.idl.Type
 
@@ -66,6 +66,9 @@ sealed interface TypeSyntax : PrettySyntax {
         override fun toType() = Type.Seq(inner.toType())
     }
 
+    /**
+     * Finds the span of a given named ref in this type.
+     */
     fun find(name: String): SourceSpan? =
         when (this) {
             is Named -> if (this.name == name) span else null
@@ -81,6 +84,8 @@ data class FieldSyntax(
     val type: TypeSyntax,
 ) : PrettySyntax {
     override fun pretty(): String = "$name: ${type.pretty()} $span"
+
+    fun toField() = Decl.Record.Field(name, type.toType())
 }
 
 data class MemberSyntax(
@@ -88,8 +93,11 @@ data class MemberSyntax(
     override val span: SourceSpan,
     val tag: Int,
     val tagSpan: SourceSpan?,
+    val payload: List<FieldSyntax> = emptyList(),
 ) : PrettySyntax {
-    override fun pretty(): String = "$name = $tag"
+    override fun pretty(): String = "$name${payload.takeIf { it.isNotEmpty() }?.let { " (${it.joinToString(", ")})" } ?: ""} = $tag"
+
+    fun toMember() = Decl.Variant.Member(name, tag, payload.map { it.toField() })
 }
 
 sealed interface DeclSyntax : PrettySyntax {
@@ -117,32 +125,38 @@ sealed interface DeclSyntax : PrettySyntax {
         override fun toDecl(): Decl.Record? {
             var ok = EmptyRecord.check(fields).reportAt(span)
             for ((name, span) in fields) ok = EmptyName.check(name).reportAt(span) && ok
-            return if (ok) Decl.Record(name, fields.map { Decl.Record.Field(it.name, it.type.toType()) }) else null
+            return if (ok) Decl.Record(name, fields.map { it.toField() }) else null
         }
     }
 
-    data class Enum(
+    data class Variant(
         override val name: String,
         override val span: SourceSpan,
         val members: List<MemberSyntax>,
+        val isEnum: Boolean = false,
     ) : DeclSyntax {
         override fun pretty(): String =
             buildString {
-                appendLine("enum $name {")
-                for ((name, _, tag, _) in members) {
-                    appendLine("  $name = $tag")
-                }
+                appendLine("variant $name {")
+                members.forEach { appendLine("  ${it.pretty()}") }
                 append("}")
             }
 
         context(sink: Sink<AnyDiagnostic>)
-        override fun toDecl(): Decl.Enum? {
-            var ok = EmptyEnum.check(members).reportAt(span)
-            for ((name, span, tag, tagSpan) in members) {
+        override fun toDecl(): Decl.Variant? {
+            var ok = EmptyVariant.check(members).reportAt(span)
+            for ((name, span, tag, tagSpan, payload) in members) {
                 ok = EmptyName.check(name).reportAt(span) && ok
                 ok = NegativeTag.check(tag).reportAt(tagSpan) && ok
+                if (isEnum) {
+                    ok = ShapeError.EnumPayload.check(payload.map { it.toField() }).reportAt(tagSpan) && ok
+                }
             }
-            return if (ok) Decl.Enum(name, members.map { Decl.Enum.Member(it.name, it.tag) }) else null
+            return if (ok) {
+                Decl.Variant(name, members.map { it.toMember() })
+            } else {
+                null
+            }
         }
     }
 
@@ -162,19 +176,56 @@ sealed interface DeclSyntax : PrettySyntax {
             val syntax = firstOrNull { it.second === kind.decl }?.first ?: return null
             return when (kind) {
                 is SchemaErrorKind.UnknownType -> {
-                    val field = kind.field ?: return (syntax as Alias).type.find(kind.name)
-                    val i = (kind.decl as Decl.Record).fields.indexOfFirst { it === field }
-                    (syntax as Record).fields[i].type.find(kind.name)
+                    val path = kind.path ?: return (syntax as Alias).type.find(kind.name)
+                    when (kind.decl) {
+                        is Decl.Record -> {
+                            val i = (kind.decl as Decl.Record).fields.indexOfFirst { it === path.field }
+                            (syntax as Record).fields[i].type.find(kind.name)
+                        }
+
+                        is Decl.Variant -> {
+                            val decl = kind.decl as Decl.Variant
+                            val im = decl.members.indexOfFirst { it === (path as VariantPath).member }
+                            val ip = decl.members[im].payload.indexOfFirst { it === path.field }
+                            (syntax as Variant)
+                                .members[im]
+                                .payload[ip]
+                                .type
+                                .find(kind.name)
+                        }
+
+                        is Decl.Alias -> {
+                            (syntax as Alias).type.find(kind.name)
+                        }
+                    }
                 }
 
                 is SchemaErrorKind.DuplicateFieldName -> {
-                    val i = (kind.decl as Decl.Record).fields.indexOfFirst { it === kind.field }
-                    (syntax as Record).fields[i].span
+                    when (kind.decl) {
+                        is Decl.Record -> {
+                            val i = (kind.decl as Decl.Record).fields.indexOfFirst { it === kind.path.field }
+                            (syntax as Record).fields[i].span
+                        }
+
+                        is Decl.Variant -> {
+                            val decl = kind.decl as Decl.Variant
+                            val im = decl.members.indexOfFirst { it === (kind.path as VariantPath).member }
+                            val ip = decl.members[im].payload.indexOfFirst { it === kind.path.field }
+                            (syntax as Variant)
+                                .members[im]
+                                .payload[ip]
+                                .span
+                        }
+
+                        is Decl.Alias -> {
+                            null
+                        }
+                    }
                 }
 
                 is SchemaErrorKind.MemberError -> {
-                    val i = (kind.decl as Decl.Enum).members.indexOfFirst { it === kind.member }
-                    val m = (syntax as Enum).members.getOrNull(i) ?: return syntax.span
+                    val i = (kind.decl as Decl.Variant).members.indexOfFirst { it === kind.member }
+                    val m = (syntax as Variant).members.getOrNull(i) ?: return syntax.span
                     if (kind is SchemaErrorKind.MemberError.DuplicateMemberTag) m.tagSpan ?: m.span else m.span
                 }
 

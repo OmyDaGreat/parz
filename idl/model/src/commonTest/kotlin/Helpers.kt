@@ -27,7 +27,7 @@ private val samples =
         Value.Str(""),
         Value.Seq(emptyList()),
         Value.Record(emptyMap()),
-        Value.Enum(""),
+        Value.Variant(""),
         Value.Some(Value.Void),
         Value.None,
     )
@@ -42,7 +42,7 @@ data class Declared(
 
 fun record(vararg fields: Decl.Record.Field) = Declared(Schema(listOf(Decl.Record("Test", fields.toList()))), Type.Ref("Test"))
 
-fun enum(vararg members: Decl.Enum.Member) = Declared(Schema(listOf(Decl.Enum("Test", members.toList()))), Type.Ref("Test"))
+fun variant(vararg members: Decl.Variant.Member) = Declared(Schema(listOf(Decl.Variant("Test", members.toList()))), Type.Ref("Test"))
 
 fun Type.assertAccepts(
     vararg values: Value,

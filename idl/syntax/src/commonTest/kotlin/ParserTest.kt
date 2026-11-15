@@ -24,7 +24,7 @@ class ParserTest {
                             FieldSyntax("status", SourceSpan(40, 46), TypeSyntax.Named("Status", SourceSpan(48, 54))),
                         ],
                     ),
-                    DeclSyntax.Enum(
+                    DeclSyntax.Variant(
                         "Status",
                         SourceSpan(57, 68),
                         [

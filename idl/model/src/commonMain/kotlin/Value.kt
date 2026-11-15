@@ -98,15 +98,18 @@ sealed interface Value {
         override val kind = "seq"
     }
 
+    typealias Fields = Map<String, Value>
+
     data class Record(
-        val fields: Map<String, Value>,
+        val fields: Fields,
     ) : Value {
         override val kind = "record"
     }
 
-    data class Enum(
+    data class Variant(
         val name: String,
+        val payload: Fields = emptyMap(),
     ) : Value {
-        override val kind = "enum"
+        override val kind = "variant"
     }
 }

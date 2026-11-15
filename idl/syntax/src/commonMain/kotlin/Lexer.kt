@@ -63,7 +63,7 @@ sealed interface SyntaxErrorKind : DiagnosticKind {
         val found: Token,
     ) : SyntaxErrorKind {
         override val code = "IDL003"
-        override val message = "Expected 'record', 'enum', or 'type', but instead found ${found.pretty()}"
+        override val message = "Expected 'record', 'variant', 'enum', or 'type', but instead found ${found.pretty()}"
     }
 
     data class ExpectedSymbol(
