@@ -76,7 +76,6 @@ sealed interface Type {
         /**
          * [Decimal]'s rounding modes, inspired by [com.ionspin.kotlin.bignum.decimal.RoundingMode].
          */
-        @Suppress("unused")
         enum class Rounding {
             /**
              * Rounds towards negative infinity.

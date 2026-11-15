@@ -71,7 +71,7 @@ sealed interface ShapeError : DiagnosticKind {
         val min: BigInteger,
         val max: BigInteger,
     ) : ShapeError {
-        override val code = "IDL124"
+        override val code = "IDL125"
         override val message = "Range must not be empty or negative: [$min, $max]"
 
         companion object {
@@ -85,7 +85,7 @@ sealed interface ShapeError : DiagnosticKind {
     data class NonPositiveLength(
         val maxLen: Long,
     ) : ShapeError {
-        override val code = "IDL125"
+        override val code = "IDL126"
         override val message = "Length $maxLen must be positive"
 
         companion object {
