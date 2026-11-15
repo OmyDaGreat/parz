@@ -149,7 +149,7 @@ sealed interface DeclSyntax : PrettySyntax {
                 ok = EmptyName.check(name).reportAt(span) && ok
                 ok = NegativeTag.check(tag).reportAt(tagSpan) && ok
                 if (isEnum) {
-                    ok = ShapeError.EnumPayload.check(payload.map { it.toField() }).reportAt(tagSpan) && ok
+                    ok = ShapeError.EnumPayload.check(payload.map { it.toField() }).reportAt(span) && ok
                 }
             }
             return if (ok) {
