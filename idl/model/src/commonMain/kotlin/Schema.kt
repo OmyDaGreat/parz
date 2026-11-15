@@ -206,12 +206,16 @@ sealed interface SchemaErrorKind : DiagnosticKind {
 
         data class RecordPath(
             override val field: Field,
-        ) : FieldPath
+        ) : FieldPath {
+            override fun toString() = field.name
+        }
 
         data class VariantPath(
             val member: Member,
             override val field: Field,
-        ) : FieldPath
+        ) : FieldPath {
+            override fun toString() = "${member.name}.${field.name}"
+        }
     }
 
     data class UnknownType(
@@ -220,7 +224,7 @@ sealed interface SchemaErrorKind : DiagnosticKind {
         val path: FieldPath?,
     ) : SchemaErrorKind {
         override val code = "IDL101"
-        override val message = "Unknown type${if (path != null) " in field ${path.field.name}" else ""}: $name"
+        override val message = "Unknown type${if (path != null) " in field $path" else ""}: $name"
     }
 
     data class DuplicateFieldName(
