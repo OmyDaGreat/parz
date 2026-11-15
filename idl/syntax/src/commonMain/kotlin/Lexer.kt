@@ -5,7 +5,6 @@ import xyz.malefic.parz.core.Diagnostic
 import xyz.malefic.parz.core.DiagnosticKind
 import xyz.malefic.parz.core.Sink
 import xyz.malefic.parz.core.SourceSpan
-import xyz.malefic.parz.idl.Decl.Variant.Member
 import xyz.malefic.parz.idl.ShapeErrorKind
 
 sealed interface Token {
