@@ -136,11 +136,14 @@ fun decodeFile(
 ) = collecting {
     fun reportNull(e: CodecErrorKind) = sink().report(Diagnostic(e, null)).let { null }
 
-    val file = readFile(text, schema, id).value
-    if (file?.run { root != expected } ?: false) {
+    val (file, errors) = readFile(text, schema, id)
+    errors.forEach(sink()::report)
+    if (file == null) return@collecting null
+
+    if (expected != null && file.root != expected) {
         return@collecting reportNull(CodecErrorKind.WrongRootType(expected?.name ?: "<empty>", file.root.name))
     }
-    if (file!!.body.size != 1) {
+    if (file.body.size != 1) {
         return@collecting reportNull(CodecErrorKind.ExpectedOneValue(file.body.size))
     }
     decode(file.body.single(), file.root, schema)
