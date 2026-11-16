@@ -11,6 +11,8 @@ data class Checked<out R, out E>(
     val ok get() = diagnostics.isEmpty()
 }
 
+fun <R, E> Checked<R, E>.with(e: E): Checked<R, E> = Checked(value, diagnostics + e)
+
 typealias Errors<E> = Checked<Unit, E>
 
 fun <R, E> collecting(block: context(Sink<E>) () -> R): Checked<R, E> {

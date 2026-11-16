@@ -58,4 +58,39 @@ sealed interface CodecErrorKind : DiagnosticKind {
         override val code = "IDL216"
         override val message = "Expected exactly one value, found $found"
     }
+
+    data object MissingHeader : CodecErrorKind {
+        override val code = "IDL217"
+        override val message = "Missing header"
+    }
+
+    data class UnsupportedVersion(
+        val found: String,
+    ) : CodecErrorKind {
+        override val code = "IDL218"
+        override val message = "Unsupported format version '$found'"
+    }
+
+    data class SchemaMismatch(
+        val expected: SchemaId,
+        val found: String,
+    ) : CodecErrorKind {
+        override val code = "IDL219"
+        override val message = "Schema mismatch: expected '$expected', found '$found'"
+    }
+
+    data class UnknownRootType(
+        val name: String,
+    ) : CodecErrorKind {
+        override val code = "IDL220"
+        override val message = "Unknown root type '$name'"
+    }
+
+    data class WrongRootType(
+        val expected: String,
+        val found: String,
+    ) : CodecErrorKind {
+        override val code = "IDL221"
+        override val message = "Wrong root type: expected '$expected', found '$found'"
+    }
 }

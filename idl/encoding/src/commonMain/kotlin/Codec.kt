@@ -14,11 +14,33 @@ import xyz.malefic.parz.idl.Type
 import xyz.malefic.parz.idl.Value
 import xyz.malefic.parz.idl.check
 
+const val FORMAT_VERSION = 1
+
 fun encodeToString(
     value: Value,
     type: Type,
     schema: Schema = Schema.EMPTY,
 ): String = encode(value, type, schema).print()
+
+fun encodeFile(
+    value: Value,
+    root: Type.Ref,
+    schema: Schema,
+    id: SchemaId,
+    targetWidth: Int = 80,
+): String {
+    val header =
+        Sexp.List(
+            listOf(
+                Sexp.Atom("parz"),
+                Sexp.Atom("$FORMAT_VERSION"),
+                id.toSexp(),
+                Sexp.Atom(root.name),
+            ),
+        )
+    val body = encode(value, root, schema)
+    return "${header.print()}\n${body.pretty(targetWidth)}\n"
+}
 
 fun encode(
     value: Value,
@@ -42,7 +64,7 @@ private fun encodeChecked(
         is Type.Str -> Sexp.Str((value as Value.Str).v)
         is Type.Option -> option(value, type.inner, schema)
         is Type.Seq -> Sexp.List((value as Value.Seq).items.map { encodeChecked(it, type.inner, schema) })
-        is Type.Ref -> encodeRef(type, value, schema)
+        is Type.Ref -> encodeRef(value, type, schema)
     }
 
 private fun decimalText(
@@ -57,8 +79,8 @@ private fun decimalText(
 }
 
 private fun encodeRef(
-    type: Type.Ref,
     value: Value,
+    type: Type.Ref,
     schema: Schema,
 ): Sexp =
     when (val resolved = schema.resolve(type)) {
@@ -93,9 +115,75 @@ private fun option(
     schema: Schema,
 ): Sexp = if (value is Value.Some) Sexp.List(listOf(Sexp.Atom("some"), encodeChecked(value.v, innerType, schema))) else Sexp.Atom("none")
 
-@IgnorableReturnValue
-context(sink: Sink<Diagnostic<CodecErrorKind>>)
-private fun Sexp.fail(kind: CodecErrorKind): Value? = null.also { sink.report(Diagnostic(kind, span)) }
+fun decodeString(
+    text: String,
+    type: Type,
+    schema: Schema = Schema.EMPTY,
+): Checked<Value?, AnyDiagnostic> =
+    collecting {
+        val sexps = readSexps(text)
+        when (val single = sexps.singleOrNull()) {
+            null -> null.also { sink().report(Diagnostic(CodecErrorKind.ExpectedOneValue(sexps.size), null)) }
+            else -> decode(single, type, schema)
+        }
+    }
+
+fun decodeFile(
+    text: String,
+    schema: Schema,
+    id: SchemaId,
+    expected: Type.Ref? = null,
+) = collecting {
+    fun reportNull(e: CodecErrorKind) = sink().report(Diagnostic(e, null)).let { null }
+
+    val file = readFile(text, schema, id).value
+    if (file?.run { root != expected } ?: false) {
+        return@collecting reportNull(CodecErrorKind.WrongRootType(expected?.name ?: "<empty>", file.root.name))
+    }
+    if (file!!.body.size != 1) {
+        return@collecting reportNull(CodecErrorKind.ExpectedOneValue(file.body.size))
+    }
+    decode(file.body.single(), file.root, schema)
+}
+
+fun readFile(
+    text: String,
+    schema: Schema,
+    id: SchemaId,
+): Checked<ParzFile?, AnyDiagnostic> =
+    collecting {
+        fun fail(kind: CodecErrorKind) = null.also { sink().report(Diagnostic(kind, null)) }
+
+        val sexps = readSexps(text)
+        val parts = (sexps.firstOrNull() as? Sexp.List)?.items
+        if ((parts?.firstOrNull() as? Sexp.Atom)?.text != "parz") {
+            return@collecting fail(CodecErrorKind.MissingHeader)
+        }
+        if ((parts.getOrNull(1) as? Sexp.Atom)?.text != FORMAT_VERSION.toString()) {
+            return@collecting fail(CodecErrorKind.Expected("(parz <version> (schema <name> <version>) <Root>)"))
+        }
+        val givenSchema = parts.getOrNull(2) as? Sexp.List
+        if (givenSchema?.items?.size != 3) {
+            return@collecting fail(CodecErrorKind.SchemaMismatch(id, givenSchema?.print() ?: "<empty>"))
+        }
+        if (givenSchema.items.getOrNull(0) != Sexp.Atom("schema")) {
+            return@collecting fail(CodecErrorKind.SchemaMismatch(id, givenSchema.print()))
+        }
+        if (givenSchema.items.getOrNull(1) != Sexp.Atom(id.name)) {
+            return@collecting fail(CodecErrorKind.SchemaMismatch(id, givenSchema.print()))
+        }
+        if (givenSchema.items.getOrNull(2) != Sexp.Atom("${id.version}")) {
+            return@collecting fail(CodecErrorKind.SchemaMismatch(id, givenSchema.print()))
+        }
+        val root = parts.getOrNull(3) as? Sexp.Atom
+        if (root?.text !in schema.decls.map { it.name }) {
+            return@collecting fail(CodecErrorKind.UnknownRootType(root?.print() ?: "<empty>"))
+        }
+        if ((parts.getOrNull(4)) != null) {
+            return@collecting fail(CodecErrorKind.Expected("(parz <version> (schema <name> <version>) <Root>)"))
+        }
+        ParzFile(Type.Ref(root!!.text), sexps.drop(1))
+    }
 
 context(sink: Sink<AnyDiagnostic>)
 fun decode(
@@ -270,15 +358,6 @@ private fun Sexp.fieldName() = (this as? Sexp.List)?.takeIf { it.items.size == 2
 
 private fun <T : Any> all(items: List<T?>): List<T>? = if (null in items) null else items.requireNoNulls()
 
-fun decodeString(
-    text: String,
-    type: Type,
-    schema: Schema = Schema.EMPTY,
-): Checked<Value?, AnyDiagnostic> =
-    collecting {
-        val sexps = readSexps(text)
-        when (val single = sexps.singleOrNull()) {
-            null -> null.also { sink().report(Diagnostic(CodecErrorKind.ExpectedOneValue(sexps.size), null)) }
-            else -> decode(single, type, schema)
-        }
-    }
+@IgnorableReturnValue
+context(sink: Sink<Diagnostic<CodecErrorKind>>)
+private fun Sexp.fail(kind: CodecErrorKind): Value? = null.also { sink.report(Diagnostic(kind, span)) }
