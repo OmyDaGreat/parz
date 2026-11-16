@@ -131,6 +131,10 @@ sealed interface Decl {
             init {
                 requireShape(EmptyName.check(name))
             }
+
+            companion object {
+                operator fun List<Field>.get(name: String) = firstOrNull { it.name == name }!!.type
+            }
         }
     }
 
