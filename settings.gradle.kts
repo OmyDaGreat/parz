@@ -23,5 +23,6 @@ rootProject.name = "parz"
 include(":bom")
 include(":idl:model")
 include(":idl:syntax")
+include(":idl:encoding")
 include(":tooling:cli")
 include(":core")
