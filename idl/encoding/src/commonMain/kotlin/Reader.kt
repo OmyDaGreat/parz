@@ -7,6 +7,8 @@ import xyz.malefic.parz.core.SourceSpan
 context(sink: Sink<Diagnostic<SexpErrorKind>>)
 fun readSexps(source: String): List<Sexp> = Reader(source, sink).all()
 
+fun Char.isDelimiter() = isWhitespace() || this in "()\";"
+
 private class Reader(
     private val source: String,
     private val sink: Sink<Diagnostic<SexpErrorKind>>,
@@ -29,7 +31,7 @@ private class Reader(
     private fun readOne(): Sexp? =
         when (source[i]) {
             '(' -> list()
-            ')' -> null.also { report(SexpErrorKind.UnexpectedClose, i, i++) }
+            ')' -> null.also { report(SexpErrorKind.UnexpectedClose, i, ++i) }
             '"' -> str()
             else -> atom()
         }
@@ -42,12 +44,10 @@ private class Reader(
                 report(SexpErrorKind.UnclosedList, start, start + 1)
                 return Sexp.List(items, SourceSpan(start, i))
             }
-            if (source[i] == ')') return Sexp.List(items, SourceSpan(start, i++))
+            if (source[i] == ')') return Sexp.List(items, SourceSpan(start, ++i))
             readOne()?.let(items::add)
         }
     }
-
-    private fun Char.isDelimiter() = isWhitespace() || this in "()\";"
 
     private fun atom(): Sexp.Atom {
         val start = i
