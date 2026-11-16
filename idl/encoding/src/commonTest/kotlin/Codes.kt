@@ -1,5 +1,6 @@
 package xyz.malefic.parz.idl.encoding
 
+import xyz.malefic.parz.idl.Reason
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -20,5 +21,35 @@ class Codes {
         assertEquals(
             listOf("Unexpected ')'", "Unclosed '('", "Unterminated string", "Invalid escape sequence"),
             kinds.map { it.message },
+        )
+
+    private val codecKinds =
+        listOf(
+            CodecErrorKind.Expected("a decimal"),
+            CodecErrorKind.UnknownMember("m"),
+            CodecErrorKind.MissingField("f"),
+            CodecErrorKind.UnknownField("f"),
+            CodecErrorKind.DuplicateField("f"),
+            CodecErrorKind.DoesNotFit(Reason.TooLong(1, 2)),
+            CodecErrorKind.ExpectedOneValue(0),
+        )
+
+    @Test
+    fun codecCodes() =
+        assertEquals(listOf("IDL210", "IDL211", "IDL212", "IDL213", "IDL214", "IDL215", "IDL216"), codecKinds.map { it.code })
+
+    @Test
+    fun codecMessages() =
+        assertEquals(
+            listOf(
+                "Expected a decimal",
+                "Unknown member 'm'",
+                "Missing field 'f'",
+                "Unknown field 'f'",
+                "Duplicate field 'f'",
+                "Too long (2 > 1)",
+                "Expected exactly one value, found 0",
+            ),
+            codecKinds.map { it.message },
         )
 }
