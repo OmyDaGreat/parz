@@ -1,6 +1,8 @@
 $dokka.format:html-v1
 $dokka.linkExtension:html
 
+module:encoding
+xyz.malefic.parz.idl.encoding
 module:model
 xyz.malefic.parz.idl
 module:syntax
