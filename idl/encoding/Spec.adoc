@@ -1,0 +1,49 @@
+= S Expression Details
+
+== Encoding Spec
+
+[cols="1,1,1"]
+|===
+|type
+|sexp type
+|sexp value
+
+|void
+|atom
+|()
+
+|bool
+|atom
+|true/false
+
+|decimal
+|atom
+|scale
+
+|option
+|atom/list
+|none/(some x)
+
+|seq
+|list
+|values
+
+|record
+|list(list..)
+|((field value) ...)
+
+|enum
+|atom
+|member
+
+|variant
+|list(atom + list..)
+|(member (field value) ...)
+|===
+
+NOTE: Fields + values are in declaration order while encoding
+
+== Decoding Spec
+
+* Fields in any order
+* Less decimal places than in type
