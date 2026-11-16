@@ -94,7 +94,7 @@ private fun Sexp.flatWidth(limit: Int): Int =
         }
 
         is Sexp.Str -> {
-            buildString { value.forEach { appendEscaped(it) } }.length
+            buildString { value.forEach { appendEscaped(it) } }.length + 2
         }
 
         is Sexp.List -> {

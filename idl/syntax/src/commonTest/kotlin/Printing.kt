@@ -15,17 +15,13 @@ class Printing {
         assertEquals(lower(first).value, lower(second).value, "pretty output means something else:\n$printed")
     }
 
-    @Test
-    fun alias() = assertEquals("type Payments = seq<Payment>", parsed("type Payments = seq<Payment>").pretty())
+    @Test fun alias() = assertEquals("type Payments = seq<Payment>", parsed("type Payments = seq<Payment>").pretty())
 
-    @Test
-    fun singleFieldRecord() = assertEquals("record A {\n  x: option<B>,\n}", parsed("record A { x: option<B> }").pretty())
+    @Test fun singleFieldRecord() = assertEquals("record A {\n  x: option<B>,\n}", parsed("record A { x: option<B> }").pretty())
 
-    @Test
-    fun enum() = assertEquals("enum E {\n  a = 0,\n}", parsed("enum E { a }").pretty())
+    @Test fun enum() = assertEquals("enum E {\n  a = 0,\n}", parsed("enum E { a }").pretty())
 
-    @Test
-    fun declsSeparatedByBlankLine() = assertEquals("type A = bool\n\ntype B = void", parsed("type A = bool type B = void").pretty())
+    @Test fun declsSeparatedByBlankLine() = assertEquals("type A = bool\n\ntype B = void", parsed("type A = bool type B = void").pretty())
 
     @Test fun roundTripAlias() = assertRoundTrips("type A = seq<option<B>>")
 
