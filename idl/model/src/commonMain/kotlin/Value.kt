@@ -96,8 +96,6 @@ sealed interface Value {
         val items: List<Value>,
     ) : Value {
         override val kind = "seq"
-
-        constructor(vararg items: Value) : this(items.toList())
     }
 
     typealias Fields = Map<String, Value>

@@ -36,7 +36,9 @@ class DecodeErrors {
         text: String,
         type: Type,
         at: String = text,
-    ) = assertIs<CodecErrorKind.Expected>(error(text, type, at).kind, text)
+    ) {
+        assertIs<CodecErrorKind.Expected>(error(text, type, at).kind, text)
+    }
 
     @Test fun wrongFormForEachType() {
         listOf(
@@ -94,8 +96,8 @@ class DecodeErrors {
     }
 
     @Test fun errorPointsAtTheLeafNotTheRecord() {
-        error("((amount 1.505) (note none))", line, at = "1.505")
-        error("((amount 1) (note (some 5)))", line, at = "5")
+        assertIs<DoesNotFit>(error("((amount 1.505) (note none))", line, at = "1.505").kind)
+        assertIs<CodecErrorKind.Expected>(error("((amount 1) (note (some 5)))", line, at = "5").kind)
     }
 
     @Test fun unknownMemberUnderlinesTheName() {

@@ -5,6 +5,7 @@ import xyz.malefic.parz.core.AnyDiagnostic
 import xyz.malefic.parz.core.Checked
 import xyz.malefic.parz.core.Diagnostic
 import xyz.malefic.parz.core.Sink
+import xyz.malefic.parz.core.SourceSpan
 import xyz.malefic.parz.core.collecting
 import xyz.malefic.parz.core.sink
 import xyz.malefic.parz.idl.Decl
@@ -134,17 +135,20 @@ fun decodeFile(
     id: SchemaId,
     expected: Type.Ref? = null,
 ) = collecting {
-    fun reportNull(e: CodecErrorKind) = sink().report(Diagnostic(e, null)).let { null }
-
     val (file, errors) = readFile(text, schema, id)
     errors.forEach(sink()::report)
     if (file == null) return@collecting null
 
+    fun reportNull(
+        e: CodecErrorKind,
+        span: SourceSpan? = file.rootSpan,
+    ) = sink().report(Diagnostic(e, span)).let { null }
+
     if (expected != null && file.root != expected) {
-        return@collecting reportNull(CodecErrorKind.WrongRootType(expected?.name ?: "<empty>", file.root.name))
+        return@collecting reportNull(CodecErrorKind.WrongRootType(expected.name, file.root.name))
     }
     if (file.body.size != 1) {
-        return@collecting reportNull(CodecErrorKind.ExpectedOneValue(file.body.size))
+        return@collecting reportNull(CodecErrorKind.ExpectedOneValue(file.body.size), null)
     }
     decode(file.body.single(), file.root, schema)
 }
@@ -155,37 +159,43 @@ fun readFile(
     id: SchemaId,
 ): Checked<ParzFile?, AnyDiagnostic> =
     collecting {
-        fun fail(kind: CodecErrorKind) = null.also { sink().report(Diagnostic(kind, null)) }
+        fun fail(
+            kind: CodecErrorKind,
+            span: SourceSpan?,
+        ) = null.also { sink().report(Diagnostic(kind, span)) }
 
         val sexps = readSexps(text)
         val parts = (sexps.firstOrNull() as? Sexp.List)?.items
-        if ((parts?.firstOrNull() as? Sexp.Atom)?.text != "parz") {
-            return@collecting fail(CodecErrorKind.MissingHeader)
+        val header = parts?.firstOrNull() as? Sexp.Atom
+        if (header?.text != "parz") {
+            return@collecting fail(CodecErrorKind.MissingHeader, sexps.firstOrNull()?.span)
         }
-        if ((parts.getOrNull(1) as? Sexp.Atom)?.text != FORMAT_VERSION.toString()) {
-            return@collecting fail(CodecErrorKind.Expected("(parz <version> (schema <name> <version>) <Root>)"))
+
+        fun malformed(span: SourceSpan? = null) =
+            fail(
+                CodecErrorKind.Expected("(parz <version> (schema <name> <version>) <Root>)"),
+                span ?: sexps.first().span,
+            )
+
+        val versionPart = parts.getOrNull(1) ?: return@collecting malformed()
+        val version = versionPart as? Sexp.Atom ?: return@collecting malformed(parts[1].span)
+        if (version.text != FORMAT_VERSION.toString()) return@collecting fail(CodecErrorKind.UnsupportedVersion(version.text), version.span)
+
+        val givenSchemaPart = parts.getOrNull(2) ?: return@collecting malformed()
+        val givenSchema = givenSchemaPart as? Sexp.List ?: return@collecting malformed(givenSchemaPart.span)
+        if (givenSchema.items.map { (it as? Sexp.Atom)?.text } != listOf("schema", id.name, "${id.version}")) {
+            return@collecting fail(CodecErrorKind.SchemaMismatch(id, givenSchema.print()), givenSchema.span)
         }
-        val givenSchema = parts.getOrNull(2) as? Sexp.List
-        if (givenSchema?.items?.size != 3) {
-            return@collecting fail(CodecErrorKind.SchemaMismatch(id, givenSchema?.print() ?: "<empty>"))
+
+        val rootPart = parts.getOrNull(3) ?: return@collecting malformed()
+        val root = rootPart as? Sexp.Atom ?: return@collecting malformed(rootPart.span)
+        if (root.text !in schema.decls.map { it.name }) {
+            return@collecting fail(CodecErrorKind.UnknownRootType(root.text), root.span)
         }
-        if ((givenSchema.items.getOrNull(0) as? Sexp.Atom)?.text != "schema") {
-            return@collecting fail(CodecErrorKind.SchemaMismatch(id, givenSchema.print()))
-        }
-        if ((givenSchema.items.getOrNull(1) as? Sexp.Atom)?.text != id.name) {
-            return@collecting fail(CodecErrorKind.SchemaMismatch(id, givenSchema.print()))
-        }
-        if ((givenSchema.items.getOrNull(2) as? Sexp.Atom)?.text != "${id.version}") {
-            return@collecting fail(CodecErrorKind.SchemaMismatch(id, givenSchema.print()))
-        }
-        val root = parts.getOrNull(3) as? Sexp.Atom
-        if (root?.text !in schema.decls.map { it.name }) {
-            return@collecting fail(CodecErrorKind.UnknownRootType(root?.print() ?: "<empty>"))
-        }
-        if ((parts.getOrNull(4)) != null) {
-            return@collecting fail(CodecErrorKind.Expected("(parz <version> (schema <name> <version>) <Root>)"))
-        }
-        ParzFile(Type.Ref(root!!.text), sexps.drop(1))
+
+        if ((parts.getOrNull(4)) != null) return@collecting malformed(parts[4].span)
+
+        ParzFile(Type.Ref(root.text), root.span, sexps.drop(1))
     }
 
 context(sink: Sink<AnyDiagnostic>)
@@ -291,7 +301,7 @@ private fun decodeVariant(
     }
 }
 
-/** Decodes `(name value)` entries in any order. Reports every bad, unknown, duplicate, and msising field before giving up. */
+/** Decodes `(name value)` entries in any order. Reports every bad, unknown, duplicate, and missing field before giving up. */
 context(sink: Sink<AnyDiagnostic>)
 private fun decodeFields(
     whole: Sexp,

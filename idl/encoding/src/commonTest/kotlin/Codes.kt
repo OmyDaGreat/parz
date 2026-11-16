@@ -32,11 +32,34 @@ class Codes {
             CodecErrorKind.DuplicateField("f"),
             CodecErrorKind.DoesNotFit(Reason.TooLong(1, 2)),
             CodecErrorKind.ExpectedOneValue(0),
+            CodecErrorKind.MissingHeader,
+            CodecErrorKind.UnsupportedVersion("2"),
+            CodecErrorKind.SchemaMismatch(SchemaId("ir", 3), "(schema ir 2)"),
+            CodecErrorKind.UnknownRootType("Nope"),
+            CodecErrorKind.WrongRootType("Program", "Line"),
         )
 
     @Test
     fun codecCodes() =
-        assertEquals(listOf("IDL210", "IDL211", "IDL212", "IDL213", "IDL214", "IDL215", "IDL216"), codecKinds.map { it.code })
+        assertEquals(
+            listOf(
+                "IDL210",
+                "IDL211",
+                "IDL212",
+                "IDL213",
+                "IDL214",
+                "IDL215",
+                "IDL216",
+                "IDL217",
+                "IDL218",
+                "IDL219",
+                "IDL220",
+                "IDL221",
+            ),
+            codecKinds.map {
+                it.code
+            },
+        )
 
     @Test
     fun codecMessages() =
@@ -49,6 +72,11 @@ class Codes {
                 "Duplicate field 'f'",
                 "Too long (2 > 1)",
                 "Expected exactly one value, found 0",
+                "Missing header",
+                "Unsupported format version '2'",
+                "Schema mismatch: expected 'ir 3', found '(schema ir 2)'",
+                "Unknown root type 'Nope'",
+                "Wrong root type: expected 'Program', found 'Line'",
             ),
             codecKinds.map { it.message },
         )
