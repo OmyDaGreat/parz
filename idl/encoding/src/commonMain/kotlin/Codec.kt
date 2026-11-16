@@ -166,13 +166,13 @@ fun readFile(
         if (givenSchema?.items?.size != 3) {
             return@collecting fail(CodecErrorKind.SchemaMismatch(id, givenSchema?.print() ?: "<empty>"))
         }
-        if (givenSchema.items.getOrNull(0) != Sexp.Atom("schema")) {
+        if ((givenSchema.items.getOrNull(0) as? Sexp.Atom)?.text != "schema") {
             return@collecting fail(CodecErrorKind.SchemaMismatch(id, givenSchema.print()))
         }
-        if (givenSchema.items.getOrNull(1) != Sexp.Atom(id.name)) {
+        if ((givenSchema.items.getOrNull(1) as? Sexp.Atom)?.text != id.name) {
             return@collecting fail(CodecErrorKind.SchemaMismatch(id, givenSchema.print()))
         }
-        if (givenSchema.items.getOrNull(2) != Sexp.Atom("${id.version}")) {
+        if ((givenSchema.items.getOrNull(2) as? Sexp.Atom)?.text != "${id.version}") {
             return@collecting fail(CodecErrorKind.SchemaMismatch(id, givenSchema.print()))
         }
         val root = parts.getOrNull(3) as? Sexp.Atom
