@@ -127,7 +127,7 @@ class Types {
     fun unknownRounding() {
         val source = "type T = decimal(9, 2, banana)"
         val error = error(source)
-        assertEquals(ExpectedOption(Rounding.entries.map { it.name }, "banana"), error.kind)
+        assertEquals(ExpectedOption(Rounding.entries.map { it.name } + Overflow.entries.map { it.name }, "banana"), error.kind)
         assertEquals(source.span("banana"), error.span)
     }
 
