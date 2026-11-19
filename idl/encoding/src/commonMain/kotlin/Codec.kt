@@ -85,8 +85,8 @@ private fun encodeChecked(
 
         is Type.Map -> {
             Sexp.List(
-                (value as Value.Map).map.map { (k, v) ->
-                    encodeChecked(k, type.keys, schema) + encodeChecked(v, type.values, schema)
+                (value as Value.Map).entries.map { (k, v) ->
+                    Sexp.List(listOf(encodeChecked(k, type.keys, schema), encodeChecked(v, type.values, schema)))
                 },
             )
         }

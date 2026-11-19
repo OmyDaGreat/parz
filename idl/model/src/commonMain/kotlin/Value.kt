@@ -99,7 +99,7 @@ sealed interface Value {
     }
 
     data class Map(
-        val map: kotlin.collections.Map<Value, Value>,
+        val entries: kotlin.collections.Map<Value, Value>,
     ) : Value {
         override val kind = "map"
     }
