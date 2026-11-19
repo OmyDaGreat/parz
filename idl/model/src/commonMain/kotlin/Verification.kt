@@ -9,6 +9,7 @@ import xyz.malefic.parz.idl.Reason.TooLong
 import xyz.malefic.parz.idl.Reason.UnknownMember
 import xyz.malefic.parz.idl.Reason.WrongKind
 import xyz.malefic.parz.idl.Type.Decimal.Rounding.PROHIBITED
+import kotlin.math.exp
 
 /**
  * A mismatch between a type and a value.
@@ -44,6 +45,20 @@ sealed interface Segment {
      */
     data class Index(
         val i: Int,
+    ) : Segment
+
+    /**
+     * A key in a [Type.Map].
+     */
+    data class Key(
+        val key: xyz.malefic.parz.idl.Value,
+    ) : Segment
+
+    /**
+     * A value in a [Type.Map].
+     */
+    data class Value(
+        val value: xyz.malefic.parz.idl.Value,
     ) : Segment
 
     /**
@@ -205,6 +220,19 @@ fun Type.check(
                 seq.items.forEachIndexed { i, item ->
                     inner.check(item, schema).forEach {
                         add(listOf(Segment.Index(i)) + it.path, it.reason)
+                    }
+                }
+            }
+        }
+
+        is Type.Map -> {
+            expect<Value.Map>(kind, v) { map ->
+                map.map.forEach { (key, value) ->
+                    keys.check(key, schema).forEach {
+                        add(listOf(Segment.Key(key)) + it.path, it.reason)
+                    }
+                    values.check(value, schema).forEach {
+                        add(listOf(Segment.Value(value)) + it.path, it.reason)
                     }
                 }
             }

@@ -23,6 +23,8 @@ sealed interface Sexp {
         val items: kotlin.collections.List<Sexp>,
         override val span: SourceSpan? = null,
     ) : Sexp
+
+    operator fun plus(item: Sexp) = List(listOf(this, item), span)
 }
 
 fun Sexp.print(): String = buildString { write(this@print) }

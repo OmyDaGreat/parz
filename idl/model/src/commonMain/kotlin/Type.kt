@@ -10,6 +10,8 @@ import xyz.malefic.parz.idl.ShapeErrorKind.NonPositiveLength
 sealed interface Type {
     val kind: String
 
+    // TODO: Make Primitive a sealed subinterface of Type
+
     /**
      * A void type. Analogous to [Unit].
      */
@@ -40,6 +42,16 @@ sealed interface Type {
         val inner: Type,
     ) : Type {
         override val kind = "seq"
+    }
+
+    /**
+     * A map type. Analogous to [kotlin.collections.Map].
+     */
+    data class Map(
+        val keys: Type,
+        val values: Type,
+    ) : Type {
+        override val kind = "map"
     }
 
     /**

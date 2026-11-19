@@ -353,6 +353,7 @@ fun Type.refs(): Set<String> =
         is Type.Ref -> setOf(name)
         is Type.Option -> inner.refs()
         is Type.Seq -> inner.refs()
+        is Type.Map -> keys.refs() + values.refs()
         else -> emptySet()
     }
 

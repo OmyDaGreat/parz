@@ -97,6 +97,7 @@ internal class Parser(
             in integerShorthandMap.keys -> integerShorthandMap[text]!!.let { decimalShorthand(span, it.first, it.second) }
             "option" -> angled { type() }.let { TypeSyntax.Option(it.second, SourceSpan(span.start, it.third.span.end)) }
             "seq" -> seq(span)
+            "map" -> map(span)
             in declKeywords -> fail(InlineDecl(text), span)
             else -> TypeSyntax.Named(text, span)
         }
@@ -147,8 +148,8 @@ internal class Parser(
         open: Char,
         close: Char,
         item: (Int) -> T,
-    ): List<T> {
-        expect(open)
+    ): Triple<Token.Symbol, List<T>, Token.Symbol> {
+        val startToken = expect(open)
         val result =
             buildList {
                 while (!accept(close)) {
@@ -159,7 +160,7 @@ internal class Parser(
                     }
                 }
             }
-        return result
+        return Triple(startToken, result, prior as Token.Symbol)
     }
 
     private fun str(span: SourceSpan): TypeSyntax.Primitive {
@@ -178,7 +179,7 @@ internal class Parser(
         )
     }
 
-    private fun fields(delimiter: Pair<Char, Char>): List<FieldSyntax> = delimited(delimiter.first, delimiter.second) { field() }
+    private fun fields(delimiter: Pair<Char, Char>): List<FieldSyntax> = delimited(delimiter.first, delimiter.second) { field() }.second
 
     private fun members(): List<MemberSyntax> {
         expect('{')
@@ -221,6 +222,14 @@ internal class Parser(
         val type = angled { type() }
         val newSpan = SourceSpan(keywordSpan.start, type.third.span.end)
         return TypeSyntax.Seq(type.second, newSpan)
+    }
+
+    private fun map(keywordSpan: SourceSpan): TypeSyntax.Map {
+        val (_, types, closing) = delimited('<', '>') { type() }
+        val newSpan = SourceSpan(keywordSpan.start, closing.span.end)
+        if (types.size < 2) fail(ExpectedWord(current), types[0].span)
+        if (types.size > 2) fail(ExpectedSymbol('>', current), types[2].span)
+        return TypeSyntax.Map(types.first(), types[1], newSpan)
     }
 
     private fun decimal(keywordSpan: SourceSpan): TypeSyntax.Primitive {

@@ -98,7 +98,13 @@ sealed interface Value {
         override val kind = "seq"
     }
 
-    typealias Fields = Map<String, Value>
+    data class Map(
+        val map: kotlin.collections.Map<Value, Value>,
+    ) : Value {
+        override val kind = "map"
+    }
+
+    typealias Fields = kotlin.collections.Map<String, Value>
 
     data class Record(
         val fields: Fields,

@@ -59,13 +59,41 @@ private fun encodeChecked(
     schema: Schema = Schema.EMPTY,
 ): Sexp =
     when (type) {
-        is Type.Void -> Sexp.List(emptyList())
-        is Type.Bool -> Sexp.Atom((value as Value.Bool).v.toString())
-        is Type.Decimal -> Sexp.Atom(decimalText(value as Value.Decimal, type.scale))
-        is Type.Str -> Sexp.Str((value as Value.Str).v)
-        is Type.Option -> option(value, type.inner, schema)
-        is Type.Seq -> Sexp.List((value as Value.Seq).items.map { encodeChecked(it, type.inner, schema) })
-        is Type.Ref -> encodeRef(value, type, schema)
+        is Type.Void -> {
+            Sexp.List(emptyList())
+        }
+
+        is Type.Bool -> {
+            Sexp.Atom((value as Value.Bool).v.toString())
+        }
+
+        is Type.Decimal -> {
+            Sexp.Atom(decimalText(value as Value.Decimal, type.scale))
+        }
+
+        is Type.Str -> {
+            Sexp.Str((value as Value.Str).v)
+        }
+
+        is Type.Option -> {
+            option(value, type.inner, schema)
+        }
+
+        is Type.Seq -> {
+            Sexp.List((value as Value.Seq).items.map { encodeChecked(it, type.inner, schema) })
+        }
+
+        is Type.Map -> {
+            Sexp.List(
+                (value as Value.Map).map.map { (k, v) ->
+                    encodeChecked(k, type.keys, schema) + encodeChecked(v, type.values, schema)
+                },
+            )
+        }
+
+        is Type.Ref -> {
+            encodeRef(value, type, schema)
+        }
     }
 
 private fun decimalText(
@@ -237,6 +265,30 @@ fun decode(
         is Type.Seq -> {
             if (sexp is Sexp.List) {
                 all(sexp.items.map { decode(it, type.inner, schema) })?.let(Value::Seq)
+            } else {
+                sexp.fail(CodecErrorKind.Expected("a list"))
+            }
+        }
+
+        is Type.Map -> {
+            if (sexp is Sexp.List) {
+                val items = sexp.items
+
+                if (items.size % 2 != 0) {
+                    sexp.fail(CodecErrorKind.Expected("an even number of items for a map"))
+                }
+                val mapEntries = mutableMapOf<Value, Value>()
+                var failed = false
+                for (i in items.indices step 2) {
+                    val key = decode(items[i], type.keys, schema)
+                    val value = decode(items[i + 1], type.values, schema)
+                    if (key == null || value == null) {
+                        failed = true
+                    } else {
+                        mapEntries[key] = value
+                    }
+                }
+                if (failed) null else Value.Map(mapEntries)
             } else {
                 sexp.fail(CodecErrorKind.Expected("a list"))
             }

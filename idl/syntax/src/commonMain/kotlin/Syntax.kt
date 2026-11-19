@@ -66,6 +66,16 @@ sealed interface TypeSyntax : PrettySyntax {
         override fun toType() = Type.Seq(inner.toType())
     }
 
+    data class Map(
+        val key: TypeSyntax,
+        val value: TypeSyntax,
+        override val span: SourceSpan,
+    ) : TypeSyntax {
+        override fun pretty(): String = "map<${key.pretty()}, ${value.pretty()}>"
+
+        override fun toType() = Type.Map(key.toType(), value.toType())
+    }
+
     /**
      * Finds the span of a given named ref in this type.
      */
@@ -74,6 +84,7 @@ sealed interface TypeSyntax : PrettySyntax {
             is Named -> if (this.name == name) span else null
             is Option -> inner.find(name)
             is Seq -> inner.find(name)
+            is Map -> key.find(name) ?: value.find(name)
             else -> null
         }
 }
