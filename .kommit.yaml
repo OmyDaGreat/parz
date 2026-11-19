@@ -18,6 +18,7 @@ scopes:
     - license
   docs:
     - readme
+    - spec
 
 options:
   stageMode: review
