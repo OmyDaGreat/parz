@@ -90,7 +90,7 @@ class Decoding {
 
     @Test fun decodeWorksOnTreesWithoutSpans() {
         val (value, diagnostics) =
-            collecting<Value?, AnyDiagnostic> {
+            collecting {
                 decode(list(list(atom("amount"), atom("1")), list(atom("note"), atom("none"))), line, shop)
             }
         assertEquals(emptyList(), diagnostics)

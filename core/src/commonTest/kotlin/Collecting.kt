@@ -33,7 +33,7 @@ class Collecting {
 
     @Test
     fun sinkReturnsTheContextSink() {
-        val result = collecting<Unit, AnyDiagnostic> { sink().report(Diagnostic(TestKind(), null)) }
+        val result = collecting { sink().report(Diagnostic(TestKind(), null)) }
         assertEquals(listOf(Diagnostic(TestKind(), null)), result.diagnostics)
     }
 

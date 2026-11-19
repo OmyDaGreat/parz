@@ -5,7 +5,7 @@ import xyz.malefic.parz.core.SourceSpan
 import xyz.malefic.parz.core.collecting
 import kotlin.test.assertEquals
 
-fun read(source: String) = collecting<List<Sexp>, Diagnostic<SexpErrorKind>> { readSexps(source) }
+fun read(source: String) = collecting { readSexps(source) }
 
 /**
  * Read [source], failing the test if it has any errors.

@@ -53,7 +53,7 @@ fun typeOf(text: String) = decl<DeclSyntax.Alias>("type T = $text").type
 /**
  * Lower each declaration in [schema] to the model, collecting shape errors.
  */
-fun lower(schema: SchemaSyntax) = collecting<List<Decl?>, AnyDiagnostic> { schema.decls.map { it.toDecl() } }
+fun lower(schema: SchemaSyntax) = collecting { schema.decls.map { it.toDecl() } }
 
 fun lowered(source: String) = lower(parsed(source))
 
@@ -62,7 +62,7 @@ fun lowered(source: String) = lower(parsed(source))
  */
 fun located(source: String): List<Pair<String, SourceSpan?>> {
     val pairs =
-        collecting<List<Pair<DeclSyntax, Decl>>, AnyDiagnostic> {
+        collecting {
             parsed(source).decls.mapNotNull { s ->
                 s.toDecl()?.let { s to it }
             }
