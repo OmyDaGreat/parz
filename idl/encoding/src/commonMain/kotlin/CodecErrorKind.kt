@@ -2,6 +2,7 @@ package xyz.malefic.parz.idl.encoding
 
 import xyz.malefic.parz.core.DiagnosticKind
 import xyz.malefic.parz.idl.Reason
+import xyz.malefic.parz.idl.Value
 
 sealed interface CodecErrorKind : DiagnosticKind {
     data class Expected(
@@ -92,5 +93,12 @@ sealed interface CodecErrorKind : DiagnosticKind {
     ) : CodecErrorKind {
         override val code = "IDL221"
         override val message = "Wrong root type: expected '$expected', found '$found'"
+    }
+
+    data class DuplicateKey(
+        val key: Value,
+    ) : CodecErrorKind {
+        override val code = "IDL222"
+        override val message = "Duplicate key '$key'"
     }
 }

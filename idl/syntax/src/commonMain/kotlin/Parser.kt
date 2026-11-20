@@ -227,8 +227,8 @@ internal class Parser(
     private fun map(keywordSpan: SourceSpan): TypeSyntax.Map {
         val (_, types, closing) = delimited('<', '>') { type() }
         val newSpan = SourceSpan(keywordSpan.start, closing.span.end)
-        if (types.size < 2) fail(ExpectedWord(current), types[0].span)
-        if (types.size > 2) fail(ExpectedSymbol('>', current), types[2].span)
+        if (types.size < 2) fail(ExpectedWord(closing), types.getOrNull(0)?.span ?: SourceSpan(closing.span.start, closing.span.end))
+        if (types.size > 2) fail(ExpectedSymbol('>', Token.Word(types[2].toType().kind, types[2].span)), types[2].span)
         return TypeSyntax.Map(types.first(), types[1], newSpan)
     }
 

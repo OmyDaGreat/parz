@@ -85,7 +85,7 @@ private fun encodeChecked(
 
         is Type.Map -> {
             Sexp.List(
-                (value as Value.Map).entries.map { (k, v) ->
+                (value as Value.Map).entries.entries.sortedBy { it.key.toString() }.map { (k, v) ->
                     Sexp.List(listOf(encodeChecked(k, type.keys, schema), encodeChecked(v, type.values, schema)))
                 },
             )
@@ -272,23 +272,31 @@ fun decode(
 
         is Type.Map -> {
             if (sexp is Sexp.List) {
-                val items = sexp.items
-
-                if (items.size % 2 != 0) {
-                    sexp.fail(CodecErrorKind.Expected("an even number of items for a map"))
-                }
-                val mapEntries = mutableMapOf<Value, Value>()
+                val map = mutableMapOf<Value, Value>()
                 var failed = false
-                for (i in items.indices step 2) {
-                    val key = decode(items[i], type.keys, schema)
-                    val value = decode(items[i + 1], type.values, schema)
-                    if (key == null || value == null) {
-                        failed = true
-                    } else {
-                        mapEntries[key] = value
+                for (pair in sexp.items) {
+                    if (pair !is Sexp.List) {
+                        return pair.fail(CodecErrorKind.Expected("(key value)"))
                     }
+                    if (pair.items.size != 2) {
+                        return pair.fail(CodecErrorKind.Expected("(key value)"))
+                    }
+                    val key =
+                        decode(pair.items[0], type.keys, schema) ?: run {
+                            failed = true
+                            break
+                        }
+                    if (key in map) {
+                        return pair.items[0].fail(CodecErrorKind.DuplicateKey(key))
+                    }
+                    val value =
+                        decode(pair.items[1], type.values, schema) ?: run {
+                            failed = true
+                            break
+                        }
+                    map[key] = value
                 }
-                if (failed) null else Value.Map(mapEntries)
+                if (failed) null else Value.Map(map)
             } else {
                 sexp.fail(CodecErrorKind.Expected("a list"))
             }
