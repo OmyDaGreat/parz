@@ -351,9 +351,9 @@ fun Decl.blame(
 fun Type.refs(): Set<String> =
     when (this) {
         is Type.Ref -> setOf(name)
-        is Type.Option -> inner.refs()
-        is Type.Seq -> inner.refs()
-        is Type.Map -> keys.refs() + values.refs()
+        is Type.Collection.Option -> inner.refs()
+        is Type.Collection.Seq -> inner.refs()
+        is Type.Collection.Map -> keys.refs() + values.refs()
         else -> emptySet()
     }
 

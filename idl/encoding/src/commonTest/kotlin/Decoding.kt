@@ -2,6 +2,11 @@ package xyz.malefic.parz.idl.encoding
 
 import xyz.malefic.parz.core.collecting
 import xyz.malefic.parz.idl.Type
+import xyz.malefic.parz.idl.Type.Collection.Option
+import xyz.malefic.parz.idl.Type.Collection.Seq
+import xyz.malefic.parz.idl.Type.Primitive.Bool
+import xyz.malefic.parz.idl.Type.Primitive.Str
+import xyz.malefic.parz.idl.Type.Primitive.Void
 import xyz.malefic.parz.idl.Value
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -10,11 +15,11 @@ import kotlin.test.assertEquals
  * [decode] and [decodeString] on well-formed input, including the forms accepted beyond the canonical one.
  */
 class Decoding {
-    @Test fun void() = assertEquals(Value.Void, decodeOk("()", Type.Void))
+    @Test fun void() = assertEquals(Value.Void, decodeOk("()", Void))
 
     @Test fun bools() {
-        assertEquals(Value.Bool(true), decodeOk("true", Type.Bool))
-        assertEquals(Value.Bool(false), decodeOk("false", Type.Bool))
+        assertEquals(Value.Bool(true), decodeOk("true", Bool))
+        assertEquals(Value.Bool(false), decodeOk("false", Bool))
     }
 
     @Test fun decimalsComeBackAtTheTypeScale() {
@@ -43,20 +48,20 @@ class Decoding {
     }
 
     @Test fun strings() {
-        assertEquals(strValue("hello"), decodeOk("\"hello\"", Type.Str()))
-        assertEquals(strValue("a\nb 😀"), decodeOk("\"a\\nb \\u{1F600}\"", Type.Str()))
-        assertEquals(strValue("12345678"), decodeOk("\"12345678\"", Type.Str(8)))
+        assertEquals(strValue("hello"), decodeOk("\"hello\"", Str()))
+        assertEquals(strValue("a\nb 😀"), decodeOk("\"a\\nb \\u{1F600}\"", Str()))
+        assertEquals(strValue("12345678"), decodeOk("\"12345678\"", Str(8)))
     }
 
     @Test fun options() {
-        val type = Type.Option(Type.Option(Type.Bool))
+        val type = Option(Option(Bool))
         assertEquals(Value.None, decodeOk("none", type))
         assertEquals(some(Value.None), decodeOk("(some none)", type))
         assertEquals(some(some(Value.Bool(false))), decodeOk("(some (some false))", type))
     }
 
     @Test fun seqs() {
-        val type = Type.Seq(money)
+        val type = Seq(money)
         assertEquals(Value.Seq(emptyList()), decodeOk("()", type))
         assertEquals(Value.Seq(listOf(dec(100, 2), dec(-250, 2))), decodeOk("(1 -2.5)", type))
     }

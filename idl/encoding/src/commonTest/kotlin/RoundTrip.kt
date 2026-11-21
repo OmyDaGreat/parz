@@ -1,6 +1,11 @@
 package xyz.malefic.parz.idl.encoding
 
 import xyz.malefic.parz.idl.Type
+import xyz.malefic.parz.idl.Type.Collection.Option
+import xyz.malefic.parz.idl.Type.Collection.Seq
+import xyz.malefic.parz.idl.Type.Primitive.Bool
+import xyz.malefic.parz.idl.Type.Primitive.Str
+import xyz.malefic.parz.idl.Type.Primitive.Void
 import xyz.malefic.parz.idl.Value
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -11,20 +16,20 @@ import kotlin.test.assertEquals
 class RoundTrip {
     private val samples: List<Pair<Value, Type>> =
         listOf(
-            Value.Void to Type.Void,
-            Value.Bool(true) to Type.Bool,
+            Value.Void to Void,
+            Value.Bool(true) to Bool,
             dec(-5, 2) to money,
             dec(0, 2) to money,
             dec(-100_000, 2) to money,
             dec(12, -1) to decimal(-100, 100, -1),
-            strValue("") to Type.Str(),
-            strValue("tab\there \"quoted\" \\ \u0000 \u001b café 😀 中文") to Type.Str(),
-            strValue((0..0x7f).map { it.toChar() }.joinToString("")) to Type.Str(),
-            Value.None to Type.Option(Type.Option(Type.Void)),
-            some(Value.None) to Type.Option(Type.Option(Type.Void)),
-            some(some(Value.Void)) to Type.Option(Type.Option(Type.Void)),
-            Value.Seq(emptyList()) to Type.Seq(Type.Seq(Type.Bool)),
-            Value.Seq(listOf(Value.Seq(emptyList()), Value.Seq(listOf(Value.Bool(false))))) to Type.Seq(Type.Seq(Type.Bool)),
+            strValue("") to Str(),
+            strValue("tab\there \"quoted\" \\ \u0000 \u001b café 😀 中文") to Str(),
+            strValue((0..0x7f).map { it.toChar() }.joinToString("")) to Str(),
+            Value.None to Option(Option(Void)),
+            some(Value.None) to Option(Option(Void)),
+            some(some(Value.Void)) to Option(Option(Void)),
+            Value.Seq(emptyList()) to Seq(Seq(Bool)),
+            Value.Seq(listOf(Value.Seq(emptyList()), Value.Seq(listOf(Value.Bool(false))))) to Seq(Seq(Bool)),
             lineValue(1234, "note") to line,
             pending to status,
             failed("card", 255) to status,

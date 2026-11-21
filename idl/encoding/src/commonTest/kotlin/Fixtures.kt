@@ -16,7 +16,7 @@ fun decimal(
     min: Long,
     max: Long,
     scale: Int = 0,
-) = Type.Decimal(BigInteger(min), BigInteger(max), scale)
+) = Type.Primitive.Decimal(BigInteger(min), BigInteger(max), scale)
 
 fun dec(
     unscaled: Long,
@@ -57,15 +57,15 @@ val shop =
     Schema(
         listOf(
             Decl.Alias("Amount", money),
-            Decl.Record("Line", listOf(field("amount", amount), field("note", Type.Option(Type.Str())))),
+            Decl.Record("Line", listOf(field("amount", amount), field("note", Type.Collection.Option(Type.Primitive.Str())))),
             Decl.Variant(
                 "Status",
                 listOf(
                     Decl.Variant.Member("pending", 0),
-                    Decl.Variant.Member("failed", 1, listOf(field("why", Type.Str(8)), field("code", count))),
+                    Decl.Variant.Member("failed", 1, listOf(field("why", Type.Primitive.Str(8)), field("code", count))),
                 ),
             ),
-            Decl.Record("Order", listOf(field("lines", Type.Seq(line)), field("status", status))),
+            Decl.Record("Order", listOf(field("lines", Type.Collection.Seq(line)), field("status", status))),
         ),
     )
 

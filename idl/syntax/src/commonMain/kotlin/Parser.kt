@@ -7,9 +7,12 @@ import xyz.malefic.parz.core.SourceSpan
 import xyz.malefic.parz.core.collecting
 import xyz.malefic.parz.idl.ShapeErrorKind
 import xyz.malefic.parz.idl.ShapeErrorKind.NonPositiveLength
-import xyz.malefic.parz.idl.Type
-import xyz.malefic.parz.idl.Type.Decimal.Overflow
-import xyz.malefic.parz.idl.Type.Decimal.Rounding
+import xyz.malefic.parz.idl.Type.Primitive.Bool
+import xyz.malefic.parz.idl.Type.Primitive.Decimal
+import xyz.malefic.parz.idl.Type.Primitive.Decimal.Overflow
+import xyz.malefic.parz.idl.Type.Primitive.Decimal.Rounding
+import xyz.malefic.parz.idl.Type.Primitive.Str
+import xyz.malefic.parz.idl.Type.Primitive.Void
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.ExpectedDecimalBounds
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.ExpectedDeclKeyword
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.ExpectedInt
@@ -20,6 +23,7 @@ import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.InlineDecl
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.IntegerOutOfRange
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.InvalidType
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.PrecisionOutOfRange
+import xyz.malefic.parz.idl.syntax.TypeSyntax.Primitive
 
 typealias SyntaxDiagnostic = Diagnostic<SyntaxErrorKind>
 
@@ -90,8 +94,8 @@ internal class Parser(
     private fun type(): TypeSyntax {
         val (text, span) = word()
         return when (text) {
-            "void" -> TypeSyntax.Primitive(Type.Void, span)
-            "bool" -> TypeSyntax.Primitive(Type.Bool, span)
+            "void" -> Primitive(Void, span)
+            "bool" -> Primitive(Bool, span)
             "string" -> str(span)
             "decimal" -> decimal(span)
             in integerShorthandMap.keys -> integerShorthandMap[text]!!.let { decimalShorthand(span, it.first, it.second) }
@@ -163,17 +167,17 @@ internal class Parser(
         return Triple(startToken, result, prior as Token.Symbol)
     }
 
-    private fun str(span: SourceSpan): TypeSyntax.Primitive {
+    private fun str(span: SourceSpan): Primitive {
         var endSpan = span.end
-        return TypeSyntax.Primitive(
+        return Primitive(
             if (accept('(')) {
                 val n = int()
                 val maxLen = n.exactLong()
                 NonPositiveLength.check(maxLen).firstOrNull()?.let { fail(InvalidType(it), n.span) }
                 endSpan = expect(')').span.end
-                Type.Str(maxLen)
+                Str(maxLen)
             } else {
-                Type.Str()
+                Str()
             },
             SourceSpan(span.start, endSpan),
         )
@@ -232,7 +236,7 @@ internal class Parser(
         return TypeSyntax.Map(types.first(), types[1], newSpan)
     }
 
-    private fun decimal(keywordSpan: SourceSpan): TypeSyntax.Primitive {
+    private fun decimal(keywordSpan: SourceSpan): Primitive {
         expect('(')
         val firstSpan = here
         val first = (if (accept('-')) -BigInteger.ONE else BigInteger.ONE) * int().bigInt
@@ -256,7 +260,7 @@ internal class Parser(
         val scale = int().exactInt()
         val (rounding, overflow) = if (accept(',')) decimalOptions() else Rounding.TOWARDS_ZERO to Overflow.ERROR
         val endSpan = expect(')').span.end
-        return TypeSyntax.Primitive(Type.Decimal(min, max, scale, rounding, overflow), SourceSpan(keywordSpan.start, endSpan))
+        return Primitive(Decimal(min, max, scale, rounding, overflow), SourceSpan(keywordSpan.start, endSpan))
     }
 
     private fun decimalShorthand(
@@ -264,11 +268,11 @@ internal class Parser(
         min: BigInteger,
         max: BigInteger,
         scale: Int = 0,
-    ): TypeSyntax.Primitive {
+    ): Primitive {
         var endSpan = keywordSpan.end
         val (rounding, overflow) =
             if (accept('(')) decimalOptions().also { endSpan = expect(')').span.end } else Rounding.TOWARDS_ZERO to Overflow.ERROR
-        return TypeSyntax.Primitive(Type.Decimal(min, max, scale, rounding, overflow), SourceSpan(keywordSpan.start, endSpan))
+        return Primitive(Decimal(min, max, scale, rounding, overflow), SourceSpan(keywordSpan.start, endSpan))
     }
 
     private fun decimalOptions(): Pair<Rounding, Overflow> {

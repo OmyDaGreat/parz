@@ -8,7 +8,7 @@ import xyz.malefic.parz.idl.Reason.OutOfRange
 import xyz.malefic.parz.idl.Reason.TooLong
 import xyz.malefic.parz.idl.Reason.UnknownMember
 import xyz.malefic.parz.idl.Reason.WrongKind
-import xyz.malefic.parz.idl.Type.Decimal.Rounding.PROHIBITED
+import xyz.malefic.parz.idl.Type.Primitive.Decimal.Rounding.PROHIBITED
 
 /**
  * A mismatch between a type and a value.
@@ -40,28 +40,28 @@ sealed interface Segment {
     ) : Segment
 
     /**
-     * An index in a [Type.Seq].
+     * An index in a [Type.Collection.Seq].
      */
     data class Index(
         val i: Int,
     ) : Segment
 
     /**
-     * A key in a [Type.Map].
+     * A key in a [Type.Collection.Map].
      */
     data class Key(
         val key: Value,
     ) : Segment
 
     /**
-     * A value in a [Type.Map].
+     * A value in a [Type.Collection.Map].
      */
     data class Entry(
         val value: Value,
     ) : Segment
 
     /**
-     * An inner value in a [Type.Option].
+     * An inner value in a [Type.Collection.Option].
      */
     data object Inner : Segment
 }
@@ -165,15 +165,15 @@ fun Type.check(
     schema: Schema,
 ): List<Mismatch> =
     when (this) {
-        Type.Void -> {
+        Type.Primitive.Void -> {
             expect<Value.Void>(kind, v)
         }
 
-        Type.Bool -> {
+        Type.Primitive.Bool -> {
             expect<Value.Bool>(kind, v)
         }
 
-        is Type.Str -> {
+        is Type.Primitive.Str -> {
             expect<Value.Str>(kind, v) {
                 if (it.v.length > this.maxLen) {
                     add(listOf(), TooLong(this.maxLen, it.v.length.toLong()))
@@ -181,7 +181,7 @@ fun Type.check(
             }
         }
 
-        is Type.Decimal -> {
+        is Type.Primitive.Decimal -> {
             expect<Value.Decimal>(kind, v) { dec ->
                 if (!dec.isExactAt(scale)) {
                     add(listOf(), InexactScale(scale, dec.scale))
@@ -194,7 +194,7 @@ fun Type.check(
             }
         }
 
-        is Type.Option -> {
+        is Type.Collection.Option -> {
             when (v) {
                 is Value.None -> {
                     listOf()
@@ -214,7 +214,7 @@ fun Type.check(
             }
         }
 
-        is Type.Seq -> {
+        is Type.Collection.Seq -> {
             expect<Value.Seq>(kind, v) { seq ->
                 seq.items.forEachIndexed { i, item ->
                     inner.check(item, schema).forEach {
@@ -224,7 +224,7 @@ fun Type.check(
             }
         }
 
-        is Type.Map -> {
+        is Type.Collection.Map -> {
             expect<Value.Map>(kind, v) { map ->
                 map.entries.forEach { (key, value) ->
                     keys.check(key, schema).forEach {

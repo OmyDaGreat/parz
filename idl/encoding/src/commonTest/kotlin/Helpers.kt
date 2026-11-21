@@ -1,6 +1,5 @@
 package xyz.malefic.parz.idl.encoding
 
-import xyz.malefic.parz.core.Diagnostic
 import xyz.malefic.parz.core.SourceSpan
 import xyz.malefic.parz.core.collecting
 import kotlin.test.assertEquals

@@ -13,6 +13,8 @@ import xyz.malefic.parz.idl.ShapeErrorKind.EmptyRecord
 import xyz.malefic.parz.idl.ShapeErrorKind.EmptyVariant
 import xyz.malefic.parz.idl.ShapeErrorKind.NegativeTag
 import xyz.malefic.parz.idl.Type
+import xyz.malefic.parz.idl.Type.Primitive.Decimal
+import xyz.malefic.parz.idl.Type.Primitive.Str
 
 interface PrettySyntax {
     val span: SourceSpan
@@ -26,13 +28,13 @@ sealed interface TypeSyntax : PrettySyntax {
     fun toType(): Type
 
     data class Primitive(
-        val type: Type,
+        val type: Type.Primitive,
         override val span: SourceSpan,
     ) : TypeSyntax {
         override fun pretty(): String =
             when (type) {
-                is Type.Decimal -> "decimal(${type.min}..${type.max}, ${type.scale}, ${type.rounding}, ${type.overflow})"
-                is Type.Str -> "string(${type.maxLen})"
+                is Decimal -> "decimal(${type.min}..${type.max}, ${type.scale}, ${type.rounding}, ${type.overflow})"
+                is Str -> "string(${type.maxLen})"
                 else -> type.kind
             }
 
@@ -54,7 +56,7 @@ sealed interface TypeSyntax : PrettySyntax {
     ) : TypeSyntax {
         override fun pretty(): String = "option<${inner.pretty()}>"
 
-        override fun toType() = Type.Option(inner.toType())
+        override fun toType() = Type.Collection.Option(inner.toType())
     }
 
     data class Seq(
@@ -63,7 +65,7 @@ sealed interface TypeSyntax : PrettySyntax {
     ) : TypeSyntax {
         override fun pretty(): String = "seq<${inner.pretty()}>"
 
-        override fun toType() = Type.Seq(inner.toType())
+        override fun toType() = Type.Collection.Seq(inner.toType())
     }
 
     data class Map(
@@ -73,7 +75,7 @@ sealed interface TypeSyntax : PrettySyntax {
     ) : TypeSyntax {
         override fun pretty(): String = "map<${key.pretty()}, ${value.pretty()}>"
 
-        override fun toType() = Type.Map(key.toType(), value.toType())
+        override fun toType() = Type.Collection.Map(key.toType(), value.toType())
     }
 
     /**

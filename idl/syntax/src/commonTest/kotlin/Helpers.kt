@@ -1,9 +1,7 @@
 package xyz.malefic.parz.idl.syntax
 
-import xyz.malefic.parz.core.AnyDiagnostic
 import xyz.malefic.parz.core.SourceSpan
 import xyz.malefic.parz.core.collecting
-import xyz.malefic.parz.idl.Decl
 import xyz.malefic.parz.idl.syntax.DeclSyntax.Companion.locate
 import xyz.malefic.parz.idl.validate
 import kotlin.test.assertEquals

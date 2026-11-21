@@ -1,7 +1,7 @@
 package xyz.malefic.parz.idl
 
 import com.ionspin.kotlin.bignum.integer.BigInteger
-import xyz.malefic.parz.idl.Type.Decimal.Rounding
+import xyz.malefic.parz.idl.Type.Primitive.Decimal.Rounding
 
 /**
  * Concrete values for the [Type] system. Used for conformance vectors and literals.
@@ -38,7 +38,7 @@ sealed interface Value {
         /**
          * Rescale a decimal to a new scale, using [rounding] when the new scale cannot represent the value exactly.
          *
-         * @throws ArithmeticException if [rounding] is [Type.Decimal.Rounding.PROHIBITED] and the value is inexact at [newScale]
+         * @throws ArithmeticException if [rounding] is [Type.Primitive.Decimal.Rounding.PROHIBITED] and the value is inexact at [newScale]
          */
         fun rescale(
             newScale: Int,

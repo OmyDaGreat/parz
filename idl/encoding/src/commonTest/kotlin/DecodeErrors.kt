@@ -3,6 +3,11 @@ package xyz.malefic.parz.idl.encoding
 import xyz.malefic.parz.core.AnyDiagnostic
 import xyz.malefic.parz.idl.Reason
 import xyz.malefic.parz.idl.Type
+import xyz.malefic.parz.idl.Type.Collection.Option
+import xyz.malefic.parz.idl.Type.Collection.Seq
+import xyz.malefic.parz.idl.Type.Primitive.Bool
+import xyz.malefic.parz.idl.Type.Primitive.Str
+import xyz.malefic.parz.idl.Type.Primitive.Void
 import xyz.malefic.parz.idl.encoding.CodecErrorKind.DoesNotFit
 import xyz.malefic.parz.idl.encoding.CodecErrorKind.DuplicateField
 import xyz.malefic.parz.idl.encoding.CodecErrorKind.ExpectedOneValue
@@ -43,20 +48,20 @@ class DecodeErrors {
 
     @Test fun wrongFormForEachType() {
         listOf(
-            "x" to Type.Void,
-            "(())" to Type.Void,
-            "\"true\"" to Type.Bool,
-            "TRUE" to Type.Bool,
-            "()" to Type.Bool,
+            "x" to Void,
+            "(())" to Void,
+            "\"true\"" to Bool,
+            "TRUE" to Bool,
+            "()" to Bool,
             "\"1\"" to money,
             "(1)" to money,
-            "hello" to Type.Str(),
-            "()" to Type.Str(),
-            "null" to Type.Option(Type.Bool),
-            "(some)" to Type.Option(Type.Bool),
-            "(some true false)" to Type.Option(Type.Bool),
-            "(none)" to Type.Option(Type.Bool),
-            "1" to Type.Seq(money),
+            "hello" to Str(),
+            "()" to Str(),
+            "null" to Option(Bool),
+            "(some)" to Option(Bool),
+            "(some true false)" to Option(Bool),
+            "(none)" to Option(Bool),
+            "1" to Seq(money),
             "\"a\"" to line,
             "amount" to line,
             "\"pending\"" to status,
@@ -70,9 +75,9 @@ class DecodeErrors {
     }
 
     @Test fun messages() {
-        assertEquals("Expected true or false", error("yes", Type.Bool).kind.message)
+        assertEquals("Expected true or false", error("yes", Bool).kind.message)
         assertEquals("Expected a decimal", error("1e5", money).kind.message)
-        assertEquals("Expected a string", error("x", Type.Str()).kind.message)
+        assertEquals("Expected a string", error("x", Str()).kind.message)
     }
 
     @Test fun outOfRange() {
@@ -91,7 +96,7 @@ class DecodeErrors {
     }
 
     @Test fun stringTooLong() {
-        val diagnostic = error("\"123456789\"", Type.Str(8))
+        val diagnostic = error("\"123456789\"", Str(8))
         assertEquals(DoesNotFit(Reason.TooLong(8, 9)), diagnostic.kind)
         assertEquals("Too long (9 > 8)", diagnostic.kind.message)
     }
@@ -154,7 +159,7 @@ class DecodeErrors {
 
     @Test fun everySeqItemErrorIsReported() {
         val text = "(1 x 2 1.505 y)"
-        val diagnostics = decodeErrors(text, Type.Seq(money))
+        val diagnostics = decodeErrors(text, Seq(money))
         assertEquals(listOf("IDL210", "IDL215", "IDL210"), codes(diagnostics))
         assertEquals(listOf(text.span("x"), text.span("1.505"), text.span("y")), diagnostics.map { it.span })
     }
@@ -174,7 +179,7 @@ class DecodeErrors {
     @Test fun moreThanOneValue() = assertEquals(listOf(ExpectedOneValue(2)), decodeErrors("1 2", money).map { it.kind })
 
     @Test fun readErrorsArePassedThrough() {
-        assertEquals(listOf("IDL204"), codes(decodeString("\"a\\qb\"", Type.Str()).diagnostics))
+        assertEquals(listOf("IDL204"), codes(decodeString("\"a\\qb\"", Str()).diagnostics))
         assertEquals(listOf("IDL201", "IDL216"), codes(decodeString(")", money).diagnostics))
     }
 

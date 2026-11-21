@@ -12,6 +12,7 @@ import xyz.malefic.parz.idl.Decl
 import xyz.malefic.parz.idl.Resolved
 import xyz.malefic.parz.idl.Schema
 import xyz.malefic.parz.idl.Type
+import xyz.malefic.parz.idl.Type.Primitive.Decimal.Rounding.PROHIBITED
 import xyz.malefic.parz.idl.Value
 import xyz.malefic.parz.idl.check
 
@@ -59,31 +60,31 @@ private fun encodeChecked(
     schema: Schema = Schema.EMPTY,
 ): Sexp =
     when (type) {
-        is Type.Void -> {
+        is Type.Primitive.Void -> {
             Sexp.List(emptyList())
         }
 
-        is Type.Bool -> {
+        is Type.Primitive.Bool -> {
             Sexp.Atom((value as Value.Bool).v.toString())
         }
 
-        is Type.Decimal -> {
+        is Type.Primitive.Decimal -> {
             Sexp.Atom(decimalText(value as Value.Decimal, type.scale))
         }
 
-        is Type.Str -> {
+        is Type.Primitive.Str -> {
             Sexp.Str((value as Value.Str).v)
         }
 
-        is Type.Option -> {
+        is Type.Collection.Option -> {
             option(value, type.inner, schema)
         }
 
-        is Type.Seq -> {
+        is Type.Collection.Seq -> {
             Sexp.List((value as Value.Seq).items.map { encodeChecked(it, type.inner, schema) })
         }
 
-        is Type.Map -> {
+        is Type.Collection.Map -> {
             Sexp.List(
                 (value as Value.Map)
                     .entries.entries
@@ -115,7 +116,7 @@ private fun decimalText(
     value: Value.Decimal,
     scale: Int,
 ): String {
-    val unscaled = value.rescale(scale, Type.Decimal.Rounding.PROHIBITED).unscaled
+    val unscaled = value.rescale(scale, PROHIBITED).unscaled
     if (scale <= 0) return (unscaled * BigInteger.TEN.pow(-scale)).toString()
     val digits = unscaled.abs().toString().padStart(scale + 1, '0')
     val sign = if (unscaled.signum() < 0) "-" else ""
@@ -265,11 +266,11 @@ fun decode(
     schema: Schema = Schema.EMPTY,
 ): Value? =
     when (type) {
-        Type.Void -> {
+        Type.Primitive.Void -> {
             if (sexp is Sexp.List && sexp.items.isEmpty()) Value.Void else sexp.fail(CodecErrorKind.Expected("()"))
         }
 
-        Type.Bool -> {
+        Type.Primitive.Bool -> {
             when ((sexp as? Sexp.Atom)?.text) {
                 "true" -> Value.Bool(true)
                 "false" -> Value.Bool(false)
@@ -277,16 +278,16 @@ fun decode(
             }
         }
 
-        is Type.Decimal -> {
+        is Type.Primitive.Decimal -> {
             val parsed = parseDecimal(sexp)
             if (parsed == null) sexp.fail(CodecErrorKind.Expected("a decimal")) else fits(parsed.rescaleIfExact(type.scale), type, sexp)
         }
 
-        is Type.Str -> {
+        is Type.Primitive.Str -> {
             if (sexp is Sexp.Str) fits(Value.Str(sexp.value), type, sexp) else sexp.fail(CodecErrorKind.Expected("a string"))
         }
 
-        is Type.Option -> {
+        is Type.Collection.Option -> {
             when {
                 sexp is Sexp.Atom && sexp.text == "none" -> Value.None
                 sexp.isForm("some") && (sexp as Sexp.List).items.size == 2 -> decode(sexp.items[1], type.inner, schema)?.let(Value::Some)
@@ -294,7 +295,7 @@ fun decode(
             }
         }
 
-        is Type.Seq -> {
+        is Type.Collection.Seq -> {
             if (sexp is Sexp.List) {
                 all(sexp.items.map { decode(it, type.inner, schema) })?.let(Value::Seq)
             } else {
@@ -302,7 +303,7 @@ fun decode(
             }
         }
 
-        is Type.Map -> {
+        is Type.Collection.Map -> {
             if (sexp is Sexp.List) {
                 val map = mutableMapOf<Value, Value>()
                 var failed = false
@@ -458,7 +459,7 @@ private fun parseDecimal(sexp: Sexp): Value.Decimal? {
     return Value.Decimal(BigInteger.parseString(text.replace(".", ""), 10), text.substringAfter('.', "").length)
 }
 
-private fun Value.Decimal.rescaleIfExact(scale: Int) = if (isExactAt(scale)) rescale(scale, Type.Decimal.Rounding.PROHIBITED) else this
+private fun Value.Decimal.rescaleIfExact(scale: Int) = if (isExactAt(scale)) rescale(scale, PROHIBITED) else this
 
 private fun Sexp.isForm(head: String) = this is Sexp.List && (items.firstOrNull() as? Sexp.Atom)?.text == head
 

@@ -1,9 +1,10 @@
 package xyz.malefic.parz.idl
 
+import xyz.malefic.parz.idl.Type.Primitive.Void
 import kotlin.test.Test
 
 class Void {
-    @Test fun nonVoid() = Type.Void.assertRejectsOtherKinds()
+    @Test fun nonVoid() = Void.assertRejectsOtherKinds()
 
-    @Test fun isVoid() = Type.Void.assertAccepts(Value.Void)
+    @Test fun isVoid() = Void.assertAccepts(Value.Void)
 }

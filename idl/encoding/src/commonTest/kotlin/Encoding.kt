@@ -1,7 +1,12 @@
 package xyz.malefic.parz.idl.encoding
 
 import com.ionspin.kotlin.bignum.integer.BigInteger
-import xyz.malefic.parz.idl.Type
+import xyz.malefic.parz.idl.Type.Collection.Option
+import xyz.malefic.parz.idl.Type.Collection.Seq
+import xyz.malefic.parz.idl.Type.Primitive.Bool
+import xyz.malefic.parz.idl.Type.Primitive.Decimal
+import xyz.malefic.parz.idl.Type.Primitive.Str
+import xyz.malefic.parz.idl.Type.Primitive.Void
 import xyz.malefic.parz.idl.Value
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -11,11 +16,11 @@ import kotlin.test.assertFailsWith
  * [encode] and [encodeToString]: the canonical text for each kind of value.
  */
 class Encoding {
-    @Test fun void() = assertEquals("()", encoded(Value.Void, Type.Void))
+    @Test fun void() = assertEquals("()", encoded(Value.Void, Void))
 
     @Test fun bools() {
-        assertEquals("true", encoded(Value.Bool(true), Type.Bool))
-        assertEquals("false", encoded(Value.Bool(false), Type.Bool))
+        assertEquals("true", encoded(Value.Bool(true), Bool))
+        assertEquals("false", encoded(Value.Bool(false), Bool))
     }
 
     @Test fun decimalsAreWrittenAtTheTypeScale() {
@@ -46,31 +51,31 @@ class Encoding {
 
     @Test fun decimalsBeyondLong() {
         val huge = BigInteger.parseString("123456789012345678901234567890", 10)
-        val type = Type.Decimal(-huge, huge, 3)
+        val type = Decimal(-huge, huge, 3)
         assertEquals("123456789012345678901234567.890", encoded(Value.Decimal(huge, 3), type))
     }
 
     @Test fun strings() {
-        assertEquals("\"hello\"", encoded(strValue("hello"), Type.Str()))
-        assertEquals("\"\"", encoded(strValue(""), Type.Str()))
-        assertEquals("\"say \\\"hi\\\"\\n\"", encoded(strValue("say \"hi\"\n"), Type.Str()))
+        assertEquals("\"hello\"", encoded(strValue("hello"), Str()))
+        assertEquals("\"\"", encoded(strValue(""), Str()))
+        assertEquals("\"say \\\"hi\\\"\\n\"", encoded(strValue("say \"hi\"\n"), Str()))
     }
 
     @Test fun options() {
-        val type = Type.Option(Type.Str())
+        val type = Option(Str())
         assertEquals("none", encoded(Value.None, type))
         assertEquals("(some \"x\")", encoded(some(strValue("x")), type))
     }
 
     @Test fun nestedOptions() {
-        val type = Type.Option(Type.Option(Type.Bool))
+        val type = Option(Option(Bool))
         assertEquals("none", encoded(Value.None, type))
         assertEquals("(some none)", encoded(some(Value.None), type))
         assertEquals("(some (some true))", encoded(some(some(Value.Bool(true))), type))
     }
 
     @Test fun seqs() {
-        val type = Type.Seq(money)
+        val type = Seq(money)
         assertEquals("()", encoded(Value.Seq(emptyList()), type))
         assertEquals("(1.00 -2.50)", encoded(Value.Seq(listOf(dec(100, 2), dec(-250, 2))), type))
     }
@@ -109,10 +114,10 @@ class Encoding {
             Value.Bool(true) to money,
             dec(1, 3) to money,
             dec(100_001, 2) to money,
-            strValue("too long!") to Type.Str(8),
+            strValue("too long!") to Str(8),
             Value.Record(mapOf("amount" to dec(1, 2))) to line,
             Value.Variant("unknown") to status,
-            Value.Seq(listOf(Value.Void)) to Type.Seq(Type.Bool),
+            Value.Seq(listOf(Value.Void)) to Seq(Bool),
         ).forEach { (value, type) ->
             assertFailsWith<IllegalArgumentException>("$value as $type") { encode(value, type, shop) }
         }
