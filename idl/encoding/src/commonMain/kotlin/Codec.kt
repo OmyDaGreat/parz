@@ -85,9 +85,24 @@ private fun encodeChecked(
 
         is Type.Map -> {
             Sexp.List(
-                (value as Value.Map).entries.entries.sortedBy { it.key.toString() }.map { (k, v) ->
-                    Sexp.List(listOf(encodeChecked(k, type.keys, schema), encodeChecked(v, type.values, schema)))
-                },
+                (value as Value.Map)
+                    .entries.entries
+                    .sortedBy {
+                        when (val k = it.key) {
+                            is Value.Bool -> if (k.v) "1" else "0"
+                            is Value.Decimal -> k.unscaled.toString()
+                            is Value.Str -> k.v
+                            is Value.None -> "none"
+                            is Value.Some -> k.v.toString()
+                            is Value.Seq -> k.items.size.toString()
+                            is Value.Map -> k.entries.size.toString()
+                            is Value.Record -> k.fields.size.toString()
+                            is Value.Variant -> k.name
+                            is Value.Void -> "void"
+                        }
+                    }.map { (k, v) ->
+                        Sexp.List(listOf(encodeChecked(k, type.keys, schema), encodeChecked(v, type.values, schema)))
+                    },
             )
         }
 
@@ -148,6 +163,14 @@ fun decodeString(
     text: String,
     type: Type,
     schema: Schema = Schema.EMPTY,
+) = decodeStringLenient(text, type, schema).let {
+    if (it.diagnostics.isEmpty()) it else Checked(null, it.diagnostics)
+}
+
+fun decodeStringLenient(
+    text: String,
+    type: Type,
+    schema: Schema = Schema.EMPTY,
 ): Checked<Value?, AnyDiagnostic> =
     collecting {
         val sexps = readSexps(text)
@@ -158,6 +181,15 @@ fun decodeString(
     }
 
 fun decodeFile(
+    text: String,
+    schema: Schema,
+    id: SchemaId,
+    expected: Type.Ref? = null,
+) = decodeFileLenient(text, schema, id, expected).let {
+    if (it.diagnostics.isEmpty()) it else Checked(null, it.diagnostics)
+}
+
+fun decodeFileLenient(
     text: String,
     schema: Schema,
     id: SchemaId,
@@ -276,23 +308,26 @@ fun decode(
                 var failed = false
                 for (pair in sexp.items) {
                     if (pair !is Sexp.List) {
-                        return pair.fail(CodecErrorKind.Expected("(key value)"))
+                        pair.fail(CodecErrorKind.Expected("(key value)"))
+                        continue
                     }
                     if (pair.items.size != 2) {
-                        return pair.fail(CodecErrorKind.Expected("(key value)"))
+                        pair.fail(CodecErrorKind.Expected("(key value)"))
+                        continue
                     }
                     val key =
                         decode(pair.items[0], type.keys, schema) ?: run {
                             failed = true
-                            break
+                            continue
                         }
                     if (key in map) {
-                        return pair.items[0].fail(CodecErrorKind.DuplicateKey(key))
+                        pair.items[0].fail(CodecErrorKind.DuplicateKey(key))
+                        continue
                     }
                     val value =
                         decode(pair.items[1], type.values, schema) ?: run {
                             failed = true
-                            break
+                            continue
                         }
                     map[key] = value
                 }

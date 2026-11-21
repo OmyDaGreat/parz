@@ -1,6 +1,5 @@
 package xyz.malefic.parz.idl.encoding
 
-import xyz.malefic.parz.core.AnyDiagnostic
 import xyz.malefic.parz.core.collecting
 import xyz.malefic.parz.idl.Type
 import xyz.malefic.parz.idl.Value

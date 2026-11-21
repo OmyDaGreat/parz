@@ -12,6 +12,7 @@ import xyz.malefic.parz.idl.encoding.CodecErrorKind.UnknownMember
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 
 /**
  * What [decodeString] reports for input that doesn't match the type, and where.
@@ -178,7 +179,8 @@ class DecodeErrors {
     }
 
     @Test fun truncatedInputIsAnError() {
-        val (_, diagnostics) = decodeString("((amount 1) (note none)", line, shop)
+        val (value, diagnostics) = decodeString("((amount 1) (note none)", line, shop)
         assertEquals(listOf("IDL202"), codes(diagnostics))
+        assertNull(value)
     }
 }
