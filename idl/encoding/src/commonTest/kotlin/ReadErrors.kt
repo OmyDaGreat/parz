@@ -8,7 +8,7 @@ import kotlin.test.assertEquals
 /**
  * Structural errors: the reader reports them with their location and keeps going.
  */
-class Errors {
+class ReadErrors {
     @Test
     fun strayClose() {
         val (value, diagnostics) = read(")")

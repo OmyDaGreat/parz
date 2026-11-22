@@ -1,9 +1,9 @@
 package xyz.malefic.parz.idl.syntax
 
 import com.ionspin.kotlin.bignum.integer.BigInteger
-import xyz.malefic.parz.idl.Type
-import xyz.malefic.parz.idl.Type.Primitive.Bool
-import xyz.malefic.parz.idl.Type.Primitive.Str
+import xyz.malefic.parz.idl.model.Type
+import xyz.malefic.parz.idl.model.Type.Primitive.Bool
+import xyz.malefic.parz.idl.model.Type.Primitive.Str
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.EmptyPayload
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.ExpectedInt
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.ExpectedSymbol
@@ -12,6 +12,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class Variants {
     private val source = "variant Expr { lit(text: string, exact: bool), neg(inner: Expr) = 5, none }"
@@ -86,4 +87,28 @@ class Variants {
 
     @Test
     fun noTagSpanWithoutTag() = assertNull(decl<DeclSyntax.Variant>("variant V { a }").members.single().tagSpan)
+
+    @Test
+    fun enumIsVariantMarkedAsEnum() {
+        val source = "enum Status { pending, settled = 5, closed }"
+        val status = decl<DeclSyntax.Variant>(source)
+        assertTrue(status.isEnum)
+        assertEquals(source.span("enum Status"), status.span)
+        assertEquals(listOf("pending", "settled", "closed"), status.members.map { it.name })
+        assertEquals(listOf(0, 5, 6), status.members.map { it.tag })
+    }
+
+    @Test
+    fun enumWithFieldsStillParses() {
+        // Rejected when lowered to the model (see Lowering), not by the parser.
+        val status = decl<DeclSyntax.Variant>("enum Status { pending(since: string) }")
+        assertTrue(status.isEnum)
+        assertEquals(
+            listOf("since"),
+            status.members
+                .single()
+                .payload
+                .map { it.name },
+        )
+    }
 }

@@ -1,13 +1,13 @@
 package xyz.malefic.parz.idl.syntax
 
 import com.ionspin.kotlin.bignum.integer.BigInteger
-import xyz.malefic.parz.idl.Decl
-import xyz.malefic.parz.idl.Decl.Record.Field
-import xyz.malefic.parz.idl.Decl.Variant.Member
-import xyz.malefic.parz.idl.SchemaErrorKind
-import xyz.malefic.parz.idl.SchemaErrorKind.FieldPath.RecordPath
-import xyz.malefic.parz.idl.ShapeErrorKind
-import xyz.malefic.parz.idl.Type.Primitive.Bool
+import xyz.malefic.parz.idl.model.Decl
+import xyz.malefic.parz.idl.model.Decl.Record.Field
+import xyz.malefic.parz.idl.model.Decl.Variant.Member
+import xyz.malefic.parz.idl.model.SchemaErrorKind
+import xyz.malefic.parz.idl.model.SchemaErrorKind.FieldPath.RecordPath
+import xyz.malefic.parz.idl.model.ShapeErrorKind
+import xyz.malefic.parz.idl.model.Type.Primitive.Bool
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

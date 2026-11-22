@@ -2,6 +2,9 @@ package xyz.malefic.parz.idl.encoding
 
 import xyz.malefic.parz.core.SourceSpan
 
+/** Whether this character ends an atom: whitespace, a parenthesis, a string quote, or a comment. */
+fun Char.isDelimiter() = isWhitespace() || this in "()\";"
+
 sealed interface Sexp {
     val span: SourceSpan?
 

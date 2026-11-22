@@ -1,8 +1,12 @@
 package xyz.malefic.parz.idl.encoding
 
+import xyz.malefic.parz.core.AnyDiagnostic
 import xyz.malefic.parz.core.SourceSpan
 import xyz.malefic.parz.core.collecting
+import xyz.malefic.parz.idl.model.Type
+import xyz.malefic.parz.idl.model.Value
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 
 fun read(source: String) = collecting { readSexps(source) }
 
@@ -56,3 +60,34 @@ fun String.span(
     }
     return SourceSpan(index, index + text.length)
 }
+
+fun encoded(
+    value: Value,
+    type: Type,
+) = encodeToString(value, type, shop)
+
+/**
+ * Decode [text], failing the test if there are any errors.
+ */
+fun decodeOk(
+    text: String,
+    type: Type,
+): Value {
+    val (value, diagnostics) = decodeString(text, type, shop)
+    assertEquals(emptyList(), diagnostics, "unexpected errors decoding:\n$text")
+    return assertNotNull(value, "no value decoding:\n$text")
+}
+
+/**
+ * Decode [text], which must fail; returns its diagnostics.
+ */
+fun decodeErrors(
+    text: String,
+    type: Type,
+): List<AnyDiagnostic> {
+    val (value, diagnostics) = decodeString(text, type, shop)
+    assertEquals(null, value, "expected no value decoding:\n$text")
+    return diagnostics
+}
+
+fun codes(diagnostics: List<AnyDiagnostic>) = diagnostics.map { it.kind.code }

@@ -1,19 +1,19 @@
 package xyz.malefic.parz.idl.encoding
 
 import xyz.malefic.parz.core.AnyDiagnostic
-import xyz.malefic.parz.idl.Reason
-import xyz.malefic.parz.idl.Type
-import xyz.malefic.parz.idl.Type.Collection.Option
-import xyz.malefic.parz.idl.Type.Collection.Seq
-import xyz.malefic.parz.idl.Type.Primitive.Bool
-import xyz.malefic.parz.idl.Type.Primitive.Str
-import xyz.malefic.parz.idl.Type.Primitive.Void
 import xyz.malefic.parz.idl.encoding.CodecErrorKind.DoesNotFit
 import xyz.malefic.parz.idl.encoding.CodecErrorKind.DuplicateField
 import xyz.malefic.parz.idl.encoding.CodecErrorKind.ExpectedOneValue
 import xyz.malefic.parz.idl.encoding.CodecErrorKind.MissingField
 import xyz.malefic.parz.idl.encoding.CodecErrorKind.UnknownField
 import xyz.malefic.parz.idl.encoding.CodecErrorKind.UnknownMember
+import xyz.malefic.parz.idl.model.Reason
+import xyz.malefic.parz.idl.model.Type
+import xyz.malefic.parz.idl.model.Type.Collection.Option
+import xyz.malefic.parz.idl.model.Type.Collection.Seq
+import xyz.malefic.parz.idl.model.Type.Primitive.Bool
+import xyz.malefic.parz.idl.model.Type.Primitive.Str
+import xyz.malefic.parz.idl.model.Type.Primitive.Void
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs

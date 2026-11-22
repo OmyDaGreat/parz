@@ -2,16 +2,16 @@ package xyz.malefic.parz.idl.syntax
 
 import com.ionspin.kotlin.bignum.integer.BigInteger
 import xyz.malefic.parz.core.SourceSpan
-import xyz.malefic.parz.idl.Type.Primitive.Decimal
+import xyz.malefic.parz.idl.model.Type.Primitive.Decimal
 import xyz.malefic.parz.idl.syntax.TypeSyntax.Named
 import xyz.malefic.parz.idl.syntax.TypeSyntax.Primitive
 import xyz.malefic.parz.idl.syntax.TypeSyntax.Seq
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class ParserTest {
+class Examples {
     @Test
-    fun testByExample() {
+    fun paymentSchema() {
         assertEquals(
             SchemaSyntax(
                 [

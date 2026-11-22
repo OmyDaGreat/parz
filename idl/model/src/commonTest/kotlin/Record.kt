@@ -1,8 +1,8 @@
-package xyz.malefic.parz.idl
+package xyz.malefic.parz.idl.model
 
-import xyz.malefic.parz.idl.Decl.Record.Field
-import xyz.malefic.parz.idl.Type.Primitive.Bool
-import xyz.malefic.parz.idl.Type.Primitive.Str
+import xyz.malefic.parz.idl.model.Decl.Record.Field
+import xyz.malefic.parz.idl.model.Type.Primitive.Bool
+import xyz.malefic.parz.idl.model.Type.Primitive.Str
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

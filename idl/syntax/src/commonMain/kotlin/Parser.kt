@@ -5,16 +5,16 @@ import xyz.malefic.parz.core.Diagnostic
 import xyz.malefic.parz.core.Sink
 import xyz.malefic.parz.core.SourceSpan
 import xyz.malefic.parz.core.collecting
-import xyz.malefic.parz.idl.ShapeErrorKind
-import xyz.malefic.parz.idl.ShapeErrorKind.NegativeLength
-import xyz.malefic.parz.idl.ShapeErrorKind.NonPositiveLength
-import xyz.malefic.parz.idl.Type.Primitive.Bool
-import xyz.malefic.parz.idl.Type.Primitive.Bytes
-import xyz.malefic.parz.idl.Type.Primitive.Decimal
-import xyz.malefic.parz.idl.Type.Primitive.Decimal.Overflow
-import xyz.malefic.parz.idl.Type.Primitive.Decimal.Rounding
-import xyz.malefic.parz.idl.Type.Primitive.Str
-import xyz.malefic.parz.idl.Type.Primitive.Void
+import xyz.malefic.parz.idl.model.ShapeErrorKind
+import xyz.malefic.parz.idl.model.ShapeErrorKind.NegativeLength
+import xyz.malefic.parz.idl.model.ShapeErrorKind.NonPositiveLength
+import xyz.malefic.parz.idl.model.Type.Primitive.Bool
+import xyz.malefic.parz.idl.model.Type.Primitive.Bytes
+import xyz.malefic.parz.idl.model.Type.Primitive.Decimal
+import xyz.malefic.parz.idl.model.Type.Primitive.Decimal.Overflow
+import xyz.malefic.parz.idl.model.Type.Primitive.Decimal.Rounding
+import xyz.malefic.parz.idl.model.Type.Primitive.Str
+import xyz.malefic.parz.idl.model.Type.Primitive.Void
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.ExpectedDecimalBounds
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.ExpectedDeclKeyword
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.ExpectedInt
@@ -26,8 +26,6 @@ import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.IntegerOutOfRange
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.InvalidType
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.PrecisionOutOfRange
 import xyz.malefic.parz.idl.syntax.TypeSyntax.Primitive
-
-typealias SyntaxDiagnostic = Diagnostic<SyntaxErrorKind>
 
 context(sink: Sink<SyntaxDiagnostic>)
 fun parse(tokens: List<Token>) = Parser(tokens, sink).schema()

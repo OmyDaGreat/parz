@@ -1,9 +1,9 @@
 package xyz.malefic.parz.idl.syntax
 
 import com.ionspin.kotlin.bignum.integer.BigInteger
-import xyz.malefic.parz.idl.ShapeErrorKind.EmptyRange
-import xyz.malefic.parz.idl.ShapeErrorKind.NegativeLength
-import xyz.malefic.parz.idl.Type.Primitive.Bytes
+import xyz.malefic.parz.idl.model.ShapeErrorKind.EmptyRange
+import xyz.malefic.parz.idl.model.ShapeErrorKind.NegativeLength
+import xyz.malefic.parz.idl.model.Type.Primitive.Bytes
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.ExpectedDecimalBounds
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.ExpectedInt
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.IntegerOutOfRange

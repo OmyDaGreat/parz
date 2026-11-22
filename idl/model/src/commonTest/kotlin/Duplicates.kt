@@ -1,15 +1,15 @@
-package xyz.malefic.parz.idl
+package xyz.malefic.parz.idl.model
 
-import xyz.malefic.parz.idl.Decl.Record.Field
-import xyz.malefic.parz.idl.Decl.Variant.Member
-import xyz.malefic.parz.idl.SchemaErrorKind.DuplicateDecl
-import xyz.malefic.parz.idl.SchemaErrorKind.DuplicateFieldName
-import xyz.malefic.parz.idl.SchemaErrorKind.FieldPath.RecordPath
-import xyz.malefic.parz.idl.SchemaErrorKind.FieldPath.VariantPath
-import xyz.malefic.parz.idl.SchemaErrorKind.MemberError.DuplicateMemberName
-import xyz.malefic.parz.idl.SchemaErrorKind.MemberError.DuplicateMemberTag
-import xyz.malefic.parz.idl.Type.Primitive.Bool
-import xyz.malefic.parz.idl.Type.Primitive.Str
+import xyz.malefic.parz.idl.model.Decl.Record.Field
+import xyz.malefic.parz.idl.model.Decl.Variant.Member
+import xyz.malefic.parz.idl.model.SchemaErrorKind.DuplicateDecl
+import xyz.malefic.parz.idl.model.SchemaErrorKind.DuplicateFieldName
+import xyz.malefic.parz.idl.model.SchemaErrorKind.FieldPath.RecordPath
+import xyz.malefic.parz.idl.model.SchemaErrorKind.FieldPath.VariantPath
+import xyz.malefic.parz.idl.model.SchemaErrorKind.MemberError.DuplicateMemberName
+import xyz.malefic.parz.idl.model.SchemaErrorKind.MemberError.DuplicateMemberTag
+import xyz.malefic.parz.idl.model.Type.Primitive.Bool
+import xyz.malefic.parz.idl.model.Type.Primitive.Str
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -84,5 +84,12 @@ class Duplicates {
         val second = Member("a", 0)
         val decl = Decl.Variant("V", listOf(Member("a", 0), second))
         assertEquals(listOf(DuplicateMemberName("a", decl, second), DuplicateMemberTag(0, decl, second)), kinds(decl))
+    }
+
+    @Test
+    fun generatorDistinct() {
+        assertEquals("foobar", "Foo_Bar".generatorDistinct())
+        assertEquals("foobar", "fooBar".generatorDistinct())
+        assertEquals("foobar", "__foo__bar__".generatorDistinct())
     }
 }

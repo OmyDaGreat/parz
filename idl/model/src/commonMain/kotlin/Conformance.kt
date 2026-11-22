@@ -1,16 +1,16 @@
-package xyz.malefic.parz.idl
+package xyz.malefic.parz.idl.model
 
 import com.ionspin.kotlin.bignum.integer.BigInteger
-import xyz.malefic.parz.idl.Reason.ExtraField
-import xyz.malefic.parz.idl.Reason.Fit.InexactLength
-import xyz.malefic.parz.idl.Reason.Fit.InexactScale
-import xyz.malefic.parz.idl.Reason.Fit.OutOfRange
-import xyz.malefic.parz.idl.Reason.Fit.TooLong
-import xyz.malefic.parz.idl.Reason.Fit.TooShort
-import xyz.malefic.parz.idl.Reason.MissingField
-import xyz.malefic.parz.idl.Reason.UnknownMember
-import xyz.malefic.parz.idl.Reason.WrongKind
-import xyz.malefic.parz.idl.Type.Primitive.Decimal.Rounding.PROHIBITED
+import xyz.malefic.parz.idl.model.Reason.ExtraField
+import xyz.malefic.parz.idl.model.Reason.Fit.InexactLength
+import xyz.malefic.parz.idl.model.Reason.Fit.InexactScale
+import xyz.malefic.parz.idl.model.Reason.Fit.OutOfRange
+import xyz.malefic.parz.idl.model.Reason.Fit.TooLong
+import xyz.malefic.parz.idl.model.Reason.Fit.TooShort
+import xyz.malefic.parz.idl.model.Reason.MissingField
+import xyz.malefic.parz.idl.model.Reason.UnknownMember
+import xyz.malefic.parz.idl.model.Reason.WrongKind
+import xyz.malefic.parz.idl.model.Type.Primitive.Decimal.Rounding.PROHIBITED
 
 /**
  * A mismatch between a type and a value.

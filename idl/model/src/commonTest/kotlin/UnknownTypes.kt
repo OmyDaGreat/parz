@@ -1,13 +1,14 @@
-package xyz.malefic.parz.idl
+package xyz.malefic.parz.idl.model
 
-import xyz.malefic.parz.idl.Decl.Record.Field
-import xyz.malefic.parz.idl.Decl.Variant.Member
-import xyz.malefic.parz.idl.SchemaErrorKind.FieldPath.RecordPath
-import xyz.malefic.parz.idl.SchemaErrorKind.FieldPath.VariantPath
-import xyz.malefic.parz.idl.SchemaErrorKind.UnknownType
-import xyz.malefic.parz.idl.Type.Collection.Option
-import xyz.malefic.parz.idl.Type.Collection.Seq
-import xyz.malefic.parz.idl.Type.Primitive.Bool
+import xyz.malefic.parz.idl.model.Decl.Record.Field
+import xyz.malefic.parz.idl.model.Decl.Variant.Member
+import xyz.malefic.parz.idl.model.SchemaErrorKind.FieldPath.RecordPath
+import xyz.malefic.parz.idl.model.SchemaErrorKind.FieldPath.VariantPath
+import xyz.malefic.parz.idl.model.SchemaErrorKind.UnknownType
+import xyz.malefic.parz.idl.model.Type.Collection.Option
+import xyz.malefic.parz.idl.model.Type.Collection.Seq
+import xyz.malefic.parz.idl.model.Type.Primitive.Bool
+import xyz.malefic.parz.idl.model.Type.Primitive.Str
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -73,5 +74,13 @@ class UnknownTypes {
                 Decl.Variant("C", listOf(Member("a", 0))),
             ),
         )
+    }
+
+    @Test
+    fun refs() {
+        assertEquals(setOf("A"), Type.Ref("A").refs())
+        assertEquals(setOf("A"), Seq(Option(Type.Ref("A"))).refs())
+        assertEquals(emptySet(), Bool.refs())
+        assertEquals(emptySet(), Seq(Str()).refs())
     }
 }

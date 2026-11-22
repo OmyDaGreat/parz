@@ -1,9 +1,9 @@
 package xyz.malefic.parz.idl.syntax
 
 import com.ionspin.kotlin.bignum.integer.BigInteger
-import xyz.malefic.parz.idl.Type.Collection.Option
-import xyz.malefic.parz.idl.Type.Primitive.Decimal
-import xyz.malefic.parz.idl.Type.Primitive.Str
+import xyz.malefic.parz.idl.model.Type.Collection.Option
+import xyz.malefic.parz.idl.model.Type.Primitive.Decimal
+import xyz.malefic.parz.idl.model.Type.Primitive.Str
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.ExpectedSymbol
 import kotlin.test.Test
 import kotlin.test.assertEquals

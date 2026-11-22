@@ -1,16 +1,16 @@
 package xyz.malefic.parz.idl.syntax
 
 import xyz.malefic.parz.core.Diagnostic
-import xyz.malefic.parz.idl.Decl
-import xyz.malefic.parz.idl.Decl.Record.Field
-import xyz.malefic.parz.idl.Decl.Variant.Member
-import xyz.malefic.parz.idl.ShapeErrorKind.EmptyRecord
-import xyz.malefic.parz.idl.ShapeErrorKind.EmptyVariant
-import xyz.malefic.parz.idl.ShapeErrorKind.EnumPayload
-import xyz.malefic.parz.idl.Type
-import xyz.malefic.parz.idl.Type.Collection.Option
-import xyz.malefic.parz.idl.Type.Collection.Seq
-import xyz.malefic.parz.idl.Type.Primitive.Bool
+import xyz.malefic.parz.idl.model.Decl
+import xyz.malefic.parz.idl.model.Decl.Record.Field
+import xyz.malefic.parz.idl.model.Decl.Variant.Member
+import xyz.malefic.parz.idl.model.ShapeErrorKind.EmptyRecord
+import xyz.malefic.parz.idl.model.ShapeErrorKind.EmptyVariant
+import xyz.malefic.parz.idl.model.ShapeErrorKind.EnumPayload
+import xyz.malefic.parz.idl.model.Type
+import xyz.malefic.parz.idl.model.Type.Collection.Option
+import xyz.malefic.parz.idl.model.Type.Collection.Seq
+import xyz.malefic.parz.idl.model.Type.Primitive.Bool
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

@@ -1,14 +1,14 @@
 package xyz.malefic.parz.idl.encoding
 
-import xyz.malefic.parz.idl.Reason.Fit.InexactLength
-import xyz.malefic.parz.idl.Reason.Fit.TooLong
-import xyz.malefic.parz.idl.Reason.Fit.TooShort
-import xyz.malefic.parz.idl.Type
-import xyz.malefic.parz.idl.Type.Collection.Map
-import xyz.malefic.parz.idl.Type.Primitive.Bool
-import xyz.malefic.parz.idl.Type.Primitive.Bytes
-import xyz.malefic.parz.idl.Value
 import xyz.malefic.parz.idl.encoding.CodecErrorKind.DoesNotFit
+import xyz.malefic.parz.idl.model.Reason.Fit.InexactLength
+import xyz.malefic.parz.idl.model.Reason.Fit.TooLong
+import xyz.malefic.parz.idl.model.Reason.Fit.TooShort
+import xyz.malefic.parz.idl.model.Type
+import xyz.malefic.parz.idl.model.Type.Collection.Map
+import xyz.malefic.parz.idl.model.Type.Primitive.Bool
+import xyz.malefic.parz.idl.model.Type.Primitive.Bytes
+import xyz.malefic.parz.idl.model.Value
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

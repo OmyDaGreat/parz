@@ -1,13 +1,10 @@
 package xyz.malefic.parz.idl.encoding
 
 import com.ionspin.kotlin.bignum.integer.BigInteger
-import xyz.malefic.parz.core.AnyDiagnostic
-import xyz.malefic.parz.idl.Decl
-import xyz.malefic.parz.idl.Schema
-import xyz.malefic.parz.idl.Type
-import xyz.malefic.parz.idl.Value
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
+import xyz.malefic.parz.idl.model.Decl
+import xyz.malefic.parz.idl.model.Schema
+import xyz.malefic.parz.idl.model.Type
+import xyz.malefic.parz.idl.model.Value
 
 /**
  * A decimal type holding unscaled values in [min]..[max] at [scale].
@@ -80,34 +77,3 @@ fun failed(
     why: String,
     code: Long,
 ) = Value.Variant("failed", mapOf("why" to strValue(why), "code" to dec(code)))
-
-fun encoded(
-    value: Value,
-    type: Type,
-) = encodeToString(value, type, shop)
-
-/**
- * Decode [text], failing the test if there are any errors.
- */
-fun decodeOk(
-    text: String,
-    type: Type,
-): Value {
-    val (value, diagnostics) = decodeString(text, type, shop)
-    assertEquals(emptyList(), diagnostics, "unexpected errors decoding:\n$text")
-    return assertNotNull(value, "no value decoding:\n$text")
-}
-
-/**
- * Decode [text], which must fail; returns its diagnostics.
- */
-fun decodeErrors(
-    text: String,
-    type: Type,
-): List<AnyDiagnostic> {
-    val (value, diagnostics) = decodeString(text, type, shop)
-    assertEquals(null, value, "expected no value decoding:\n$text")
-    return diagnostics
-}
-
-fun codes(diagnostics: List<AnyDiagnostic>) = diagnostics.map { it.kind.code }

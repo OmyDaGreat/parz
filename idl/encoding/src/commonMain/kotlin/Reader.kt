@@ -7,8 +7,6 @@ import xyz.malefic.parz.core.SourceSpan
 context(sink: Sink<Diagnostic<SexpErrorKind>>)
 fun readSexps(source: String): List<Sexp> = Reader(source, sink).all()
 
-fun Char.isDelimiter() = isWhitespace() || this in "()\";"
-
 private class Reader(
     private val source: String,
     private val sink: Sink<Diagnostic<SexpErrorKind>>,

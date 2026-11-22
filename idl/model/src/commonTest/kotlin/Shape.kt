@@ -1,16 +1,16 @@
-package xyz.malefic.parz.idl
+package xyz.malefic.parz.idl.model
 
 import com.ionspin.kotlin.bignum.integer.BigInteger
-import xyz.malefic.parz.idl.Decl.Record.Field
-import xyz.malefic.parz.idl.Decl.Variant.Member
-import xyz.malefic.parz.idl.ShapeErrorKind.EmptyName
-import xyz.malefic.parz.idl.ShapeErrorKind.EmptyRange
-import xyz.malefic.parz.idl.ShapeErrorKind.EmptyRecord
-import xyz.malefic.parz.idl.ShapeErrorKind.EmptyVariant
-import xyz.malefic.parz.idl.ShapeErrorKind.EnumPayload
-import xyz.malefic.parz.idl.ShapeErrorKind.NegativeTag
-import xyz.malefic.parz.idl.ShapeErrorKind.NonPositiveLength
-import xyz.malefic.parz.idl.Type.Primitive.Bool
+import xyz.malefic.parz.idl.model.Decl.Record.Field
+import xyz.malefic.parz.idl.model.Decl.Variant.Member
+import xyz.malefic.parz.idl.model.ShapeErrorKind.EmptyName
+import xyz.malefic.parz.idl.model.ShapeErrorKind.EmptyRange
+import xyz.malefic.parz.idl.model.ShapeErrorKind.EmptyRecord
+import xyz.malefic.parz.idl.model.ShapeErrorKind.EmptyVariant
+import xyz.malefic.parz.idl.model.ShapeErrorKind.EnumPayload
+import xyz.malefic.parz.idl.model.ShapeErrorKind.NegativeTag
+import xyz.malefic.parz.idl.model.ShapeErrorKind.NonPositiveLength
+import xyz.malefic.parz.idl.model.Type.Primitive.Bool
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

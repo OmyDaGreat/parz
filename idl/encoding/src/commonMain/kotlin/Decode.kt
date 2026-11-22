@@ -5,143 +5,17 @@ import xyz.malefic.parz.core.AnyDiagnostic
 import xyz.malefic.parz.core.Checked
 import xyz.malefic.parz.core.Diagnostic
 import xyz.malefic.parz.core.Sink
-import xyz.malefic.parz.core.SourceSpan
 import xyz.malefic.parz.core.collecting
 import xyz.malefic.parz.core.sink
-import xyz.malefic.parz.idl.Decl
-import xyz.malefic.parz.idl.Resolved
-import xyz.malefic.parz.idl.Schema
-import xyz.malefic.parz.idl.Type
-import xyz.malefic.parz.idl.Type.Primitive.Decimal.Rounding.PROHIBITED
-import xyz.malefic.parz.idl.Value
-import xyz.malefic.parz.idl.check
-
-const val FORMAT_VERSION = 1
-
-fun encodeToString(
-    value: Value,
-    type: Type,
-    schema: Schema = Schema.EMPTY,
-): String = encode(value, type, schema).print()
-
-fun encodeFile(
-    value: Value,
-    root: Type.Ref,
-    schema: Schema,
-    id: SchemaId,
-    targetWidth: Int = 80,
-): String {
-    val header =
-        Sexp.List(
-            listOf(
-                Sexp.Atom("parz"),
-                Sexp.Atom("$FORMAT_VERSION"),
-                id.toSexp(),
-                Sexp.Atom(root.name),
-            ),
-        )
-    val body = encode(value, root, schema)
-    return "${header.print()}\n${body.pretty(targetWidth)}\n"
-}
-
-fun encode(
-    value: Value,
-    type: Type,
-    schema: Schema = Schema.EMPTY,
-): Sexp {
-    val mismatches = type.check(value, schema)
-    require(mismatches.isEmpty()) { "Value does not conform to $type: $mismatches" }
-    return encodeChecked(value, type, schema)
-}
-
-private fun encodeChecked(
-    value: Value,
-    type: Type,
-    schema: Schema = Schema.EMPTY,
-): Sexp =
-    when (type) {
-        is Type.Primitive.Void -> {
-            Sexp.List(emptyList())
-        }
-
-        is Type.Primitive.Bool -> {
-            Sexp.Atom((value as Value.Bool).v.toString())
-        }
-
-        is Type.Primitive.Decimal -> {
-            Sexp.Atom((value as Value.Decimal).text(type.scale))
-        }
-
-        is Type.Primitive.Bytes -> {
-            Sexp.Atom("#x${(value as Value.Bytes).hex()}")
-        }
-
-        is Type.Primitive.Str -> {
-            Sexp.Str((value as Value.Str).v)
-        }
-
-        is Type.Collection.Option -> {
-            option(value, type.inner, schema)
-        }
-
-        is Type.Collection.Seq -> {
-            Sexp.List((value as Value.Seq).items.map { encodeChecked(it, type.inner, schema) })
-        }
-
-        is Type.Collection.Map -> {
-            val order = keyOrder(type.keys, schema)
-            val entries = (value as Value.Map).entries.entries.sortedWith(compareBy(order) { it.key })
-            entries.zipWithNext().firstOrNull { (a, b) -> order.compare(a.key, b.key) == 0 }?.let { (a, b) ->
-                throw IllegalArgumentException("Duplicate map key: ${a.key} and ${b.key} are the same ${type.keys.kind}")
-            }
-            Sexp.List(
-                entries.map { (k, v) ->
-                    Sexp.List(listOf(encodeChecked(k, type.keys, schema), encodeChecked(v, type.values, schema)))
-                },
-            )
-        }
-
-        is Type.Ref -> {
-            encodeRef(value, type, schema)
-        }
-    }
-
-private fun encodeRef(
-    value: Value,
-    type: Type.Ref,
-    schema: Schema,
-): Sexp =
-    when (val resolved = schema.resolve(type)) {
-        is Resolved.Record -> {
-            Sexp.List(fields(resolved.decl.fields, (value as Value.Record).fields, schema))
-        }
-
-        is Resolved.Variant -> {
-            val variant = value as Value.Variant
-            val member = resolved.decl.members.find { it.name == variant.name }!!
-            if (member.payload.isEmpty()) {
-                Sexp.Atom(member.name)
-            } else {
-                Sexp.List(listOf(Sexp.Atom(member.name)) + fields(member.payload, variant.payload, schema))
-            }
-        }
-
-        is Resolved.Other -> {
-            encodeChecked(value, resolved.type, schema)
-        }
-    }
-
-private fun fields(
-    declared: List<Decl.Record.Field>,
-    values: Value.Fields,
-    schema: Schema,
-) = declared.map { Sexp.List(listOf(Sexp.Atom(it.name), encodeChecked(values.getValue(it.name), it.type, schema))) }
-
-private fun option(
-    value: Value,
-    innerType: Type,
-    schema: Schema,
-): Sexp = if (value is Value.Some) Sexp.List(listOf(Sexp.Atom("some"), encodeChecked(value.v, innerType, schema))) else Sexp.Atom("none")
+import xyz.malefic.parz.idl.model.Decl
+import xyz.malefic.parz.idl.model.Resolved
+import xyz.malefic.parz.idl.model.Schema
+import xyz.malefic.parz.idl.model.Type
+import xyz.malefic.parz.idl.model.Type.Primitive.Decimal.Rounding.PROHIBITED
+import xyz.malefic.parz.idl.model.Value
+import xyz.malefic.parz.idl.model.check
+import xyz.malefic.parz.idl.model.isExactAt
+import xyz.malefic.parz.idl.model.rescale
 
 fun decodeString(
     text: String,
@@ -162,84 +36,6 @@ fun decodeStringLenient(
             null -> null.also { sink().report(Diagnostic(CodecErrorKind.ExpectedOneValue(sexps.size), null)) }
             else -> decode(single, type, schema)
         }
-    }
-
-fun decodeFile(
-    text: String,
-    schema: Schema,
-    id: SchemaId,
-    expected: Type.Ref? = null,
-) = decodeFileLenient(text, schema, id, expected).let {
-    if (it.diagnostics.isEmpty()) it else Checked(null, it.diagnostics)
-}
-
-fun decodeFileLenient(
-    text: String,
-    schema: Schema,
-    id: SchemaId,
-    expected: Type.Ref? = null,
-) = collecting {
-    val (file, errors) = readFile(text, schema, id)
-    errors.forEach(sink()::report)
-    if (file == null) return@collecting null
-
-    fun reportNull(
-        e: CodecErrorKind,
-        span: SourceSpan? = file.rootSpan,
-    ) = sink().report(Diagnostic(e, span)).let { null }
-
-    if (expected != null && file.root != expected) {
-        return@collecting reportNull(CodecErrorKind.WrongRootType(expected.name, file.root.name))
-    }
-    if (file.body.size != 1) {
-        return@collecting reportNull(CodecErrorKind.ExpectedOneValue(file.body.size), null)
-    }
-    decode(file.body.single(), file.root, schema)
-}
-
-fun readFile(
-    text: String,
-    schema: Schema,
-    id: SchemaId,
-): Checked<ParzFile?, AnyDiagnostic> =
-    collecting {
-        fun fail(
-            kind: CodecErrorKind,
-            span: SourceSpan?,
-        ) = null.also { sink().report(Diagnostic(kind, span)) }
-
-        val sexps = readSexps(text)
-        val parts = (sexps.firstOrNull() as? Sexp.List)?.items
-        val header = parts?.firstOrNull() as? Sexp.Atom
-        if (header?.text != "parz") {
-            return@collecting fail(CodecErrorKind.MissingHeader, sexps.firstOrNull()?.span)
-        }
-
-        fun malformed(span: SourceSpan? = null) =
-            fail(
-                CodecErrorKind.Expected("(parz <version> (schema <name> <version>) <Root>)"),
-                span ?: sexps.first().span,
-            )
-
-        val versionPart = parts.getOrNull(1) ?: return@collecting malformed()
-        val version = versionPart as? Sexp.Atom ?: return@collecting malformed(parts[1].span)
-        if (version.text != FORMAT_VERSION.toString()) return@collecting fail(CodecErrorKind.UnsupportedVersion(version.text), version.span)
-
-        val givenSchemaPart = parts.getOrNull(2) ?: return@collecting malformed()
-        val givenSchema = givenSchemaPart as? Sexp.List ?: return@collecting malformed(givenSchemaPart.span)
-        if (givenSchema.items.map { (it as? Sexp.Atom)?.text } != listOf("schema", id.name, "${id.version}")) {
-            return@collecting fail(CodecErrorKind.SchemaMismatch(id, givenSchema.print()), givenSchema.span)
-        }
-
-        val rootPart = parts.getOrNull(3) ?: return@collecting malformed()
-        val root = rootPart as? Sexp.Atom ?: return@collecting malformed(rootPart.span)
-        if (root.text !in schema.decls.map { it.name }) {
-            return@collecting fail(CodecErrorKind.UnknownRootType(root.text), root.span)
-        }
-
-        if ((parts.getOrNull(4)) != null) return@collecting malformed(parts[4].span)
-
-        ParzFile(Type.Ref(root.text), root.span, sexps.drop(1))
     }
 
 private val HEX = Regex("([0-9a-fA-F]{2})*")

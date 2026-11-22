@@ -4,7 +4,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 /**
- * Finding where in the source a schema error belongs, with [DeclSyntax.Companion.locate].
+ * Finding where in the source a schema error belongs, with [locate].
  */
 class Locating {
     @Test

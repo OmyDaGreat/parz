@@ -3,19 +3,17 @@ package xyz.malefic.parz.idl.syntax
 import xyz.malefic.parz.core.AnyDiagnostic
 import xyz.malefic.parz.core.Sink
 import xyz.malefic.parz.core.SourceSpan
-import xyz.malefic.parz.idl.Decl
-import xyz.malefic.parz.idl.SchemaErrorKind
-import xyz.malefic.parz.idl.SchemaErrorKind.FieldPath.VariantPath
-import xyz.malefic.parz.idl.ShapeErrorKind
-import xyz.malefic.parz.idl.ShapeErrorKind.Companion.reportAt
-import xyz.malefic.parz.idl.ShapeErrorKind.EmptyName
-import xyz.malefic.parz.idl.ShapeErrorKind.EmptyRecord
-import xyz.malefic.parz.idl.ShapeErrorKind.EmptyVariant
-import xyz.malefic.parz.idl.ShapeErrorKind.NegativeTag
-import xyz.malefic.parz.idl.Type
-import xyz.malefic.parz.idl.Type.Primitive.Bytes
-import xyz.malefic.parz.idl.Type.Primitive.Decimal
-import xyz.malefic.parz.idl.Type.Primitive.Str
+import xyz.malefic.parz.idl.model.Decl
+import xyz.malefic.parz.idl.model.ShapeErrorKind
+import xyz.malefic.parz.idl.model.ShapeErrorKind.Companion.reportAt
+import xyz.malefic.parz.idl.model.ShapeErrorKind.EmptyName
+import xyz.malefic.parz.idl.model.ShapeErrorKind.EmptyRecord
+import xyz.malefic.parz.idl.model.ShapeErrorKind.EmptyVariant
+import xyz.malefic.parz.idl.model.ShapeErrorKind.NegativeTag
+import xyz.malefic.parz.idl.model.Type
+import xyz.malefic.parz.idl.model.Type.Primitive.Bytes
+import xyz.malefic.parz.idl.model.Type.Primitive.Decimal
+import xyz.malefic.parz.idl.model.Type.Primitive.Str
 
 interface PrettySyntax {
     val span: SourceSpan
@@ -95,29 +93,6 @@ sealed interface TypeSyntax : PrettySyntax {
 
         override fun toType() = Type.Collection.Map(key.toType(), value.toType())
     }
-
-    /**
-     * Finds the span of a given named ref in this type.
-     */
-    fun find(name: String): SourceSpan? =
-        when (this) {
-            is Named -> if (this.name == name) span else null
-            is Option -> inner.find(name)
-            is Seq -> inner.find(name)
-            is Map -> key.find(name) ?: value.find(name)
-            else -> null
-        }
-
-    /**
-     * Finds the span of the first map key in this type that lowers to [key].
-     */
-    fun findMapKey(key: Type): SourceSpan? =
-        when (this) {
-            is Option -> inner.findMapKey(key)
-            is Seq -> inner.findMapKey(key)
-            is Map -> if (this.key.toType() == key) this.key.span else this.key.findMapKey(key) ?: value.findMapKey(key)
-            else -> null
-        }
 }
 
 data class FieldSyntax(
@@ -212,84 +187,6 @@ sealed interface DeclSyntax : PrettySyntax {
 
         context(sink: Sink<AnyDiagnostic>)
         override fun toDecl() = if (EmptyName.check(name).reportAt(span)) Decl.Alias(name, type.toType()) else null
-    }
-
-    companion object {
-        /**
-         * The syntax of the type at [path] in this declaration, or the aliased type if [path] is null.
-         */
-        private fun DeclSyntax.typeAt(
-            decl: Decl,
-            path: SchemaErrorKind.FieldPath?,
-        ): TypeSyntax? =
-            when {
-                path == null -> {
-                    (this as? Alias)?.type
-                }
-
-                decl is Decl.Record -> {
-                    (this as Record).fields.getOrNull(decl.fields.indexOfFirst { it === path.field })?.type
-                }
-
-                decl is Decl.Variant -> {
-                    val im = decl.members.indexOfFirst { it === (path as VariantPath).member }
-                    val ip = decl.members[im].payload.indexOfFirst { it === path.field }
-                    (this as Variant)
-                        .members[im]
-                        .payload
-                        .getOrNull(ip)
-                        ?.type
-                }
-
-                else -> {
-                    null
-                }
-            }
-
-        fun List<Pair<DeclSyntax, Decl>>.locate(kind: SchemaErrorKind): SourceSpan? {
-            val syntax = firstOrNull { it.second === kind.decl }?.first ?: return null
-            return when (kind) {
-                is SchemaErrorKind.UnknownType -> {
-                    syntax.typeAt(kind.decl, kind.path)?.find(kind.name)
-                }
-
-                is SchemaErrorKind.InvalidMapKey -> {
-                    syntax.typeAt(kind.decl, kind.path)?.let { it.findMapKey(kind.key) ?: it.span }
-                }
-
-                is SchemaErrorKind.DuplicateFieldName -> {
-                    when (val decl = kind.decl) {
-                        is Decl.Record -> {
-                            val i = decl.fields.indexOfFirst { it === kind.path.field }
-                            (syntax as Record).fields[i].span
-                        }
-
-                        is Decl.Variant -> {
-                            val im = decl.members.indexOfFirst { it === (kind.path as VariantPath).member }
-                            val ip = decl.members[im].payload.indexOfFirst { it === kind.path.field }
-                            (syntax as Variant)
-                                .members[im]
-                                .payload[ip]
-                                .span
-                        }
-
-                        is Decl.Alias -> {
-                            null
-                        }
-                    }
-                }
-
-                is SchemaErrorKind.MemberError -> {
-                    val i = (kind.decl as Decl.Variant).members.indexOfFirst { it === kind.member }
-                    val m = (syntax as Variant).members.getOrNull(i) ?: return syntax.span
-                    if (kind is SchemaErrorKind.MemberError.DuplicateMemberTag) m.tagSpan ?: m.span else m.span
-                }
-
-                is SchemaErrorKind.CyclicType, is SchemaErrorKind.DuplicateDecl -> {
-                    syntax.span
-                }
-            }
-        }
     }
 }
 

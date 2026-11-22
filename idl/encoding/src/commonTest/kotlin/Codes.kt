@@ -1,6 +1,6 @@
 package xyz.malefic.parz.idl.encoding
 
-import xyz.malefic.parz.idl.Reason
+import xyz.malefic.parz.idl.model.Reason
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

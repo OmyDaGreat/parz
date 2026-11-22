@@ -1,10 +1,11 @@
 package xyz.malefic.parz.idl.encoding
 
-import xyz.malefic.parz.idl.Resolved
-import xyz.malefic.parz.idl.Schema
-import xyz.malefic.parz.idl.Type
-import xyz.malefic.parz.idl.Type.Primitive.Decimal.Rounding.PROHIBITED
-import xyz.malefic.parz.idl.Value
+import xyz.malefic.parz.idl.model.Resolved
+import xyz.malefic.parz.idl.model.Schema
+import xyz.malefic.parz.idl.model.Type
+import xyz.malefic.parz.idl.model.Type.Primitive.Decimal.Rounding.PROHIBITED
+import xyz.malefic.parz.idl.model.Value
+import xyz.malefic.parz.idl.model.rescale
 
 /**
  * The canonical order of map keys of type [type], which both encoders (Kotlin and OCaml) must follow exactly:

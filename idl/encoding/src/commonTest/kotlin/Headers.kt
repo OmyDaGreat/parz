@@ -1,16 +1,17 @@
 package xyz.malefic.parz.idl.encoding
 
 import xyz.malefic.parz.core.AnyDiagnostic
-import xyz.malefic.parz.idl.Type
-import xyz.malefic.parz.idl.Value
 import xyz.malefic.parz.idl.encoding.CodecErrorKind.ExpectedOneValue
 import xyz.malefic.parz.idl.encoding.CodecErrorKind.MissingHeader
 import xyz.malefic.parz.idl.encoding.CodecErrorKind.SchemaMismatch
 import xyz.malefic.parz.idl.encoding.CodecErrorKind.UnknownRootType
 import xyz.malefic.parz.idl.encoding.CodecErrorKind.UnsupportedVersion
 import xyz.malefic.parz.idl.encoding.CodecErrorKind.WrongRootType
+import xyz.malefic.parz.idl.model.Type
+import xyz.malefic.parz.idl.model.Value
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 
@@ -165,4 +166,20 @@ class Headers {
             listOf("IDL204"),
             codes(decodeFile(file("(parz 1 (schema shop 1) Status)", "(failed (why \"\\q\") (code 1))"), shop, id).diagnostics),
         )
+
+    @Test fun schemaIdPrintsAsTheHeaderPart() = assertEquals(list(atom("schema"), atom("ir"), atom("3")), SchemaId("ir", 3).toSexp())
+
+    @Test fun schemaIdToString() = assertEquals("ir 3", SchemaId("ir", 3).toString())
+
+    @Test fun schemaVersionZeroIsAllowed() = assertEquals("ir 0", SchemaId("ir", 0).toString())
+
+    @Test fun invalidSchemaNames() {
+        listOf("", "my ir", "ir(2)", "\"ir\"", "a;b", "tab\tname").forEach { name ->
+            assertFailsWith<IllegalArgumentException>(name) { SchemaId(name, 1) }
+        }
+    }
+
+    @Test fun negativeSchemaVersion() {
+        assertFailsWith<IllegalArgumentException> { SchemaId("ir", -1) }
+    }
 }

@@ -1,12 +1,12 @@
 package xyz.malefic.parz.idl.encoding
 
-import xyz.malefic.parz.idl.Type
-import xyz.malefic.parz.idl.Type.Collection.Option
-import xyz.malefic.parz.idl.Type.Collection.Seq
-import xyz.malefic.parz.idl.Type.Primitive.Bool
-import xyz.malefic.parz.idl.Type.Primitive.Str
-import xyz.malefic.parz.idl.Type.Primitive.Void
-import xyz.malefic.parz.idl.Value
+import xyz.malefic.parz.idl.model.Type
+import xyz.malefic.parz.idl.model.Type.Collection.Option
+import xyz.malefic.parz.idl.model.Type.Collection.Seq
+import xyz.malefic.parz.idl.model.Type.Primitive.Bool
+import xyz.malefic.parz.idl.model.Type.Primitive.Str
+import xyz.malefic.parz.idl.model.Type.Primitive.Void
+import xyz.malefic.parz.idl.model.Value
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

@@ -1,10 +1,10 @@
-package xyz.malefic.parz.idl
+package xyz.malefic.parz.idl.model
 
-import xyz.malefic.parz.idl.Decl.Record.Field
-import xyz.malefic.parz.idl.Decl.Variant.Member
-import xyz.malefic.parz.idl.SchemaErrorKind.CyclicType
-import xyz.malefic.parz.idl.Type.Collection.Option
-import xyz.malefic.parz.idl.Type.Collection.Seq
+import xyz.malefic.parz.idl.model.Decl.Record.Field
+import xyz.malefic.parz.idl.model.Decl.Variant.Member
+import xyz.malefic.parz.idl.model.SchemaErrorKind.CyclicType
+import xyz.malefic.parz.idl.model.Type.Collection.Option
+import xyz.malefic.parz.idl.model.Type.Collection.Seq
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

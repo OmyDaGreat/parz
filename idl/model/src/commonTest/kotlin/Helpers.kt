@@ -1,4 +1,4 @@
-package xyz.malefic.parz.idl
+package xyz.malefic.parz.idl.model
 
 import com.ionspin.kotlin.bignum.integer.BigInteger
 import kotlin.test.assertFalse

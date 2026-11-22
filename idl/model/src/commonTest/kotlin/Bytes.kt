@@ -1,11 +1,11 @@
-package xyz.malefic.parz.idl
+package xyz.malefic.parz.idl.model
 
-import xyz.malefic.parz.idl.Reason.Fit.InexactLength
-import xyz.malefic.parz.idl.Reason.Fit.TooLong
-import xyz.malefic.parz.idl.Reason.Fit.TooShort
-import xyz.malefic.parz.idl.ShapeErrorKind.EmptyRange
-import xyz.malefic.parz.idl.ShapeErrorKind.NegativeLength
-import xyz.malefic.parz.idl.Type.Primitive.Bytes
+import xyz.malefic.parz.idl.model.Reason.Fit.InexactLength
+import xyz.malefic.parz.idl.model.Reason.Fit.TooLong
+import xyz.malefic.parz.idl.model.Reason.Fit.TooShort
+import xyz.malefic.parz.idl.model.ShapeErrorKind.EmptyRange
+import xyz.malefic.parz.idl.model.ShapeErrorKind.NegativeLength
+import xyz.malefic.parz.idl.model.Type.Primitive.Bytes
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

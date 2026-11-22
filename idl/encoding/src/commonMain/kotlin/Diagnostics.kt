@@ -1,13 +1,35 @@
 package xyz.malefic.parz.idl.encoding
 
 import xyz.malefic.parz.core.DiagnosticKind
-import xyz.malefic.parz.idl.Reason
-import xyz.malefic.parz.idl.Reason.Fit.InexactLength
-import xyz.malefic.parz.idl.Reason.Fit.InexactScale
-import xyz.malefic.parz.idl.Reason.Fit.OutOfRange
-import xyz.malefic.parz.idl.Reason.Fit.TooLong
-import xyz.malefic.parz.idl.Reason.Fit.TooShort
-import xyz.malefic.parz.idl.Value
+import xyz.malefic.parz.idl.model.Reason
+import xyz.malefic.parz.idl.model.Reason.Fit.InexactLength
+import xyz.malefic.parz.idl.model.Reason.Fit.InexactScale
+import xyz.malefic.parz.idl.model.Reason.Fit.OutOfRange
+import xyz.malefic.parz.idl.model.Reason.Fit.TooLong
+import xyz.malefic.parz.idl.model.Reason.Fit.TooShort
+import xyz.malefic.parz.idl.model.Value
+
+sealed interface SexpErrorKind : DiagnosticKind {
+    data object UnexpectedClose : SexpErrorKind {
+        override val code = "IDL201"
+        override val message = "Unexpected ')'"
+    }
+
+    data object UnclosedList : SexpErrorKind {
+        override val code = "IDL202"
+        override val message = "Unclosed '('"
+    }
+
+    data object UnterminatedString : SexpErrorKind {
+        override val code = "IDL203"
+        override val message = "Unterminated string"
+    }
+
+    data object BadEscape : SexpErrorKind {
+        override val code = "IDL204"
+        override val message = "Invalid escape sequence"
+    }
+}
 
 sealed interface CodecErrorKind : DiagnosticKind {
     data class Expected(

@@ -1,7 +1,7 @@
 package xyz.malefic.parz.idl.syntax
 
-import xyz.malefic.parz.idl.Type
-import xyz.malefic.parz.idl.Type.Collection.Seq
+import xyz.malefic.parz.idl.model.Type
+import xyz.malefic.parz.idl.model.Type.Collection.Seq
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.ExpectedSymbol
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.ExpectedWord
 import kotlin.test.Test

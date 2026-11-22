@@ -3,6 +3,7 @@ package xyz.malefic.parz.idl.encoding
 import xyz.malefic.parz.core.SourceSpan
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 /**
  * The canonical printer, and that its output reads back to the same tree.
@@ -51,5 +52,18 @@ class Printing {
 
     @Test fun roundTripTrickyStrings() {
         listOf("", "\"", "\\", "\\\"", "a\"b\\c", "😀", "\u0085 ", "end\\").forEach { assertRoundTrips(str(it)) }
+    }
+
+    // Sexp.Atom only holds text that reads back as the same single atom.
+    @Test
+    fun atomsRejectTextThatWouldNotReadBack() {
+        listOf("", "a b", "(", "a)", "\"", "a;b", "\t", "a\nb").forEach { text ->
+            assertFailsWith<IllegalArgumentException>("'$text' should be rejected") { Sexp.Atom(text) }
+        }
+    }
+
+    @Test
+    fun atomsAcceptOtherText() {
+        listOf("a", "-0.05", "a.b", "TOWARDS_ZERO", "x/y", "é").forEach { assertEquals(it, Sexp.Atom(it).text) }
     }
 }

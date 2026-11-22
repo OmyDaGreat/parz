@@ -1,13 +1,13 @@
-package xyz.malefic.parz.idl
+package xyz.malefic.parz.idl.model
 
 import com.ionspin.kotlin.bignum.integer.BigInteger
 import com.ionspin.kotlin.bignum.integer.BigInteger.Companion.ONE
 import com.ionspin.kotlin.bignum.integer.BigInteger.Companion.TEN
 import com.ionspin.kotlin.bignum.integer.BigInteger.Companion.TWO
 import com.ionspin.kotlin.bignum.integer.BigInteger.Companion.ZERO
-import xyz.malefic.parz.idl.Type.Primitive.Decimal
-import xyz.malefic.parz.idl.Type.Primitive.Decimal.Overflow
-import xyz.malefic.parz.idl.Type.Primitive.Decimal.Rounding
+import xyz.malefic.parz.idl.model.Type.Primitive.Decimal
+import xyz.malefic.parz.idl.model.Type.Primitive.Decimal.Overflow
+import xyz.malefic.parz.idl.model.Type.Primitive.Decimal.Rounding
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
