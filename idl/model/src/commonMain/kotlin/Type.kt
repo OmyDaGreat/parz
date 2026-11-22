@@ -191,7 +191,7 @@ sealed interface Type {
          */
         data class Option(
             val inner: Type,
-        ) : Type {
+        ) : Collection {
             override val kind = "option"
         }
 
@@ -200,7 +200,7 @@ sealed interface Type {
          */
         data class Seq(
             val inner: Type,
-        ) : Type {
+        ) : Collection {
             override val kind = "seq"
         }
 
@@ -210,7 +210,7 @@ sealed interface Type {
         data class Map(
             val keys: Type,
             val values: Type,
-        ) : Type {
+        ) : Collection {
             override val kind = "map"
         }
     }

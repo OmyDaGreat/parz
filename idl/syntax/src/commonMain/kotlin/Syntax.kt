@@ -89,6 +89,17 @@ sealed interface TypeSyntax : PrettySyntax {
             is Map -> key.find(name) ?: value.find(name)
             else -> null
         }
+
+    /**
+     * Finds the span of the first map key in this type that lowers to [key].
+     */
+    fun findMapKey(key: Type): SourceSpan? =
+        when (this) {
+            is Option -> inner.findMapKey(key)
+            is Seq -> inner.findMapKey(key)
+            is Map -> if (this.key.toType() == key) this.key.span else this.key.findMapKey(key) ?: value.findMapKey(key)
+            else -> null
+        }
 }
 
 data class FieldSyntax(
@@ -186,31 +197,46 @@ sealed interface DeclSyntax : PrettySyntax {
     }
 
     companion object {
+        /**
+         * The syntax of the type at [path] in this declaration, or the aliased type if [path] is null.
+         */
+        private fun DeclSyntax.typeAt(
+            decl: Decl,
+            path: SchemaErrorKind.FieldPath?,
+        ): TypeSyntax? =
+            when {
+                path == null -> {
+                    (this as? Alias)?.type
+                }
+
+                decl is Decl.Record -> {
+                    (this as Record).fields.getOrNull(decl.fields.indexOfFirst { it === path.field })?.type
+                }
+
+                decl is Decl.Variant -> {
+                    val im = decl.members.indexOfFirst { it === (path as VariantPath).member }
+                    val ip = decl.members[im].payload.indexOfFirst { it === path.field }
+                    (this as Variant)
+                        .members[im]
+                        .payload
+                        .getOrNull(ip)
+                        ?.type
+                }
+
+                else -> {
+                    null
+                }
+            }
+
         fun List<Pair<DeclSyntax, Decl>>.locate(kind: SchemaErrorKind): SourceSpan? {
             val syntax = firstOrNull { it.second === kind.decl }?.first ?: return null
             return when (kind) {
                 is SchemaErrorKind.UnknownType -> {
-                    val path = kind.path ?: return (syntax as Alias).type.find(kind.name)
-                    when (val decl = kind.decl) {
-                        is Decl.Record -> {
-                            val i = decl.fields.indexOfFirst { it === path.field }
-                            (syntax as Record).fields[i].type.find(kind.name)
-                        }
+                    syntax.typeAt(kind.decl, kind.path)?.find(kind.name)
+                }
 
-                        is Decl.Variant -> {
-                            val im = decl.members.indexOfFirst { it === (path as VariantPath).member }
-                            val ip = decl.members[im].payload.indexOfFirst { it === path.field }
-                            (syntax as Variant)
-                                .members[im]
-                                .payload[ip]
-                                .type
-                                .find(kind.name)
-                        }
-
-                        is Decl.Alias -> {
-                            (syntax as Alias).type.find(kind.name)
-                        }
-                    }
+                is SchemaErrorKind.InvalidMapKey -> {
+                    syntax.typeAt(kind.decl, kind.path)?.let { it.findMapKey(kind.key) ?: it.span }
                 }
 
                 is SchemaErrorKind.DuplicateFieldName -> {

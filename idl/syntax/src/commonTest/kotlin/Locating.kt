@@ -66,4 +66,25 @@ class Locating {
         val source = "record A { x: bool }\nrecord A { y: bool }"
         assertEquals(listOf("IDL106" to source.span("record A", 1)), located(source))
     }
+
+    @Test
+    fun invalidMapKeyInRecord() {
+        val source = "record A { m: map<seq<bool>, string> }"
+        assertEquals(listOf("IDL107" to source.span("seq<bool>")), located(source))
+    }
+
+    @Test
+    fun invalidMapKeyNestedInMember() {
+        val source = "variant V { a(m: option<map<string, map<P, bool>>>) } record P { x: bool }"
+        assertEquals(listOf("IDL107" to source.span("P")), located(source))
+    }
+
+    @Test
+    fun invalidMapKeyInAlias() {
+        val source = "type T = seq<map<option<bool>, bool>>"
+        assertEquals(listOf("IDL107" to source.span("option<bool>")), located(source))
+    }
+
+    @Test
+    fun enumMapKeyIsFine() = assertEquals(emptyList(), located("enum S { a, b } record A { m: map<S, bool> }"))
 }

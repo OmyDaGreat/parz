@@ -19,6 +19,7 @@ import xyz.malefic.parz.idl.SchemaErrorKind.DuplicateDecl
 import xyz.malefic.parz.idl.SchemaErrorKind.DuplicateFieldName
 import xyz.malefic.parz.idl.SchemaErrorKind.FieldPath.RecordPath
 import xyz.malefic.parz.idl.SchemaErrorKind.FieldPath.VariantPath
+import xyz.malefic.parz.idl.SchemaErrorKind.InvalidMapKey
 import xyz.malefic.parz.idl.SchemaErrorKind.MemberError.DuplicateMemberName
 import xyz.malefic.parz.idl.SchemaErrorKind.MemberError.DuplicateMemberTag
 import xyz.malefic.parz.idl.SchemaErrorKind.UnknownType
@@ -288,6 +289,20 @@ sealed interface SchemaErrorKind : DiagnosticKind {
         override val code = "IDL106"
         override val message = "Duplicate declaration: ${decl.name}"
     }
+
+    /**
+     * A map's key type isn't a bool, decimal, string, or variant without payloads (an enum), directly or through aliases.
+     */
+    data class InvalidMapKey(
+        val key: Type,
+        override val decl: Decl,
+        val path: FieldPath?,
+    ) : SchemaErrorKind {
+        override val code = "IDL107"
+        override val message =
+            "Invalid map key${if (path != null) " in field $path" else ""}: ${(key as? Type.Ref)?.name ?: key.kind}" +
+                " (keys must be bool, decimal, string, or an enum)"
+    }
 }
 
 context(sink: Sink<Diagnostic<SchemaErrorKind>>)
@@ -385,11 +400,19 @@ private fun List<String>.rotateCycleTo(predicate: (String) -> Boolean): List<Str
     return open.drop(start) + open.take(start) + open[start]
 }
 
+/**
+ * Validates the fields of a record. Also calls [checkMapKeys].
+ * @param sink The sink to report errors to.
+ * @param decl The record declaration.
+ * @param fields The fields to validate.
+ * @param declarationMap A map of declaration names to declarations.
+ * @param pathOf A function that returns the path of a field.
+ */
 context(sink: Sink<Diagnostic<SchemaErrorKind>>)
 private fun checkFieldDecls(
     decl: Decl,
     fields: List<Field>,
-    declarations: Set<String>,
+    declarationMap: Map<String, Decl>,
     pathOf: (Field) -> SchemaErrorKind.FieldPath,
 ) {
     fun report(kind: SchemaErrorKind) = sink.report(Diagnostic(kind, null))
@@ -397,15 +420,71 @@ private fun checkFieldDecls(
     fields.forEach { field ->
         field.type
             .refs()
-            .filter { it !in declarations }
+            .filter { it !in declarationMap }
             .forEach {
                 report(UnknownType(it, decl, pathOf(field)))
             }
+        checkMapKeys(field.type, decl, pathOf(field), declarationMap)
         if (!fieldNames.add(field.name.generatorDistinct())) {
             report(DuplicateFieldName(pathOf(field), decl))
         }
     }
 }
+
+/**
+ * The key type of every map in this type, including maps nested in options, sequences, and other maps.
+ */
+private fun Type.mapKeys(): List<Type> =
+    when (this) {
+        is Type.Collection.Map -> listOf(keys) + keys.mapKeys() + values.mapKeys()
+        is Type.Collection.Option -> inner.mapKeys()
+        is Type.Collection.Seq -> inner.mapKeys()
+        else -> emptyList()
+    }
+
+/**
+ * Whether this type can key a map: any primitive but void or a ref to an enum variant, directly or through aliases.
+ *
+ * Unknown refs and alias cycles count aren't dealt with, since they're already reported as [UnknownType] and [CyclicType] elsewhere.
+ */
+private fun Type.isAllowedKey(
+    declarationMap: Map<String, Decl>,
+    seen: Set<String> = emptySet(),
+): Boolean =
+    when (this) {
+        is Type.Primitive -> {
+            this !is Type.Primitive.Void
+        }
+
+        is Type.Collection -> {
+            false
+        }
+
+        is Type.Ref -> {
+            when (val decl = declarationMap[name]) {
+                null -> true
+                is Record -> false
+                is Variant -> decl.members.all { it.payload.isEmpty() }
+                is Alias -> name in seen || decl.type.isAllowedKey(declarationMap, seen + name)
+            }
+        }
+    }
+
+/**
+ * Validates the keys of a map.
+ * @param sink The sink to report errors to.
+ * @param type The map type to validate.
+ * @param decl The declaration of the map.
+ * @param path The path of the map.
+ * @param declarationMap A map of declaration names to declarations.
+ */
+context(sink: Sink<Diagnostic<SchemaErrorKind>>)
+private fun checkMapKeys(
+    type: Type,
+    decl: Decl,
+    path: SchemaErrorKind.FieldPath?,
+    declarationMap: Map<String, Decl>,
+) = type.mapKeys().filterNot { it.isAllowedKey(declarationMap) }.forEach { sink.report(Diagnostic(InvalidMapKey(it, decl, path), null)) }
 
 /**
  * Validates a list of declarations, reporting any errors found.
@@ -423,14 +502,14 @@ fun validate(decls: List<Decl>): Errors<Diagnostic<SchemaErrorKind>> =
         distinct.forEach { decl ->
             when (decl) {
                 is Record -> {
-                    checkFieldDecls(decl, decl.fields, declarations, ::RecordPath)
+                    checkFieldDecls(decl, decl.fields, declarationMap, ::RecordPath)
                 }
 
                 is Variant -> {
                     val memberNames = mutableSetOf<String>()
                     val memberTags = mutableSetOf<Int>()
                     decl.members.forEach { member ->
-                        checkFieldDecls(decl, member.payload, declarations) { VariantPath(member, it) }
+                        checkFieldDecls(decl, member.payload, declarationMap) { VariantPath(member, it) }
                         if (!memberNames.add(member.name.generatorDistinct())) {
                             report(DuplicateMemberName(member.name, decl, member))
                         }
@@ -451,6 +530,7 @@ fun validate(decls: List<Decl>): Errors<Diagnostic<SchemaErrorKind>> =
                         .refs()
                         .filter { it !in declarations }
                         .forEach { report(UnknownType(it, decl, null)) }
+                    checkMapKeys(decl.type, decl, null, declarationMap)
                 }
             }
         }
