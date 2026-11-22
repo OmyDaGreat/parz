@@ -2,6 +2,8 @@ package xyz.malefic.parz.idl
 
 import xyz.malefic.parz.idl.Decl.Record.Field
 import xyz.malefic.parz.idl.Decl.Variant.Member
+import xyz.malefic.parz.idl.Type.Primitive.Bool
+import xyz.malefic.parz.idl.Type.Primitive.Str
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -11,7 +13,7 @@ class Variant {
     private val pair = variant(Member("key", 0), Member("key2", 1))
     private val expr =
         variant(
-            Member("lit", 0, listOf(Field("text", Type.Str()), Field("exact", Type.Bool))),
+            Member("lit", 0, listOf(Field("text", Str()), Field("exact", Bool))),
             Member("none", 1),
         )
     private val hello = Value.Str("hello")
@@ -93,7 +95,7 @@ class Variant {
     @Test
     fun enumRejectsFields() {
         assertFailsWith<IllegalArgumentException> {
-            Decl.Variant("E", listOf(Member("a", 0, listOf(Field("x", Type.Bool)))), isEnum = true)
+            Decl.Variant("E", listOf(Member("a", 0, listOf(Field("x", Bool)))), isEnum = true)
         }
     }
 

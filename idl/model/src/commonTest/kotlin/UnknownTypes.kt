@@ -5,6 +5,9 @@ import xyz.malefic.parz.idl.Decl.Variant.Member
 import xyz.malefic.parz.idl.SchemaErrorKind.FieldPath.RecordPath
 import xyz.malefic.parz.idl.SchemaErrorKind.FieldPath.VariantPath
 import xyz.malefic.parz.idl.SchemaErrorKind.UnknownType
+import xyz.malefic.parz.idl.Type.Collection.Option
+import xyz.malefic.parz.idl.Type.Collection.Seq
+import xyz.malefic.parz.idl.Type.Primitive.Bool
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -22,7 +25,7 @@ class UnknownTypes {
 
     @Test
     fun insideContainers() {
-        val field = Field("x", Type.Seq(Type.Option(Type.Ref("Nope"))))
+        val field = Field("x", Seq(Option(Type.Ref("Nope"))))
         val decl = Decl.Record("A", listOf(field))
         assertEquals(listOf(UnknownType("Nope", decl, RecordPath(field))), kinds(decl))
     }
@@ -47,7 +50,7 @@ class UnknownTypes {
 
     @Test
     fun inAlias() {
-        val decl = Decl.Alias("A", Type.Option(Type.Ref("Nope")))
+        val decl = Decl.Alias("A", Option(Type.Ref("Nope")))
         val kinds = kinds(decl)
         assertEquals(listOf(UnknownType("Nope", decl, null)), kinds)
         assertEquals("Unknown type: Nope", kinds.single().message)
@@ -57,7 +60,7 @@ class UnknownTypes {
     fun caseSensitive() {
         val field = Field("x", Type.Ref("foo"))
         val decl = Decl.Record("A", listOf(field))
-        assertEquals(listOf(UnknownType("foo", decl, RecordPath(field))), kinds(decl, Decl.Alias("Foo", Type.Bool)))
+        assertEquals(listOf(UnknownType("foo", decl, RecordPath(field))), kinds(decl, Decl.Alias("Foo", Bool)))
     }
 
     @Test
@@ -66,7 +69,7 @@ class UnknownTypes {
             emptyList(),
             kinds(
                 Decl.Record("A", listOf(Field("b", Type.Ref("B")))),
-                Decl.Alias("B", Type.Seq(Type.Ref("C"))),
+                Decl.Alias("B", Seq(Type.Ref("C"))),
                 Decl.Variant("C", listOf(Member("a", 0))),
             ),
         )

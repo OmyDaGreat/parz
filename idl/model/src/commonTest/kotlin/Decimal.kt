@@ -5,54 +5,55 @@ import com.ionspin.kotlin.bignum.integer.BigInteger.Companion.ONE
 import com.ionspin.kotlin.bignum.integer.BigInteger.Companion.TEN
 import com.ionspin.kotlin.bignum.integer.BigInteger.Companion.TWO
 import com.ionspin.kotlin.bignum.integer.BigInteger.Companion.ZERO
-import xyz.malefic.parz.idl.Type.Decimal.Overflow
-import xyz.malefic.parz.idl.Type.Decimal.Rounding
+import xyz.malefic.parz.idl.Type.Primitive.Decimal
+import xyz.malefic.parz.idl.Type.Primitive.Decimal.Overflow
+import xyz.malefic.parz.idl.Type.Primitive.Decimal.Rounding
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class Decimal {
-    @Test fun nonDecimal() = Type.Decimal(ZERO, ZERO, 0).assertRejectsOtherKinds()
+    @Test fun nonDecimal() = Decimal(ZERO, ZERO, 0).assertRejectsOtherKinds()
 
     @Test
     fun invalidBounds() {
-        assertFailsWith<IllegalArgumentException> { Type.Decimal(ONE, ZERO, 0) }
-        assertFailsWith<IllegalArgumentException> { Type.Decimal(TEN, -TEN, 2) }
+        assertFailsWith<IllegalArgumentException> { Decimal(ONE, ZERO, 0) }
+        assertFailsWith<IllegalArgumentException> { Decimal(TEN, -TEN, 2) }
     }
 
     @Test
     fun outOfRange() {
-        Type.Decimal(ZERO, ZERO, 0).assertRejects(dec(1), dec(-1))
-        Type.Decimal(-TEN, TEN, 0).assertRejects(dec(TEN + 1), dec(-TEN - 1))
-        Type.Decimal(-TEN, TEN, 0, overflow = Overflow.WRAP).assertRejects(dec(TEN + 1))
-        Type.Decimal(ZERO, TEN, 2).assertRejects(dec(-1, 2))
-        Type.Decimal(ZERO, TEN.pow(2), 2).assertRejects(dec(1004, 3))
-        Type.Decimal(-TWO.pow(128), TWO.pow(128), 0).assertRejects(dec(TWO.pow(128) + 1))
+        Decimal(ZERO, ZERO, 0).assertRejects(dec(1), dec(-1))
+        Decimal(-TEN, TEN, 0).assertRejects(dec(TEN + 1), dec(-TEN - 1))
+        Decimal(-TEN, TEN, 0, overflow = Overflow.WRAP).assertRejects(dec(TEN + 1))
+        Decimal(ZERO, TEN, 2).assertRejects(dec(-1, 2))
+        Decimal(ZERO, TEN.pow(2), 2).assertRejects(dec(1004, 3))
+        Decimal(-TWO.pow(128), TWO.pow(128), 0).assertRejects(dec(TWO.pow(128) + 1))
     }
 
     @Test
     fun mismatchReasons() {
         val inexactAndOutOfRange = listOf(mismatch(Reason.InexactScale(2, 3)), mismatch(Reason.OutOfRange(ZERO, TEN.pow(2))))
-        assertEquals(inexactAndOutOfRange, Type.Decimal(ZERO, TEN.pow(2), 2) check dec(1004, 3))
-        assertEquals(inexactAndOutOfRange, Type.Decimal(ZERO, TEN.pow(2), 2, Rounding.PROHIBITED) check dec(1004, 3))
+        assertEquals(inexactAndOutOfRange, Decimal(ZERO, TEN.pow(2), 2) check dec(1004, 3))
+        assertEquals(inexactAndOutOfRange, Decimal(ZERO, TEN.pow(2), 2, Rounding.PROHIBITED) check dec(1004, 3))
         assertEquals(
             listOf(mismatch(Reason.InexactScale(2, 3))),
-            Type.Decimal(ZERO, TEN.pow(5), 2, Rounding.ROUND_HALF_AWAY_FROM_ZERO) check dec(500001, 3),
+            Decimal(ZERO, TEN.pow(5), 2, Rounding.ROUND_HALF_AWAY_FROM_ZERO) check dec(500001, 3),
         )
         assertEquals(
             listOf(mismatch(Reason.OutOfRange(ZERO, TEN.pow(5)))),
-            Type.Decimal(ZERO, TEN.pow(5), 2, overflow = Overflow.SATURATE) check dec(TEN.pow(5) + 1, 2),
+            Decimal(ZERO, TEN.pow(5), 2, overflow = Overflow.SATURATE) check dec(TEN.pow(5) + 1, 2),
         )
     }
 
     @Test
     fun isDecimal() {
-        Type.Decimal(-TEN, TEN, 0).assertAccepts(dec(0), dec(1), dec(-1), dec(TEN), dec(-TEN))
-        Type.Decimal(ZERO, ZERO, 0).assertAccepts(dec(0, -1))
-        Type.Decimal(-ONE, ONE, 0).assertAccepts(dec(10, 1))
-        Type.Decimal(-TEN.pow(4), TEN.pow(4), 2).assertAccepts(dec(1234, 2), dec(-TEN.pow(4), 2))
-        Type.Decimal(ONE, ONE, 3).assertAccepts(dec(1, 3))
-        Type.Decimal(-TWO.pow(128), TWO.pow(128), 0).assertAccepts(dec(TWO.pow(128)))
+        Decimal(-TEN, TEN, 0).assertAccepts(dec(0), dec(1), dec(-1), dec(TEN), dec(-TEN))
+        Decimal(ZERO, ZERO, 0).assertAccepts(dec(0, -1))
+        Decimal(-ONE, ONE, 0).assertAccepts(dec(10, 1))
+        Decimal(-TEN.pow(4), TEN.pow(4), 2).assertAccepts(dec(1234, 2), dec(-TEN.pow(4), 2))
+        Decimal(ONE, ONE, 3).assertAccepts(dec(1, 3))
+        Decimal(-TWO.pow(128), TWO.pow(128), 0).assertAccepts(dec(TWO.pow(128)))
     }
 
     @Test
@@ -95,7 +96,7 @@ class Decimal {
     @Test
     fun coerce() {
         val max = TEN.pow(5) - 1
-        val pic = { overflow: Overflow, rounding: Rounding -> Type.Decimal(-max, max, 2, rounding, overflow) }
+        val pic = { overflow: Overflow, rounding: Rounding -> Decimal(-max, max, 2, rounding, overflow) }
 
         val erroring = pic(Overflow.ERROR, Rounding.TOWARDS_ZERO)
         assertEquals(dec(max, 2), erroring coerce dec(999991, 3))
@@ -112,10 +113,10 @@ class Decimal {
         assertEquals(dec(23456, 2), truncating coerce dec(123456, 2))
         assertEquals(dec(-23456, 2), truncating coerce dec(-123456, 2))
         assertFailsWith<ArithmeticException> {
-            Type.Decimal(ZERO, BigInteger(500), 0, overflow = Overflow.TRUNCATE_HIGH) coerce dec(600)
+            Decimal(ZERO, BigInteger(500), 0, overflow = Overflow.TRUNCATE_HIGH) coerce dec(600)
         }
 
-        val byte = Type.Decimal(BigInteger(-128), BigInteger(127), 0, overflow = Overflow.WRAP)
+        val byte = Decimal(BigInteger(-128), BigInteger(127), 0, overflow = Overflow.WRAP)
         assertEquals(dec(-128), byte coerce dec(128))
         assertEquals(dec(127), byte coerce dec(-129))
         assertEquals(dec(44), byte coerce dec(300))

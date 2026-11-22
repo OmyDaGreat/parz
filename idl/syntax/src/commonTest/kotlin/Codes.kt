@@ -8,6 +8,7 @@ import xyz.malefic.parz.idl.SchemaErrorKind
 import xyz.malefic.parz.idl.SchemaErrorKind.FieldPath.RecordPath
 import xyz.malefic.parz.idl.ShapeErrorKind
 import xyz.malefic.parz.idl.Type
+import xyz.malefic.parz.idl.Type.Primitive.Bool
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -17,7 +18,7 @@ import kotlin.test.assertTrue
  */
 class Codes {
     private val token = Token.EOF(0)
-    private val decl = Decl.Alias("A", Type.Bool)
+    private val decl = Decl.Alias("A", Bool)
     private val member = Member("m", 0)
 
     private val syntax =
@@ -49,7 +50,7 @@ class Codes {
     private val schema =
         listOf(
             SchemaErrorKind.UnknownType("X", decl, null),
-            SchemaErrorKind.DuplicateFieldName(RecordPath(Field("f", Type.Bool)), decl),
+            SchemaErrorKind.DuplicateFieldName(RecordPath(Field("f", Bool)), decl),
             SchemaErrorKind.MemberError.DuplicateMemberName("m", decl, member),
             SchemaErrorKind.MemberError.DuplicateMemberTag(0, decl, member),
             SchemaErrorKind.CyclicType(emptyList(), decl),

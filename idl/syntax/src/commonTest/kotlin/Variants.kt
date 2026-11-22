@@ -2,6 +2,8 @@ package xyz.malefic.parz.idl.syntax
 
 import com.ionspin.kotlin.bignum.integer.BigInteger
 import xyz.malefic.parz.idl.Type
+import xyz.malefic.parz.idl.Type.Primitive.Bool
+import xyz.malefic.parz.idl.Type.Primitive.Str
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.EmptyPayload
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.ExpectedInt
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.ExpectedSymbol
@@ -35,7 +37,7 @@ class Variants {
         val lit = expr.members[0]
         assertEquals(listOf("text", "exact"), lit.payload.map { it.name })
         assertEquals(listOf(source.span("text"), source.span("exact")), lit.payload.map { it.span })
-        assertEquals(listOf(Type.Str(), Type.Bool), lit.payload.map { it.type.toType() })
+        assertEquals(listOf(Str(), Bool), lit.payload.map { it.type.toType() })
         assertEquals(listOf(Type.Ref("Expr")), expr.members[1].payload.map { it.type.toType() })
         assertEquals(emptyList(), expr.members[2].payload)
     }

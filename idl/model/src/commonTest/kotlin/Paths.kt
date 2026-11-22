@@ -2,6 +2,10 @@ package xyz.malefic.parz.idl
 
 import xyz.malefic.parz.idl.Decl.Record.Field
 import xyz.malefic.parz.idl.Decl.Variant.Member
+import xyz.malefic.parz.idl.Type.Collection.Option
+import xyz.malefic.parz.idl.Type.Collection.Seq
+import xyz.malefic.parz.idl.Type.Primitive.Bool
+import xyz.malefic.parz.idl.Type.Primitive.Str
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -16,7 +20,7 @@ class Paths {
                 Decl.Variant(
                     "Expr",
                     listOf(
-                        Member("lit", 0, listOf(Field("text", Type.Str()))),
+                        Member("lit", 0, listOf(Field("text", Str()))),
                         Member("neg", 1, listOf(Field("inner", Type.Ref("Expr")))),
                     ),
                 ),
@@ -31,7 +35,7 @@ class Paths {
     fun optionInner() =
         assertEquals(
             listOf(Mismatch(listOf(Segment.Inner), Reason.WrongKind("bool", "string"))),
-            Type.Option(Type.Bool) check Value.Some(Value.Str("x")),
+            Option(Bool) check Value.Some(Value.Str("x")),
         )
 
     @Test
@@ -41,7 +45,7 @@ class Paths {
                 Mismatch(listOf(Segment.Index(1)), Reason.WrongKind("bool", "string")),
                 Mismatch(listOf(Segment.Index(3)), Reason.WrongKind("bool", "void")),
             ),
-            Type.Seq(Type.Bool) check Value.Seq(listOf(Value.Bool(true), Value.Str(""), Value.Bool(false), Value.Void)),
+            Seq(Bool) check Value.Seq(listOf(Value.Bool(true), Value.Str(""), Value.Bool(false), Value.Void)),
         )
 
     @Test
@@ -66,7 +70,7 @@ class Paths {
     fun seqOfRecords() =
         assertEquals(
             listOf(Mismatch(listOf(Segment.Index(1), Segment.Field("expr")), Reason.MissingField("expr"))),
-            Type.Seq(Type.Ref("Holder")).check(
+            Seq(Type.Ref("Holder")).check(
                 Value.Seq(listOf(Value.Record(mapOf("expr" to lit(Value.Str("ok")))), Value.Record(emptyMap()))),
                 schema,
             ),

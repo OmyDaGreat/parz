@@ -3,6 +3,8 @@ package xyz.malefic.parz.idl
 import xyz.malefic.parz.idl.Decl.Record.Field
 import xyz.malefic.parz.idl.Decl.Variant.Member
 import xyz.malefic.parz.idl.SchemaErrorKind.CyclicType
+import xyz.malefic.parz.idl.Type.Collection.Option
+import xyz.malefic.parz.idl.Type.Collection.Seq
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -73,8 +75,8 @@ class Cycles {
 
     @Test
     fun guardedByOptionOrSeq() {
-        assertEquals(emptyList(), cycles(record("R", "next" to Type.Option(ref("R")))))
-        assertEquals(emptyList(), cycles(record("R", "kids" to Type.Seq(ref("R")))))
+        assertEquals(emptyList(), cycles(record("R", "next" to Option(ref("R")))))
+        assertEquals(emptyList(), cycles(record("R", "kids" to Seq(ref("R")))))
     }
 
     @Test
@@ -94,7 +96,7 @@ class Cycles {
     fun aliasSelf() = assertEquals(listOf("A -> A"), cycles(Decl.Alias("A", ref("A"))))
 
     @Test
-    fun aliasThroughOption() = assertEquals(listOf("A -> A"), cycles(Decl.Alias("A", Type.Option(ref("A")))))
+    fun aliasThroughOption() = assertEquals(listOf("A -> A"), cycles(Decl.Alias("A", Option(ref("A")))))
 
     @Test
     fun aliasPairReportedOnce() = assertEquals(1, cycles(Decl.Alias("B", ref("C")), Decl.Alias("C", ref("B"))).size)

@@ -5,8 +5,14 @@ import xyz.malefic.parz.core.SourceSpan
 import xyz.malefic.parz.idl.ShapeErrorKind.EmptyRange
 import xyz.malefic.parz.idl.ShapeErrorKind.NonPositiveLength
 import xyz.malefic.parz.idl.Type
-import xyz.malefic.parz.idl.Type.Decimal.Overflow
-import xyz.malefic.parz.idl.Type.Decimal.Rounding
+import xyz.malefic.parz.idl.Type.Collection.Option
+import xyz.malefic.parz.idl.Type.Collection.Seq
+import xyz.malefic.parz.idl.Type.Primitive.Bool
+import xyz.malefic.parz.idl.Type.Primitive.Decimal
+import xyz.malefic.parz.idl.Type.Primitive.Decimal.Overflow
+import xyz.malefic.parz.idl.Type.Primitive.Decimal.Rounding
+import xyz.malefic.parz.idl.Type.Primitive.Str
+import xyz.malefic.parz.idl.Type.Primitive.Void
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.ExpectedDecimalBounds
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.ExpectedInt
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.ExpectedOption
@@ -24,10 +30,10 @@ class Types {
 
     @Test
     fun primitives() {
-        assertEquals(Type.Void, typeOf("void").toType())
-        assertEquals(Type.Bool, typeOf("bool").toType())
-        assertEquals(Type.Str(), typeOf("string").toType())
-        assertEquals(Type.Str(10), typeOf("string(10)").toType())
+        assertEquals(Void, typeOf("void").toType())
+        assertEquals(Bool, typeOf("bool").toType())
+        assertEquals(Str(), typeOf("string").toType())
+        assertEquals(Str(10), typeOf("string(10)").toType())
     }
 
     @Test
@@ -35,28 +41,28 @@ class Types {
 
     @Test
     fun containers() {
-        assertEquals(Type.Option(Type.Bool), typeOf("option<bool>").toType())
-        assertEquals(Type.Seq(Type.Option(Type.Ref("Money"))), typeOf("seq<option<Money>>").toType())
+        assertEquals(Option(Bool), typeOf("option<bool>").toType())
+        assertEquals(Seq(Option(Type.Ref("Money"))), typeOf("seq<option<Money>>").toType())
     }
 
     @Test
-    fun decimalPrecision() = assertEquals(Type.Decimal(int(-99999), int(99999), 2), typeOf("decimal(5, 2)").toType())
+    fun decimalPrecision() = assertEquals(Decimal(int(-99999), int(99999), 2), typeOf("decimal(5, 2)").toType())
 
     @Test
-    fun decimalZeroPrecision() = assertEquals(Type.Decimal(int(0), int(0), 0), typeOf("decimal(0, 0)").toType())
+    fun decimalZeroPrecision() = assertEquals(Decimal(int(0), int(0), 0), typeOf("decimal(0, 0)").toType())
 
     @Test
     fun decimalPoliciesIgnoreCase() =
         assertEquals(
-            Type.Decimal(int(-99), int(99), 0, Rounding.ROUND_HALF_TO_EVEN, Overflow.SATURATE),
+            Decimal(int(-99), int(99), 0, Rounding.ROUND_HALF_TO_EVEN, Overflow.SATURATE),
             typeOf("decimal(2, 0, round_half_to_even, Saturate)").toType(),
         )
 
     @Test
     fun decimalRange() {
-        assertEquals(Type.Decimal(int(-5), int(10), 1), typeOf("decimal(-5..10, 1)").toType())
-        assertEquals(Type.Decimal(int(-10), int(-5), 0, Rounding.FLOOR), typeOf("decimal(-10..-5, 0, floor)").toType())
-        assertEquals(Type.Decimal(int(3), int(3), 0), typeOf("decimal(3..3, 0)").toType())
+        assertEquals(Decimal(int(-5), int(10), 1), typeOf("decimal(-5..10, 1)").toType())
+        assertEquals(Decimal(int(-10), int(-5), 0, Rounding.FLOOR), typeOf("decimal(-10..-5, 0, floor)").toType())
+        assertEquals(Decimal(int(3), int(3), 0), typeOf("decimal(3..3, 0)").toType())
     }
 
     @Test
@@ -127,7 +133,10 @@ class Types {
     fun unknownRounding() {
         val source = "type T = decimal(9, 2, banana)"
         val error = error(source)
-        assertEquals(ExpectedOption(Rounding.entries.map { it.name } + Overflow.entries.map { it.name }, "banana"), error.kind)
+        assertEquals(
+            ExpectedOption(Rounding.entries.map { it.name } + Overflow.entries.map { it.name }, "banana"),
+            error.kind,
+        )
         assertEquals(source.span("banana"), error.span)
     }
 

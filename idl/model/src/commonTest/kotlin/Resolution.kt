@@ -2,6 +2,8 @@ package xyz.malefic.parz.idl
 
 import xyz.malefic.parz.idl.Decl.Record.Field
 import xyz.malefic.parz.idl.Decl.Variant.Member
+import xyz.malefic.parz.idl.Type.Collection.Seq
+import xyz.malefic.parz.idl.Type.Primitive.Bool
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -12,7 +14,7 @@ import kotlin.test.assertTrue
  * Looking up and resolving declarations in a [Schema].
  */
 class Resolution {
-    private val record = Decl.Record("R", listOf(Field("x", Type.Bool)))
+    private val record = Decl.Record("R", listOf(Field("x", Bool)))
     private val variant = Decl.Variant("V", listOf(Member("a", 0)))
     private val schema =
         Schema(
@@ -21,7 +23,7 @@ class Resolution {
                 variant,
                 Decl.Alias("ToR", Type.Ref("R")),
                 Decl.Alias("ToToR", Type.Ref("ToR")),
-                Decl.Alias("Flag", Type.Bool),
+                Decl.Alias("Flag", Bool),
             ),
         )
 
@@ -40,11 +42,11 @@ class Resolution {
     @Test
     fun resolveThroughAliases() {
         assertEquals(Resolved.Record(record), schema.resolve(Type.Ref("ToToR")))
-        assertEquals(Resolved.Other(Type.Bool), schema.resolve(Type.Ref("Flag")))
+        assertEquals(Resolved.Other(Bool), schema.resolve(Type.Ref("Flag")))
     }
 
     @Test
-    fun resolveNonRef() = assertEquals(Resolved.Other(Type.Seq(Type.Bool)), schema.resolve(Type.Seq(Type.Bool)))
+    fun resolveNonRef() = assertEquals(Resolved.Other(Seq(Bool)), schema.resolve(Seq(Bool)))
 
     @Test
     fun resolveUnknown() {

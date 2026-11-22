@@ -1,7 +1,9 @@
 package xyz.malefic.parz.idl.syntax
 
 import com.ionspin.kotlin.bignum.integer.BigInteger
-import xyz.malefic.parz.idl.Type
+import xyz.malefic.parz.idl.Type.Collection.Option
+import xyz.malefic.parz.idl.Type.Primitive.Decimal
+import xyz.malefic.parz.idl.Type.Primitive.Str
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.ExpectedSymbol
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -16,7 +18,7 @@ class Records {
         assertEquals(listOf("amount", "note"), record.fields.map { it.name })
         assertEquals(listOf(source.span("amount"), source.span("note")), record.fields.map { it.span })
         assertEquals(
-            listOf(Type.Decimal(BigInteger(-999999999), BigInteger(999999999), 2), Type.Option(Type.Str())),
+            listOf(Decimal(BigInteger(-999999999), BigInteger(999999999), 2), Option(Str())),
             record.fields.map { it.type.toType() },
         )
     }

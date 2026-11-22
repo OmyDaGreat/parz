@@ -8,18 +8,20 @@ import xyz.malefic.parz.idl.SchemaErrorKind.FieldPath.RecordPath
 import xyz.malefic.parz.idl.SchemaErrorKind.FieldPath.VariantPath
 import xyz.malefic.parz.idl.SchemaErrorKind.MemberError.DuplicateMemberName
 import xyz.malefic.parz.idl.SchemaErrorKind.MemberError.DuplicateMemberTag
+import xyz.malefic.parz.idl.Type.Primitive.Bool
+import xyz.malefic.parz.idl.Type.Primitive.Str
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class Duplicates {
     private fun kinds(vararg decls: Decl) = validate(decls.toList()).diagnostics.map { it.kind }
 
-    private val flag = Field("x", Type.Bool)
+    private val flag = Field("x", Bool)
 
     @Test
     fun duplicateDecl() {
         val first = Decl.Record("A", listOf(flag))
-        val second = Decl.Alias("A", Type.Bool)
+        val second = Decl.Alias("A", Bool)
         val kinds = kinds(first, second)
         assertEquals(listOf(DuplicateDecl(second)), kinds)
         assertEquals("Duplicate declaration: A", kinds.single().message)
@@ -27,20 +29,20 @@ class Duplicates {
 
     @Test
     fun duplicateDeclIgnoresCaseAndUnderscores() {
-        val second = Decl.Alias("foobar", Type.Bool)
-        assertEquals(listOf(DuplicateDecl(second)), kinds(Decl.Alias("Foo_Bar", Type.Bool), second))
+        val second = Decl.Alias("foobar", Bool)
+        assertEquals(listOf(DuplicateDecl(second)), kinds(Decl.Alias("Foo_Bar", Bool), second))
     }
 
     @Test
     fun duplicateDeclIsNotValidatedFurther() {
         val second = Decl.Alias("A", Type.Ref("Nope"))
-        assertEquals(listOf(DuplicateDecl(second)), kinds(Decl.Alias("A", Type.Bool), second))
+        assertEquals(listOf(DuplicateDecl(second)), kinds(Decl.Alias("A", Bool), second))
     }
 
     @Test
     fun duplicateRecordField() {
-        val second = Field("my_field", Type.Str())
-        val decl = Decl.Record("A", listOf(Field("myField", Type.Bool), second))
+        val second = Field("my_field", Str())
+        val decl = Decl.Record("A", listOf(Field("myField", Bool), second))
         val kinds = kinds(decl)
         assertEquals(listOf(DuplicateFieldName(RecordPath(second), decl)), kinds)
         assertEquals("Duplicate field my_field in A", kinds.single().message)
@@ -48,7 +50,7 @@ class Duplicates {
 
     @Test
     fun duplicateMemberField() {
-        val second = Field("x", Type.Str())
+        val second = Field("x", Str())
         val member = Member("m", 0, listOf(flag, second))
         val decl = Decl.Variant("V", listOf(member))
         assertEquals(listOf(DuplicateFieldName(VariantPath(member, second), decl)), kinds(decl))

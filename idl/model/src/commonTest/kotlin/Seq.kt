@@ -1,9 +1,11 @@
 package xyz.malefic.parz.idl
 
+import xyz.malefic.parz.idl.Type.Collection.Seq
+import xyz.malefic.parz.idl.Type.Primitive.Bool
 import kotlin.test.Test
 
 class Seq {
-    private val bools = Type.Seq(Type.Bool)
+    private val bools = Seq(Bool)
 
     @Test fun nonSeq() = bools.assertRejectsOtherKinds()
 

@@ -1,6 +1,7 @@
 package xyz.malefic.parz.idl.syntax
 
 import xyz.malefic.parz.idl.Type
+import xyz.malefic.parz.idl.Type.Collection.Seq
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.ExpectedSymbol
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.ExpectedWord
 import kotlin.test.Test
@@ -13,7 +14,7 @@ class Aliases {
         val alias = decl<DeclSyntax.Alias>(source)
         assertEquals("Payments", alias.name)
         assertEquals(source.span("type Payments"), alias.span)
-        assertEquals(Type.Seq(Type.Ref("Payment")), alias.type.toType())
+        assertEquals(Seq(Type.Ref("Payment")), alias.type.toType())
     }
 
     @Test

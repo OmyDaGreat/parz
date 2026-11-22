@@ -1,10 +1,12 @@
 package xyz.malefic.parz.idl
 
+import xyz.malefic.parz.idl.Type.Collection.Option
+import xyz.malefic.parz.idl.Type.Primitive.Bool
 import kotlin.test.Test
 
 class Option {
-    private val bool = Type.Option(Type.Bool)
-    private val nested = Type.Option(bool)
+    private val bool = Option(Bool)
+    private val nested = Option(bool)
 
     @Test
     fun nonOption() {

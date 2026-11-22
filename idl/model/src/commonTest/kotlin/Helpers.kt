@@ -26,6 +26,7 @@ private val samples =
         dec(0),
         Value.Str(""),
         Value.Seq(emptyList()),
+        Value.Map(emptyMap()),
         Value.Record(emptyMap()),
         Value.Variant(""),
         Value.Some(Value.Void),

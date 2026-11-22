@@ -1,12 +1,14 @@
 package xyz.malefic.parz.idl
 
 import xyz.malefic.parz.idl.Decl.Record.Field
+import xyz.malefic.parz.idl.Type.Primitive.Bool
+import xyz.malefic.parz.idl.Type.Primitive.Str
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class Record {
-    private val single = record(Field("key", Type.Str()))
+    private val single = record(Field("key", Str()))
     private val hello = Value.Str("hello world")
 
     @Test fun nonRecord() = single.assertRejectsOtherKinds("record")
@@ -14,15 +16,14 @@ class Record {
     @Test
     fun invalidRecord() {
         assertFailsWith<IllegalArgumentException> { record() }
-        assertFailsWith<IllegalArgumentException> { record(Field("key", Type.Str()), Field("key", Type.Bool)) }
+        assertFailsWith<IllegalArgumentException> { record(Field("key", Str()), Field("key", Bool)) }
         single.assertRejects(Value.Record(emptyMap()))
     }
 
     @Test
     fun isRecord() {
         single.assertAccepts(Value.Record(mapOf("key" to hello)))
-        record(Field("key", Type.Str()), Field("key2", Type.Str()))
-            .assertAccepts(Value.Record(mapOf("key" to hello, "key2" to hello)))
+        record(Field("key", Str()), Field("key2", Str())).assertAccepts(Value.Record(mapOf("key" to hello, "key2" to hello)))
     }
 
     @Test
