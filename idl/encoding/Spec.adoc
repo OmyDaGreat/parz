@@ -98,6 +98,7 @@ NOTE: No other types are allowed for keys of maps
 * ASCII digits only for decimals
 * Values like 007 and -0 are normalized to 7 and 0
 * Any error existing means no value, though lenient functions are in the docs as an option
+* Comments (`; Something`) are currently ignored
 
 == File Header Spec
 [source]
