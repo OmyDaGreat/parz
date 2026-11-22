@@ -2,10 +2,12 @@ package xyz.malefic.parz.idl
 
 import com.ionspin.kotlin.bignum.integer.BigInteger
 import xyz.malefic.parz.idl.Reason.ExtraField
-import xyz.malefic.parz.idl.Reason.InexactScale
+import xyz.malefic.parz.idl.Reason.Fit.InexactLength
+import xyz.malefic.parz.idl.Reason.Fit.InexactScale
+import xyz.malefic.parz.idl.Reason.Fit.OutOfRange
+import xyz.malefic.parz.idl.Reason.Fit.TooLong
+import xyz.malefic.parz.idl.Reason.Fit.TooShort
 import xyz.malefic.parz.idl.Reason.MissingField
-import xyz.malefic.parz.idl.Reason.OutOfRange
-import xyz.malefic.parz.idl.Reason.TooLong
 import xyz.malefic.parz.idl.Reason.UnknownMember
 import xyz.malefic.parz.idl.Reason.WrongKind
 import xyz.malefic.parz.idl.Type.Primitive.Decimal.Rounding.PROHIBITED
@@ -79,30 +81,6 @@ sealed interface Reason {
     ) : Reason
 
     /**
-     * The value is out of the range of the type.
-     */
-    data class OutOfRange(
-        val min: BigInteger,
-        val max: BigInteger,
-    ) : Reason
-
-    /**
-     * The value is longer than the maximum length of the type.
-     */
-    data class TooLong(
-        val maxLen: Long,
-        val actual: Long,
-    ) : Reason
-
-    /**
-     * The value has a different scale than the type.
-     */
-    data class InexactScale(
-        val expected: Int,
-        val actual: Int,
-    ) : Reason
-
-    /**
      * The value has a member not reflected in the type.
      */
     data class UnknownMember(
@@ -122,6 +100,51 @@ sealed interface Reason {
     data class ExtraField(
         val name: String,
     ) : Reason
+
+    /**
+     * A reason for a mismatch that indicates the value does not fit within the type's constraints.
+     */
+    sealed interface Fit : Reason {
+        /**
+         * The value is out of the range of the type.
+         */
+        data class OutOfRange(
+            val min: BigInteger,
+            val max: BigInteger,
+        ) : Fit
+
+        /**
+         * The value is longer than the maximum length of the type.
+         */
+        data class TooLong(
+            val maxLen: Long,
+            val actual: Long,
+        ) : Fit
+
+        /**
+         * The value is shorter than the minimum length of the type.
+         */
+        data class TooShort(
+            val minLen: Long,
+            val actual: Long,
+        ) : Fit
+
+        /**
+         * The value does not have the expected length from the type.
+         */
+        data class InexactLength(
+            val exactLen: Long,
+            val actual: Long,
+        ) : Fit
+
+        /**
+         * The value has a different scale than the type.
+         */
+        data class InexactScale(
+            val expected: Int,
+            val actual: Int,
+        ) : Fit
+    }
 }
 
 /**
@@ -171,6 +194,17 @@ fun Type.check(
 
         Type.Primitive.Bool -> {
             expect<Value.Bool>(kind, v)
+        }
+
+        is Type.Primitive.Bytes -> {
+            expect<Value.Bytes>(kind, v) {
+                if (exact) {
+                    if (it.size.toLong() != maxLen) add(listOf(), InexactLength(this.maxLen, it.size.toLong()))
+                } else {
+                    if (it.size > this.maxLen) add(listOf(), TooLong(this.maxLen, it.size.toLong()))
+                    if (it.size < this.minLen) add(listOf(), TooShort(this.minLen, it.size.toLong()))
+                }
+            }
         }
 
         is Type.Primitive.Str -> {

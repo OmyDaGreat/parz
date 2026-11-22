@@ -30,6 +30,15 @@ internal fun keyOrder(
             compareBy { (it as Value.Decimal).rescale(type.scale, PROHIBITED).unscaled }
         }
 
+        is Type.Primitive.Bytes -> {
+            Comparator { a, b ->
+                val x = (a as Value.Bytes).toByteArray()
+                val y = (b as Value.Bytes).toByteArray()
+                for (i in 0 until minOf(x.size, y.size)) if (x[i] != y[i]) return@Comparator x[i].toUByte().compareTo(y[i].toUByte())
+                x.size - y.size
+            }
+        }
+
         is Type.Primitive.Str -> {
             Comparator { a, b -> compareCodePoints((a as Value.Str).v, (b as Value.Str).v) }
         }

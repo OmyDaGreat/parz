@@ -14,20 +14,35 @@ sealed interface Value {
         override val kind = "void"
     }
 
-    data object None : Value {
-        override val kind = "none"
-    }
-
-    data class Some(
-        val v: Value,
-    ) : Value {
-        override val kind = "some"
-    }
-
     data class Bool(
         val v: Boolean,
     ) : Value {
         override val kind = "bool"
+    }
+
+    class Bytes(
+        bytes: ByteArray,
+    ) : Value {
+        override val kind = "bytes"
+        private val data = bytes.copyOf()
+
+        fun toByteArray() = data.copyOf()
+
+        val size get() = data.size
+
+        fun hex() = data.toHexString()
+
+        override fun toString() = hex()
+
+        override fun equals(other: Any?) = other is Bytes && data.contentEquals(other.data)
+
+        override fun hashCode() = data.contentHashCode()
+    }
+
+    data class Str(
+        val v: String,
+    ) : Value {
+        override val kind = "string"
     }
 
     data class Decimal(
@@ -96,10 +111,14 @@ sealed interface Value {
         infix fun isExactAt(newScale: Int) = newScale >= scale || unscaled % BigInteger.TEN.pow(scale - newScale) == BigInteger.ZERO
     }
 
-    data class Str(
-        val v: String,
+    data object None : Value {
+        override val kind = "none"
+    }
+
+    data class Some(
+        val v: Value,
     ) : Value {
-        override val kind = "string"
+        override val kind = "some"
     }
 
     data class Seq(

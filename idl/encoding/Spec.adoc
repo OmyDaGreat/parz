@@ -9,15 +9,27 @@
 
 |void
 |list
-|()
+|`()`
 
 |bool
 |atom
-|true/false
+|`true`/`false`
+
+|bytes
+|atom
+|`#x` followed by two lowercase hex digits per byte
+
+|str
+|str
+|quoted string with escaped `\" \\ \n \r \t, \u{…}`
+
+|decimal
+|atom
+|exact value at type's scale
 
 |option
 |atom/list
-|none/(some x)
+|`none`/`(some x)`
 
 |seq
 |list
@@ -25,27 +37,19 @@
 
 |map
 |list
-|((key value) ...)
-
-|str
-|str
-|quoted string with escaped \" \\ \n \r \t, \u{…}
-
-|decimal
-|atom
-|exact value at type's scale
-
-|record
-|list(list..)
-|((field value) ...)
+|`((key value) ...)`
 
 |enum
 |atom
-|member
+|`member`
 
 |variant
 |list(atom + list..)
-|(member (field value) ...)
+|`(member (field value) ...)`
+
+|record
+|list(list..)
+|`((field value) ...)`
 |===
 
 === Ordering
@@ -74,10 +78,13 @@
 |ordering
 
 |bool
-|false, true
+|`false`, `true`
 
 |decimal
 |unscaled after rescaling into type's scale
+
+|bytes
+|byte by byte unsigned comparison, with prefixes first
 
 |str
 |code point comparison
@@ -94,6 +101,7 @@ NOTE: No other types are allowed for keys of maps
 == Decoding Spec
 * Fields in any order
 * Map entries in any order
+* Bytes normalize to lowercase
 * Less decimal places than in type
 * ASCII digits only for decimals
 * Values like 007 and -0 are normalized to 7 and 0

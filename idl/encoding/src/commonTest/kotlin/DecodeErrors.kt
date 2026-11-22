@@ -82,14 +82,14 @@ class DecodeErrors {
 
     @Test fun outOfRange() {
         val kind = assertIs<DoesNotFit>(error("1000.01", money).kind)
-        assertIs<Reason.OutOfRange>(kind.reason)
+        assertIs<Reason.Fit.OutOfRange>(kind.reason)
         assertIs<DoesNotFit>(error("-1", count).kind)
         assertIs<DoesNotFit>(error("256", count).kind)
     }
 
     @Test fun tooManyDecimalPlaces() {
         val diagnostic = error("1.505", money)
-        assertEquals(DoesNotFit(Reason.InexactScale(2, 3)), diagnostic.kind)
+        assertEquals(DoesNotFit(Reason.Fit.InexactScale(2, 3)), diagnostic.kind)
         assertEquals("Too many decimal places (at most 2)", diagnostic.kind.message)
         assertIs<DoesNotFit>(error("125", decimal(-100, 100, -1)).kind)
         assertIs<DoesNotFit>(error("0.5", count).kind)
@@ -97,7 +97,7 @@ class DecodeErrors {
 
     @Test fun stringTooLong() {
         val diagnostic = error("\"123456789\"", Str(8))
-        assertEquals(DoesNotFit(Reason.TooLong(8, 9)), diagnostic.kind)
+        assertEquals(DoesNotFit(Reason.Fit.TooLong(8, 9)), diagnostic.kind)
         assertEquals("Too long (9 > 8)", diagnostic.kind.message)
     }
 

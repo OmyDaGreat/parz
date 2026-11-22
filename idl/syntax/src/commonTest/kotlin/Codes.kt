@@ -7,7 +7,6 @@ import xyz.malefic.parz.idl.Decl.Variant.Member
 import xyz.malefic.parz.idl.SchemaErrorKind
 import xyz.malefic.parz.idl.SchemaErrorKind.FieldPath.RecordPath
 import xyz.malefic.parz.idl.ShapeErrorKind
-import xyz.malefic.parz.idl.Type
 import xyz.malefic.parz.idl.Type.Primitive.Bool
 import kotlin.test.Test
 import kotlin.test.assertEquals

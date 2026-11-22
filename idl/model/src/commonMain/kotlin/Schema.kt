@@ -1,6 +1,7 @@
 package xyz.malefic.parz.idl
 
 import com.ionspin.kotlin.bignum.integer.BigInteger
+import com.ionspin.kotlin.bignum.integer.toBigInteger
 import xyz.malefic.parz.core.AnyDiagnostic
 import xyz.malefic.parz.core.Checked
 import xyz.malefic.parz.core.Diagnostic
@@ -73,14 +74,19 @@ sealed interface ShapeErrorKind : DiagnosticKind {
                 min: BigInteger,
                 max: BigInteger,
             ) = listOfNotNull(EmptyRange(min, max).takeIf { min > max })
+
+            fun check(
+                min: Long,
+                max: Long,
+            ) = listOfNotNull(EmptyRange(min.toBigInteger(), max.toBigInteger()).takeIf { min > max })
         }
     }
 
     data class NonPositiveLength(
-        val maxLen: Long,
+        val length: Long,
     ) : ShapeErrorKind {
         override val code = "IDL125"
-        override val message = "Length $maxLen must be positive"
+        override val message = "Length $length must be positive"
 
         companion object {
             fun check(maxLen: Long) = listOfNotNull(NonPositiveLength(maxLen).takeIf { maxLen <= 0 })
@@ -95,6 +101,17 @@ sealed interface ShapeErrorKind : DiagnosticKind {
 
         companion object {
             fun check(member: Member) = listOfNotNull(EnumPayload(member).takeIf { member.payload.isNotEmpty() })
+        }
+    }
+
+    data class NegativeLength(
+        val length: Long,
+    ) : ShapeErrorKind {
+        override val code = "IDL127"
+        override val message = "Length $length must be non-negative"
+
+        companion object {
+            fun check(length: Long) = listOfNotNull(NegativeLength(length).takeIf { length < 0 })
         }
     }
 

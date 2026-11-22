@@ -2,6 +2,7 @@ package xyz.malefic.parz.idl
 
 import com.ionspin.kotlin.bignum.integer.BigInteger
 import xyz.malefic.parz.idl.ShapeErrorKind.EmptyRange
+import xyz.malefic.parz.idl.ShapeErrorKind.NegativeLength
 import xyz.malefic.parz.idl.ShapeErrorKind.NonPositiveLength
 
 /**
@@ -26,6 +27,40 @@ sealed interface Type {
          */
         data object Bool : Primitive {
             override val kind = "bool"
+        }
+
+        /**
+         * A bytes type.
+         * @param minLen The minimum length of the bytes.
+         * @param maxLen The maximum length of the bytes.
+         */
+        data class Bytes(
+            val minLen: Long,
+            val maxLen: Long,
+        ) : Primitive {
+            /**
+             * A bytes type with an exact, predetermined length.
+             * @param exactLen The exact length of the bytes.
+             */
+            constructor(exactLen: Long) : this(exactLen, exactLen)
+
+            /**
+             * A bytes type, with length defined through a range.
+             * @param range The range for the length of the bytes.
+             */
+            constructor(range: ClosedRange<Long>) : this(range.start, range.endInclusive)
+
+            override val kind = "bytes"
+
+            /**
+             * Whether this is a bytes type with an exact length.
+             */
+            val exact = minLen == maxLen
+
+            init {
+                requireShape(NegativeLength.check(minLen))
+                requireShape(EmptyRange.check(minLen, maxLen))
+            }
         }
 
         /**

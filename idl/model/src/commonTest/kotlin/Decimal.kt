@@ -33,15 +33,15 @@ class Decimal {
 
     @Test
     fun mismatchReasons() {
-        val inexactAndOutOfRange = listOf(mismatch(Reason.InexactScale(2, 3)), mismatch(Reason.OutOfRange(ZERO, TEN.pow(2))))
+        val inexactAndOutOfRange = listOf(mismatch(Reason.Fit.InexactScale(2, 3)), mismatch(Reason.Fit.OutOfRange(ZERO, TEN.pow(2))))
         assertEquals(inexactAndOutOfRange, Decimal(ZERO, TEN.pow(2), 2) check dec(1004, 3))
         assertEquals(inexactAndOutOfRange, Decimal(ZERO, TEN.pow(2), 2, Rounding.PROHIBITED) check dec(1004, 3))
         assertEquals(
-            listOf(mismatch(Reason.InexactScale(2, 3))),
+            listOf(mismatch(Reason.Fit.InexactScale(2, 3))),
             Decimal(ZERO, TEN.pow(5), 2, Rounding.ROUND_HALF_AWAY_FROM_ZERO) check dec(500001, 3),
         )
         assertEquals(
-            listOf(mismatch(Reason.OutOfRange(ZERO, TEN.pow(5)))),
+            listOf(mismatch(Reason.Fit.OutOfRange(ZERO, TEN.pow(5)))),
             Decimal(ZERO, TEN.pow(5), 2, overflow = Overflow.SATURATE) check dec(TEN.pow(5) + 1, 2),
         )
     }

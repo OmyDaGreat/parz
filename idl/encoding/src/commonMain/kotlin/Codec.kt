@@ -72,6 +72,10 @@ private fun encodeChecked(
             Sexp.Atom((value as Value.Decimal).text(type.scale))
         }
 
+        is Type.Primitive.Bytes -> {
+            Sexp.Atom("#x${(value as Value.Bytes).hex()}")
+        }
+
         is Type.Primitive.Str -> {
             Sexp.Str((value as Value.Str).v)
         }
@@ -238,6 +242,8 @@ fun readFile(
         ParzFile(Type.Ref(root.text), root.span, sexps.drop(1))
     }
 
+private val HEX = Regex("([0-9a-fA-F]{2})*")
+
 context(sink: Sink<AnyDiagnostic>)
 fun decode(
     sexp: Sexp,
@@ -254,6 +260,16 @@ fun decode(
                 "true" -> Value.Bool(true)
                 "false" -> Value.Bool(false)
                 else -> sexp.fail(CodecErrorKind.Expected("true or false"))
+            }
+        }
+
+        is Type.Primitive.Bytes -> {
+            if (sexp !is Sexp.Atom || !sexp.text.startsWith("#x")) {
+                sexp.fail(CodecErrorKind.Expected("bytes like #xc1c2"))
+            } else {
+                val hex =
+                    sexp.text.substring(2).takeIf { HEX.matches(it) } ?: return sexp.fail(CodecErrorKind.Expected("bytes like #xc1c2"))
+                fits(Value.Bytes(hex.chunked(2).map { it.toInt(16).toByte() }.toByteArray()), type, sexp)
             }
         }
 

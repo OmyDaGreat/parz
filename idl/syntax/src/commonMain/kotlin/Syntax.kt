@@ -13,6 +13,7 @@ import xyz.malefic.parz.idl.ShapeErrorKind.EmptyRecord
 import xyz.malefic.parz.idl.ShapeErrorKind.EmptyVariant
 import xyz.malefic.parz.idl.ShapeErrorKind.NegativeTag
 import xyz.malefic.parz.idl.Type
+import xyz.malefic.parz.idl.Type.Primitive.Bytes
 import xyz.malefic.parz.idl.Type.Primitive.Decimal
 import xyz.malefic.parz.idl.Type.Primitive.Str
 
@@ -33,9 +34,26 @@ sealed interface TypeSyntax : PrettySyntax {
     ) : TypeSyntax {
         override fun pretty(): String =
             when (type) {
-                is Decimal -> "decimal(${type.min}..${type.max}, ${type.scale}, ${type.rounding}, ${type.overflow})"
-                is Str -> "string(${type.maxLen})"
-                else -> type.kind
+                // TODO: Write decimal in shortest form
+                is Decimal -> {
+                    "decimal(${type.min}..${type.max}, ${type.scale}, ${type.rounding}, ${type.overflow})"
+                }
+
+                is Bytes -> {
+                    when {
+                        type.maxLen == Long.MAX_VALUE && type.minLen == 0L -> "bytes"
+                        type.exact -> "bytes(${type.maxLen})"
+                        else -> "bytes(${type.minLen}..${type.maxLen})"
+                    }
+                }
+
+                is Str -> {
+                    if (type.maxLen == Long.MAX_VALUE) "string" else "string(${type.maxLen})"
+                }
+
+                else -> {
+                    type.kind
+                }
             }
 
         override fun toType() = type

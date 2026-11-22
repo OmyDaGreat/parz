@@ -1,7 +1,6 @@
 package xyz.malefic.parz.idl.encoding
 
 import xyz.malefic.parz.core.collecting
-import xyz.malefic.parz.idl.Type
 import xyz.malefic.parz.idl.Type.Collection.Option
 import xyz.malefic.parz.idl.Type.Collection.Seq
 import xyz.malefic.parz.idl.Type.Primitive.Bool

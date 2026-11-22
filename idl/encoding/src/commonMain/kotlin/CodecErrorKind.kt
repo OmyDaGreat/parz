@@ -2,6 +2,11 @@ package xyz.malefic.parz.idl.encoding
 
 import xyz.malefic.parz.core.DiagnosticKind
 import xyz.malefic.parz.idl.Reason
+import xyz.malefic.parz.idl.Reason.Fit.InexactLength
+import xyz.malefic.parz.idl.Reason.Fit.InexactScale
+import xyz.malefic.parz.idl.Reason.Fit.OutOfRange
+import xyz.malefic.parz.idl.Reason.Fit.TooLong
+import xyz.malefic.parz.idl.Reason.Fit.TooShort
 import xyz.malefic.parz.idl.Value
 
 sealed interface CodecErrorKind : DiagnosticKind {
@@ -46,9 +51,11 @@ sealed interface CodecErrorKind : DiagnosticKind {
         override val code = "IDL215"
         override val message =
             when (reason) {
-                is Reason.OutOfRange -> "Out of range (unscaled ${reason.min}..${reason.max})"
-                is Reason.InexactScale -> "Too many decimal places (at most ${reason.expected})"
-                is Reason.TooLong -> "Too long (${reason.actual} > ${reason.maxLen})"
+                is OutOfRange -> "Out of range (unscaled ${reason.min}..${reason.max})"
+                is InexactScale -> "Too many decimal places (at most ${reason.expected})"
+                is TooLong -> "Too long (${reason.actual} > ${reason.maxLen})"
+                is TooShort -> "Too short (${reason.actual} < ${reason.minLen})"
+                is InexactLength -> "Expected a length of ${reason.exactLen}, got ${reason.actual}"
                 else -> "Value does not fit: $reason"
             }
     }

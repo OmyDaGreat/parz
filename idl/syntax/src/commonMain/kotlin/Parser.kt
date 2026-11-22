@@ -6,8 +6,10 @@ import xyz.malefic.parz.core.Sink
 import xyz.malefic.parz.core.SourceSpan
 import xyz.malefic.parz.core.collecting
 import xyz.malefic.parz.idl.ShapeErrorKind
+import xyz.malefic.parz.idl.ShapeErrorKind.NegativeLength
 import xyz.malefic.parz.idl.ShapeErrorKind.NonPositiveLength
 import xyz.malefic.parz.idl.Type.Primitive.Bool
+import xyz.malefic.parz.idl.Type.Primitive.Bytes
 import xyz.malefic.parz.idl.Type.Primitive.Decimal
 import xyz.malefic.parz.idl.Type.Primitive.Decimal.Overflow
 import xyz.malefic.parz.idl.Type.Primitive.Decimal.Rounding
@@ -96,6 +98,7 @@ internal class Parser(
         return when (text) {
             "void" -> Primitive(Void, span)
             "bool" -> Primitive(Bool, span)
+            "bytes" -> bytes(span)
             "string" -> str(span)
             "decimal" -> decimal(span)
             in integerShorthandMap.keys -> integerShorthandMap[text]!!.let { decimalShorthand(span, it.first, it.second) }
@@ -165,6 +168,36 @@ internal class Parser(
                 }
             }
         return Triple(startToken, result, prior as Token.Symbol)
+    }
+
+    private fun bytes(span: SourceSpan): Primitive {
+        var endSpan = span.end
+        return Primitive(
+            if (accept('(')) {
+                val minOrExactToken = int()
+                if (accept('.') && accept('.')) {
+                    if (peek('.')) fail(ExpectedDecimalBounds(current), current.span)
+                    val minLen = minOrExactToken.exactLong()
+                    val maxLenToken = int()
+                    val maxLen = maxLenToken.exactLong()
+                    NegativeLength.check(minLen).firstOrNull()?.let { fail(InvalidType(it), minOrExactToken.span) }
+                    ShapeErrorKind.EmptyRange
+                        .check(minLen, maxLen)
+                        .firstOrNull()
+                        ?.let { fail(InvalidType(it), minOrExactToken.span) }
+                    endSpan = expect(')').span.end
+                    Bytes(minLen..maxLen)
+                } else {
+                    val exactLen = minOrExactToken.exactLong()
+                    NegativeLength.check(exactLen).firstOrNull()?.let { fail(InvalidType(it), minOrExactToken.span) }
+                    endSpan = expect(')').span.end
+                    Bytes(exactLen)
+                }
+            } else {
+                Bytes(0..Long.MAX_VALUE)
+            },
+            SourceSpan(span.start, endSpan),
+        )
     }
 
     private fun str(span: SourceSpan): Primitive {

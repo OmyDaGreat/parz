@@ -30,7 +30,7 @@ class Codes {
             CodecErrorKind.MissingField("f"),
             CodecErrorKind.UnknownField("f"),
             CodecErrorKind.DuplicateField("f"),
-            CodecErrorKind.DoesNotFit(Reason.TooLong(1, 2)),
+            CodecErrorKind.DoesNotFit(Reason.Fit.TooLong(1, 2)),
             CodecErrorKind.ExpectedOneValue(0),
             CodecErrorKind.MissingHeader,
             CodecErrorKind.UnsupportedVersion("2"),

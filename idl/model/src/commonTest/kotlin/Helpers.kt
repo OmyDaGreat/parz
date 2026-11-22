@@ -25,6 +25,7 @@ private val samples =
         Value.Bool(true),
         dec(0),
         Value.Str(""),
+        Value.Bytes(ByteArray(0)),
         Value.Seq(emptyList()),
         Value.Map(emptyMap()),
         Value.Record(emptyMap()),

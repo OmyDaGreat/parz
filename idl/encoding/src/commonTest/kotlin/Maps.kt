@@ -43,7 +43,7 @@ class Maps {
         type: Map,
     ): List<Value> =
         (encode(value, type, schema) as Sexp.List).items.map { entry ->
-            val (key, diagnostics) = collecting<Value?, AnyDiagnostic> { decode((entry as Sexp.List).items[0], type.keys, schema) }
+            val (key, diagnostics) = collecting { decode((entry as Sexp.List).items[0], type.keys, schema) }
             assertEquals(emptyList(), diagnostics)
             key!!
         }
