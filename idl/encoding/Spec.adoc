@@ -63,11 +63,8 @@
 |record
 |fields in declaration order
 
-|enum
-|members in declaration order
-
 |variant
-|members & fields in declaration order
+|fields in declaration order
 |===
 
 ==== Map Key Ordering
@@ -87,13 +84,20 @@
 
 |enum
 |member tags
+
+|alias
+|target type's ordering
 |===
 
 NOTE: No other types are allowed for keys of maps
 
 == Decoding Spec
 * Fields in any order
+* Map entries in any order
 * Less decimal places than in type
+* ASCII digits only for decimals
+* Values like 007 and -0 are normalized to 7 and 0
+* Any error existing means no value, though lenient functions are in the docs as an option
 
 == File Header Spec
 [source]

@@ -37,9 +37,6 @@ internal fun keyOrder(
         is Type.Ref -> {
             when (val resolved = schema.resolve(type)) {
                 is Resolved.Variant -> {
-                    if (!resolved.decl.isEnum) {
-                        error("Only enums can be map keys: ${type.name}")
-                    }
                     val tags = resolved.decl.members.associate { it.name to it.tag }
                     compareBy { tags[(it as Value.Variant).name] }
                 }
