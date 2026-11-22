@@ -69,7 +69,7 @@ private fun encodeChecked(
         }
 
         is Type.Primitive.Decimal -> {
-            Sexp.Atom(decimalText(value as Value.Decimal, type.scale))
+            Sexp.Atom((value as Value.Decimal).text(type.scale))
         }
 
         is Type.Primitive.Str -> {
@@ -85,25 +85,15 @@ private fun encodeChecked(
         }
 
         is Type.Collection.Map -> {
+            val order = keyOrder(type.keys, schema)
+            val entries = (value as Value.Map).entries.entries.sortedWith(compareBy(order) { it.key })
+            entries.zipWithNext().firstOrNull { (a, b) -> order.compare(a.key, b.key) == 0 }?.let { (a, b) ->
+                throw IllegalArgumentException("Duplicate map key: ${a.key} and ${b.key} are the same ${type.keys.kind}")
+            }
             Sexp.List(
-                (value as Value.Map)
-                    .entries.entries
-                    .sortedBy {
-                        when (val k = it.key) {
-                            is Value.Bool -> if (k.v) "1" else "0"
-                            is Value.Decimal -> k.unscaled.toString()
-                            is Value.Str -> k.v
-                            is Value.None -> "none"
-                            is Value.Some -> k.v.toString()
-                            is Value.Seq -> k.items.size.toString()
-                            is Value.Map -> k.entries.size.toString()
-                            is Value.Record -> k.fields.size.toString()
-                            is Value.Variant -> k.name
-                            is Value.Void -> "void"
-                        }
-                    }.map { (k, v) ->
-                        Sexp.List(listOf(encodeChecked(k, type.keys, schema), encodeChecked(v, type.values, schema)))
-                    },
+                entries.map { (k, v) ->
+                    Sexp.List(listOf(encodeChecked(k, type.keys, schema), encodeChecked(v, type.values, schema)))
+                },
             )
         }
 
@@ -111,17 +101,6 @@ private fun encodeChecked(
             encodeRef(value, type, schema)
         }
     }
-
-private fun decimalText(
-    value: Value.Decimal,
-    scale: Int,
-): String {
-    val unscaled = value.rescale(scale, PROHIBITED).unscaled
-    if (scale <= 0) return (unscaled * BigInteger.TEN.pow(-scale)).toString()
-    val digits = unscaled.abs().toString().padStart(scale + 1, '0')
-    val sign = if (unscaled.signum() < 0) "-" else ""
-    return sign + digits.dropLast(scale) + "." + digits.takeLast(scale)
-}
 
 private fun encodeRef(
     value: Value,
@@ -310,10 +289,12 @@ fun decode(
                 for (pair in sexp.items) {
                     if (pair !is Sexp.List) {
                         pair.fail(CodecErrorKind.Expected("(key value)"))
+                        failed = true
                         continue
                     }
                     if (pair.items.size != 2) {
                         pair.fail(CodecErrorKind.Expected("(key value)"))
+                        failed = true
                         continue
                     }
                     val key =
@@ -323,6 +304,7 @@ fun decode(
                         }
                     if (key in map) {
                         pair.items[0].fail(CodecErrorKind.DuplicateKey(key))
+                        failed = true
                         continue
                     }
                     val value =

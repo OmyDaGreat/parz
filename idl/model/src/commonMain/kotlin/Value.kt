@@ -2,6 +2,7 @@ package xyz.malefic.parz.idl
 
 import com.ionspin.kotlin.bignum.integer.BigInteger
 import xyz.malefic.parz.idl.Type.Primitive.Decimal.Rounding
+import xyz.malefic.parz.idl.Type.Primitive.Decimal.Rounding.PROHIBITED
 
 /**
  * Concrete values for the [Type] system. Used for conformance vectors and literals.
@@ -34,6 +35,15 @@ sealed interface Value {
         val scale: Int,
     ) : Value {
         override val kind = "decimal"
+
+        fun text(scale: Int = this.scale): String {
+            var unscaled = unscaled
+            if (scale != this.scale) unscaled = rescale(scale, PROHIBITED).unscaled
+            if (scale <= 0) return (unscaled * BigInteger.TEN.pow(-scale)).toString()
+            val digits = unscaled.abs().toString().padStart(scale + 1, '0')
+            val sign = if (unscaled.signum() < 0) "-" else ""
+            return sign + digits.dropLast(scale) + "." + digits.takeLast(scale)
+        }
 
         /**
          * Rescale a decimal to a new scale, using [rounding] when the new scale cannot represent the value exactly.
@@ -75,7 +85,7 @@ sealed interface Value {
 
                     Rounding.ROUND_HALF_TO_ODD -> half > 0 || (half == 0 && even)
 
-                    Rounding.PROHIBITED -> throw ArithmeticException(
+                    PROHIBITED -> throw ArithmeticException(
                         "Rounding prohibited: $this is inexact at scale $newScale",
                     )
                 }

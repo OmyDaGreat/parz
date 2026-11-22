@@ -1,7 +1,6 @@
 = S Expression Details
 
 == Encoding Spec
-
 [cols="1,1,1"]
 |===
 |type
@@ -49,10 +48,50 @@
 |(member (field value) ...)
 |===
 
-NOTE: Fields + values are in declaration order while encoding
+=== Ordering
+[cols="1,1"]
+|===
+|type
+|ordering
+
+|seq
+|keeps given order
+
+|map
+|keys ordered based on types*
+
+|record
+|fields in declaration order
+
+|enum
+|members in declaration order
+
+|variant
+|members & fields in declaration order
+|===
+
+==== Map Key Ordering
+[cols="1,1"]
+|===
+|key type
+|ordering
+
+|bool
+|false, true
+
+|decimal
+|unscaled after rescaling into type's scale
+
+|str
+|code point comparison
+
+|enum
+|member tags
+|===
+
+NOTE: No other types are allowed for keys of maps
 
 == Decoding Spec
-
 * Fields in any order
 * Less decimal places than in type
 
