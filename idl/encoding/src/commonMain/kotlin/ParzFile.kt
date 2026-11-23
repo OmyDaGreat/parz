@@ -9,6 +9,7 @@ import xyz.malefic.parz.core.sink
 import xyz.malefic.parz.idl.model.Schema
 import xyz.malefic.parz.idl.model.Type
 import xyz.malefic.parz.idl.model.Value
+import xyz.malefic.parz.idl.model.checkReferences
 
 const val FORMAT_VERSION = 1
 
@@ -44,6 +45,8 @@ fun encodeFile(
 ): String {
     val header = header(id, root)
     val body = encode(value, root, schema)
+    val references = checkReferences(value, root, schema)
+    require(references.isEmpty()) { "Value has bad references: $references" }
     return "${header.print()}\n${body.pretty(targetWidth)}\n"
 }
 
@@ -53,6 +56,9 @@ private fun header(
     root: Type.Ref,
 ) = Sexp.List(listOf(Sexp.Atom("parz"), Sexp.Atom("$FORMAT_VERSION"), id.toSexp(), Sexp.Atom(root.name)))
 
+/**
+ * Strictly decodes a given file (string w/ header and body) into a value. Either returns a value or diagnostics.
+ */
 fun decodeFile(
     text: String,
     schema: Schema,
@@ -62,6 +68,9 @@ fun decodeFile(
     if (it.diagnostics.isEmpty()) it else Checked(null, it.diagnostics)
 }
 
+/**
+ * Leniently decodes a given file (string w/ header and body) into a value. Returns a value w/ diagnostics when the only problems are recoverable read errors.
+ */
 fun decodeFileLenient(
     text: String,
     schema: Schema,
@@ -83,7 +92,10 @@ fun decodeFileLenient(
     if (file.body.size != 1) {
         return@collecting reportNull(CodecErrorKind.ExpectedOneValue(file.body.size), null)
     }
-    decode(file.body.single(), file.root, schema)
+    decode(file.body.single(), file.root, schema)?.also { value ->
+        val bad = checkReferences(value, file.root, schema)
+        bad.forEach { reportNull(CodecErrorKind.BadReference(it)) }
+    }
 }
 
 fun readFile(

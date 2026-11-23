@@ -1,5 +1,6 @@
 package xyz.malefic.parz.idl.model
 
+import xyz.malefic.parz.core.Severity
 import xyz.malefic.parz.idl.model.Decl.Alias
 import xyz.malefic.parz.idl.model.Decl.Record
 import xyz.malefic.parz.idl.model.Decl.Record.Field
@@ -84,7 +85,9 @@ data class Schema(
 
     init {
         val problems = validate()
-        require(problems.ok) { "Schema validation failed: ${problems.diagnostics.joinToString { it.kind.message }}" }
+        require(problems.diagnostics.none { it.kind.severity == Severity.ERROR }) {
+            "Schema validation failed: ${problems.diagnostics.joinToString { it.kind.message }}"
+        }
     }
 
     companion object {

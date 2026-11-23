@@ -15,6 +15,10 @@
 |atom
 |`true`/`false`
 
+|id
+|atom
+|numeric value
+
 |bytes
 |atom
 |`#x` followed by two lowercase hex digits per byte
@@ -38,6 +42,10 @@
 |map
 |list
 |`((key value) ...)`
+
+|table
+|list
+|values
 
 |enum
 |atom
@@ -64,6 +72,9 @@
 |map
 |keys ordered based on types*
 
+|table
+|keeps given order
+
 |record
 |fields in declaration order
 
@@ -80,14 +91,17 @@
 |bool
 |`false`, `true`
 
-|decimal
-|unscaled after rescaling into type's scale
+|id
+|numeric value
 
 |bytes
 |byte by byte unsigned comparison, with prefixes first
 
 |str
 |code point comparison
+
+|decimal
+|unscaled after rescaling into type's scale
 
 |enum
 |member tags
@@ -102,11 +116,18 @@ NOTE: No other types are allowed for keys of maps
 * Fields in any order
 * Map entries in any order
 * Bytes normalize to lowercase
+* Any error existing means no value, though lenient functions are in the docs as an option externally
+* Comments (`; Something`) are currently ignored
+
+=== Decimals
 * Less decimal places than in type
 * ASCII digits only for decimals
 * Values like 007 and -0 are normalized to 7 and 0
-* Any error existing means no value, though lenient functions are in the docs as an option
-* Comments (`; Something`) are currently ignored
+
+=== References
+* Each root holds at most one table per target
+* IDs start at 0
+* The target must be a record or variant named directly
 
 == File Header Spec
 [source]

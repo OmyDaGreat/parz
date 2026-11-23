@@ -8,11 +8,13 @@ import xyz.malefic.parz.core.collecting
 import xyz.malefic.parz.idl.model.ShapeErrorKind
 import xyz.malefic.parz.idl.model.ShapeErrorKind.NegativeLength
 import xyz.malefic.parz.idl.model.ShapeErrorKind.NonPositiveLength
+import xyz.malefic.parz.idl.model.Type
 import xyz.malefic.parz.idl.model.Type.Primitive.Bool
 import xyz.malefic.parz.idl.model.Type.Primitive.Bytes
 import xyz.malefic.parz.idl.model.Type.Primitive.Decimal
 import xyz.malefic.parz.idl.model.Type.Primitive.Decimal.Overflow
 import xyz.malefic.parz.idl.model.Type.Primitive.Decimal.Rounding
+import xyz.malefic.parz.idl.model.Type.Primitive.Id
 import xyz.malefic.parz.idl.model.Type.Primitive.Str
 import xyz.malefic.parz.idl.model.Type.Primitive.Void
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.ExpectedDecimalBounds
@@ -96,6 +98,7 @@ internal class Parser(
         return when (text) {
             "void" -> Primitive(Void, span)
             "bool" -> Primitive(Bool, span)
+            "id" -> id(span)
             "bytes" -> bytes(span)
             "string" -> str(span)
             "decimal" -> decimal(span)
@@ -103,6 +106,7 @@ internal class Parser(
             "option" -> angled { type() }.let { TypeSyntax.Option(it.second, SourceSpan(span.start, it.third.span.end)) }
             "seq" -> seq(span)
             "map" -> map(span)
+            "table" -> table(span)
             in declKeywords -> fail(InlineDecl(text), span)
             else -> TypeSyntax.Named(text, span)
         }
@@ -166,6 +170,12 @@ internal class Parser(
                 }
             }
         return Triple(startToken, result, prior as Token.Symbol)
+    }
+
+    private fun id(keywordSpan: SourceSpan): Primitive {
+        val (_, word, closing) = angled { word() }
+        val newSpan = SourceSpan(keywordSpan.start, closing.span.end)
+        return Primitive(Id(word.text), newSpan)
     }
 
     private fun bytes(span: SourceSpan): Primitive {
@@ -254,9 +264,9 @@ internal class Parser(
     private fun <T> angled(inner: () -> T): Triple<Token.Symbol, T, Token.Symbol> = Triple(expect('<'), inner(), expect('>'))
 
     private fun seq(keywordSpan: SourceSpan): TypeSyntax.Seq {
-        val type = angled { type() }
-        val newSpan = SourceSpan(keywordSpan.start, type.third.span.end)
-        return TypeSyntax.Seq(type.second, newSpan)
+        val (_, type, closing) = angled { type() }
+        val newSpan = SourceSpan(keywordSpan.start, closing.span.end)
+        return TypeSyntax.Seq(type, newSpan)
     }
 
     private fun map(keywordSpan: SourceSpan): TypeSyntax.Map {
@@ -265,6 +275,12 @@ internal class Parser(
         if (types.size < 2) fail(ExpectedWord(closing), types.getOrNull(0)?.span ?: SourceSpan(closing.span.start, closing.span.end))
         if (types.size > 2) fail(ExpectedSymbol('>', Token.Word(types[2].toType().kind, types[2].span)), types[2].span)
         return TypeSyntax.Map(types.first(), types[1], newSpan)
+    }
+
+    private fun table(keywordSpan: SourceSpan): TypeSyntax.Table {
+        val (_, type, closing) = angled { type() }
+        val newSpan = SourceSpan(keywordSpan.start, closing.span.end)
+        return TypeSyntax.Table(type, newSpan)
     }
 
     private fun decimal(keywordSpan: SourceSpan): Primitive {

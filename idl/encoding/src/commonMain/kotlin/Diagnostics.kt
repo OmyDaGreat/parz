@@ -1,9 +1,11 @@
 package xyz.malefic.parz.idl.encoding
 
 import xyz.malefic.parz.core.DiagnosticKind
+import xyz.malefic.parz.idl.model.Mismatch
 import xyz.malefic.parz.idl.model.Reason
 import xyz.malefic.parz.idl.model.Reason.Fit.InexactLength
 import xyz.malefic.parz.idl.model.Reason.Fit.InexactScale
+import xyz.malefic.parz.idl.model.Reason.Fit.NegativeId
 import xyz.malefic.parz.idl.model.Reason.Fit.OutOfRange
 import xyz.malefic.parz.idl.model.Reason.Fit.TooLong
 import xyz.malefic.parz.idl.model.Reason.Fit.TooShort
@@ -78,6 +80,7 @@ sealed interface CodecErrorKind : DiagnosticKind {
                 is TooLong -> "Too long (${reason.actual} > ${reason.maxLen})"
                 is TooShort -> "Too short (${reason.actual} < ${reason.minLen})"
                 is InexactLength -> "Expected a length of ${reason.exactLen}, got ${reason.actual}"
+                is NegativeId -> "Negative id ${reason.value}"
                 else -> "Value does not fit: $reason"
             }
     }
@@ -129,5 +132,12 @@ sealed interface CodecErrorKind : DiagnosticKind {
     ) : CodecErrorKind {
         override val code = "IDL222"
         override val message = "Duplicate key '$key'"
+    }
+
+    data class BadReference(
+        val mismatch: Mismatch,
+    ) : CodecErrorKind {
+        override val code = "IDL223"
+        override val message = "Bad reference at ${mismatch.path}: ${mismatch.reason}"
     }
 }

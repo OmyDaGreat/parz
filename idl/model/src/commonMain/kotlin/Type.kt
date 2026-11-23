@@ -30,6 +30,16 @@ sealed interface Type {
         }
 
         /**
+         * An id type.
+         * @param target The target of the id.
+         */
+        data class Id(
+            val target: String,
+        ) : Primitive {
+            override val kind = "id"
+        }
+
+        /**
          * A bytes type.
          * @param minLen The minimum length of the bytes.
          * @param maxLen The maximum length of the bytes.
@@ -45,7 +55,7 @@ sealed interface Type {
             constructor(exactLen: Long) : this(exactLen, exactLen)
 
             /**
-             * A bytes type, with length defined through a range.
+             * A bytes type with length defined through a range.
              * @param range The range for the length of the bytes.
              */
             constructor(range: ClosedRange<Long>) : this(range.start, range.endInclusive)
@@ -180,6 +190,7 @@ sealed interface Type {
     sealed interface Collection : Type {
         /**
          * An option type (nullability). Allows for nested nullability.
+         * @param inner The type of the option.
          */
         data class Option(
             val inner: Type,
@@ -189,6 +200,7 @@ sealed interface Type {
 
         /**
          * A sequence type. Analogous to [List].
+         * @param inner The type of the sequence's inner value.
          */
         data class Seq(
             val inner: Type,
@@ -198,12 +210,24 @@ sealed interface Type {
 
         /**
          * A map type. Analogous to [kotlin.collections.Map].
+         * @param keys The type of the map's keys.
+         * @param values The type of the map's values.
          */
         data class Map(
             val keys: Type,
             val values: Type,
         ) : Collection {
             override val kind = "map"
+        }
+
+        /**
+         * A table type.
+         * @param inner The type of the table's inner value.
+         */
+        data class Table(
+            val inner: Type,
+        ) : Collection {
+            override val kind = "table"
         }
     }
 

@@ -18,6 +18,12 @@ sealed interface Value {
         override val kind = "bool"
     }
 
+    data class Id(
+        val index: Int,
+    ) : Value {
+        override val kind = "id"
+    }
+
     class Bytes(
         bytes: ByteArray,
     ) : Value {

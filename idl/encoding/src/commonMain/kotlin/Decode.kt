@@ -1,6 +1,7 @@
 package xyz.malefic.parz.idl.encoding
 
 import com.ionspin.kotlin.bignum.integer.BigInteger
+import com.ionspin.kotlin.bignum.integer.toBigInteger
 import xyz.malefic.parz.core.AnyDiagnostic
 import xyz.malefic.parz.core.Checked
 import xyz.malefic.parz.core.Diagnostic
@@ -17,6 +18,9 @@ import xyz.malefic.parz.idl.model.check
 import xyz.malefic.parz.idl.model.isExactAt
 import xyz.malefic.parz.idl.model.rescale
 
+/**
+ * Strictly decodes a given string into a value. Either returns a value or diagnostics.
+ */
 fun decodeString(
     text: String,
     type: Type,
@@ -25,6 +29,9 @@ fun decodeString(
     if (it.diagnostics.isEmpty()) it else Checked(null, it.diagnostics)
 }
 
+/**
+ * Leniently decodes a given string into a value. Returns a value w/ diagnostics when the only problems are recoverable read errors.
+ */
 fun decodeStringLenient(
     text: String,
     type: Type,
@@ -39,7 +46,11 @@ fun decodeStringLenient(
     }
 
 private val HEX = Regex("([0-9a-fA-F]{2})*")
+private val DIGITS = Regex("0|[1-9][0-9]*")
 
+/**
+ * Decodes an S-expression into a value.
+ */
 context(sink: Sink<AnyDiagnostic>)
 fun decode(
     sexp: Sexp,
@@ -57,6 +68,17 @@ fun decode(
                 "false" -> Value.Bool(false)
                 else -> sexp.fail(CodecErrorKind.Expected("true or false"))
             }
+        }
+
+        is Type.Primitive.Id -> {
+            val id = (sexp as? Sexp.Atom)?.text?.takeIf { DIGITS.matches(it) } ?: return sexp.fail(CodecErrorKind.Expected("an id"))
+            val n: Int
+            try {
+                n = id.toBigInteger().intValue(true)
+            } catch (_: ArithmeticException) {
+                return sexp.fail(CodecErrorKind.Expected("an id"))
+            }
+            fits(Value.Id(n), type, sexp)
         }
 
         is Type.Primitive.Bytes -> {
@@ -127,6 +149,14 @@ fun decode(
                     map[key] = value
                 }
                 if (failed) null else Value.Map(map)
+            } else {
+                sexp.fail(CodecErrorKind.Expected("a list"))
+            }
+        }
+
+        is Type.Collection.Table -> {
+            if (sexp is Sexp.List) {
+                all(sexp.items.map { decode(it, type.inner, schema) })?.let(Value::Seq)
             } else {
                 sexp.fail(CodecErrorKind.Expected("a list"))
             }

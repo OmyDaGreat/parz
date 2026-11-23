@@ -38,6 +38,10 @@ private fun encodeChecked(
             Sexp.Atom((value as Value.Bool).v.toString())
         }
 
+        is Type.Primitive.Id -> {
+            Sexp.Atom((value as Value.Id).index.toString())
+        }
+
         is Type.Primitive.Decimal -> {
             Sexp.Atom((value as Value.Decimal).text(type.scale))
         }
@@ -69,6 +73,10 @@ private fun encodeChecked(
                     Sexp.List(listOf(encodeChecked(k, type.keys, schema), encodeChecked(v, type.values, schema)))
                 },
             )
+        }
+
+        is Type.Collection.Table -> {
+            Sexp.List((value as Value.Seq).items.map { encodeChecked(it, type.inner, schema) })
         }
 
         is Type.Ref -> {

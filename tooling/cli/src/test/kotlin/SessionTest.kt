@@ -87,4 +87,38 @@ class SessionTest {
         assertFalse("Unknown type" in out, out)
         assertTrue(session.decls.isEmpty())
     }
+
+    @Test
+    fun warningsAreShownButDoNotReject() {
+        session.output("record P { x: bool }")
+        val out = session.output("record A { e: id<P> }")
+        assertContains(out, "WARNING: No table<P> for id<P> in field e at line 1:15")
+        assertContains(out, "record A {\n  e: id<P>,\n}")
+        assertEquals(listOf("P", "A"), session.decls.keys.toList())
+    }
+
+    @Test
+    fun warningGoesAwayOnceTheTableExists() {
+        session.output("record P { x: bool }")
+        session.output("record A { e: id<P> }")
+        val out = session.output("record Prog { ps: table<P> }")
+        assertFalse(out.contains("WARNING"), out)
+        assertEquals(listOf("P", "A", "Prog"), session.decls.keys.toList())
+    }
+
+    @Test
+    fun warningsAreReportedOnce() {
+        session.output("record P { x: bool }")
+        val out = session.output("record A { e: id<P> } record B { x: bool }")
+        assertEquals(1, Regex("WARNING").findAll(out).count(), out)
+    }
+
+    @Test
+    fun rejectedDeclarationsOnlyShowErrors() {
+        session.output("record P { x: bool }")
+        val out = session.output("record A { e: id<P>, y: Nope }")
+        assertContains(out, "ERROR: Unknown type in field y: Nope")
+        assertFalse(out.contains("WARNING"), out)
+        assertEquals(listOf("P"), session.decls.keys.toList())
+    }
 }

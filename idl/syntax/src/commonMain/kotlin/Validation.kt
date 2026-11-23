@@ -1,6 +1,7 @@
 package xyz.malefic.parz.idl.syntax
 
 import xyz.malefic.parz.core.AnyDiagnostic
+import xyz.malefic.parz.core.Severity
 import xyz.malefic.parz.core.Sink
 import xyz.malefic.parz.core.SourceSpan
 import xyz.malefic.parz.idl.model.Decl
@@ -16,8 +17,7 @@ import xyz.malefic.parz.idl.model.validate
 /**
  * Lowers this schema and validates it together with the already accepted [existing] declarations.
  *
- * Every new declaration with a schema error is rejected and its errors are reported at their spans; validation then repeats
- * without it, so declarations that only failed because of a rejected one are rejected too.
+ * Every new declaration with a schema error (of severity error) is rejected and its errors are reported at their spans; validation then repeats without it, so declarations that only failed because of a rejected one are rejected too.
  *
  * @return Each accepted declaration paired with its syntax.
  */
@@ -26,17 +26,23 @@ fun SchemaSyntax.accept(existing: List<Decl>): List<Pair<DeclSyntax, Decl>> {
     var pending = decls.mapNotNull { s -> s.toDecl()?.let { s to it } }
     while (true) {
         val problems = validate(existing + pending.map { it.second })
-        val rejected =
+        val rejectedLoop =
             pending.filter { (_, decl) ->
                 problems.diagnostics.any {
-                    it.kind.decl === decl || (it.kind as? SchemaErrorKind.CyclicType)?.path?.contains(decl.name) == true
+                    it.kind.severity == Severity.ERROR &&
+                        (it.kind.decl === decl || (it.kind as? SchemaErrorKind.CyclicType)?.path?.contains(decl.name) == true)
                 }
             }
-        if (rejected.isEmpty()) return pending
+        if (rejectedLoop.isEmpty()) {
+            problems.diagnostics
+                .filter { p -> pending.any { it.second === p.kind.decl } }
+                .forEach { sink.report(it.copy(span = pending.locate(it.kind))) }
+            return pending
+        }
         problems.diagnostics
-            .filter { p -> rejected.any { it.second === p.kind.decl } }
+            .filter { p -> p.kind.severity == Severity.ERROR && rejectedLoop.any { it.second === p.kind.decl } }
             .forEach { sink.report(it.copy(span = pending.locate(it.kind))) }
-        pending = pending - rejected.toSet()
+        pending = pending - rejectedLoop.toSet()
     }
 }
 
@@ -116,6 +122,14 @@ fun List<Pair<DeclSyntax, Decl>>.locate(kind: SchemaErrorKind): SourceSpan? {
         is SchemaErrorKind.CyclicType, is SchemaErrorKind.DuplicateDecl -> {
             syntax.span
         }
+
+        is SchemaErrorKind.MissingTable -> {
+            syntax.typeAt(kind.decl, kind.path)?.let { it.findType(Type.Primitive.Id(kind.name)) ?: it.span }
+        }
+
+        is SchemaErrorKind.InvalidTarget -> {
+            syntax.typeAt(kind.decl, kind.path)?.let { it.findType(kind.type) ?: it.span }
+        }
     }
 }
 
@@ -125,9 +139,11 @@ fun List<Pair<DeclSyntax, Decl>>.locate(kind: SchemaErrorKind): SourceSpan? {
 internal fun TypeSyntax.find(name: String): SourceSpan? =
     when (this) {
         is TypeSyntax.Named -> if (this.name == name) span else null
+        is TypeSyntax.Primitive -> if ((type as? Type.Primitive.Id)?.target == name) span else null
         is TypeSyntax.Option -> inner.find(name)
         is TypeSyntax.Seq -> inner.find(name)
         is TypeSyntax.Map -> key.find(name) ?: value.find(name)
+        is TypeSyntax.Table -> inner.find(name)
         else -> null
     }
 
@@ -139,5 +155,22 @@ internal fun TypeSyntax.findMapKey(key: Type): SourceSpan? =
         is TypeSyntax.Option -> inner.findMapKey(key)
         is TypeSyntax.Seq -> inner.findMapKey(key)
         is TypeSyntax.Map -> if (this.key.toType() == key) this.key.span else this.key.findMapKey(key) ?: value.findMapKey(key)
+        is TypeSyntax.Table -> inner.findMapKey(key)
         else -> null
+    }
+
+/**
+ * Finds the span of the first part of this type (itself included) that lowers to [type].
+ */
+internal fun TypeSyntax.findType(type: Type): SourceSpan? =
+    if (toType() == type) {
+        span
+    } else {
+        when (this) {
+            is TypeSyntax.Option -> inner.findType(type)
+            is TypeSyntax.Seq -> inner.findType(type)
+            is TypeSyntax.Map -> key.findType(type) ?: value.findType(type)
+            is TypeSyntax.Table -> inner.findType(type)
+            else -> null
+        }
     }

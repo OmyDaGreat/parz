@@ -12,6 +12,8 @@ import xyz.malefic.parz.idl.model.rescale
  *
  * - `bool`: `false` before `true`
  * - `decimal`: by numeric value
+ * - `id`: by numeric value
+ * - `bytes`: byte by byte unsigned comparison, with prefixes first
  * - `string`: by Unicode code point (not UTF-16 code unit)
  * - variant without payloads (enum): by member tag, so reordering members in the IDL doesn't reorder files
  * - alias: the order of its target
@@ -29,6 +31,10 @@ internal fun keyOrder(
 
         is Type.Primitive.Decimal -> {
             compareBy { (it as Value.Decimal).rescale(type.scale, PROHIBITED).unscaled }
+        }
+
+        is Type.Primitive.Id -> {
+            compareBy { (it as Value.Id).index }
         }
 
         is Type.Primitive.Bytes -> {

@@ -15,8 +15,10 @@ import xyz.malefic.parz.idl.model.SchemaErrorKind.DuplicateFieldName
 import xyz.malefic.parz.idl.model.SchemaErrorKind.FieldPath.RecordPath
 import xyz.malefic.parz.idl.model.SchemaErrorKind.FieldPath.VariantPath
 import xyz.malefic.parz.idl.model.SchemaErrorKind.InvalidMapKey
+import xyz.malefic.parz.idl.model.SchemaErrorKind.InvalidTarget
 import xyz.malefic.parz.idl.model.SchemaErrorKind.MemberError.DuplicateMemberName
 import xyz.malefic.parz.idl.model.SchemaErrorKind.MemberError.DuplicateMemberTag
+import xyz.malefic.parz.idl.model.SchemaErrorKind.MissingTable
 import xyz.malefic.parz.idl.model.SchemaErrorKind.UnknownType
 
 /**
@@ -32,6 +34,7 @@ private fun checkFieldDecls(
     decl: Decl,
     fields: List<Field>,
     declarationMap: Map<String, Decl>,
+    tables: Set<String>,
     pathOf: (Field) -> SchemaErrorKind.FieldPath,
 ) {
     fun report(kind: SchemaErrorKind) = sink.report(Diagnostic(kind, null))
@@ -44,6 +47,7 @@ private fun checkFieldDecls(
                 report(UnknownType(it, decl, pathOf(field)))
             }
         checkMapKeys(field.type, decl, pathOf(field), declarationMap)
+        checkReferenceTypes(field.type, decl, pathOf(field), declarationMap, tables)
         if (!fieldNames.add(field.name.generatorDistinct())) {
             report(DuplicateFieldName(pathOf(field), decl))
         }
@@ -58,6 +62,7 @@ private fun Type.mapKeys(): List<Type> =
         is Type.Collection.Map -> listOf(keys) + keys.mapKeys() + values.mapKeys()
         is Type.Collection.Option -> inner.mapKeys()
         is Type.Collection.Seq -> inner.mapKeys()
+        is Type.Collection.Table -> inner.mapKeys()
         else -> emptyList()
     }
 
@@ -106,6 +111,69 @@ private fun checkMapKeys(
 ) = type.mapKeys().filterNot { it.isAllowedKey(declarationMap) }.forEach { sink.report(Diagnostic(InvalidMapKey(it, decl, path), null)) }
 
 /**
+ * Every `id<…>` and `table<…>` in this type, including ones nested in other types.
+ */
+private fun Type.references(): List<Type> =
+    when (this) {
+        is Type.Primitive.Id -> listOf(this)
+        is Type.Collection.Table -> listOf(this) + inner.references()
+        is Type.Collection.Option -> inner.references()
+        is Type.Collection.Seq -> inner.references()
+        is Type.Collection.Map -> keys.references() + values.references()
+        else -> emptyList()
+    }
+
+/**
+ * Every type written in this declaration: its fields, member payloads, or aliased type.
+ */
+private fun Decl.types(): List<Type> =
+    when (this) {
+        is Record -> fields.map { it.type }
+        is Variant -> members.flatMap { m -> m.payload.map { it.type } }
+        is Alias -> listOf(type)
+    }
+
+/**
+ * The names of every declaration some `table<…>` in [decls] holds.
+ */
+private fun tableTargets(decls: List<Decl>): Set<String> =
+    decls
+        .flatMap { it.types() }
+        .flatMap { it.references() }
+        .filterIsInstance<Type.Collection.Table>()
+        .mapNotNullTo(HashSet()) { (it.inner as? Type.Ref)?.name }
+
+/**
+ * Validates every `id<…>` and `table<…>` in a type:
+ * - Its target must name a record or variant directly ([InvalidTarget]); unknown names are left to [UnknownType]
+ * - Every `id<T>` needs a `table<T>` somewhere in the schema ([MissingTable])
+ */
+context(sink: Sink<Diagnostic<SchemaErrorKind>>)
+private fun checkReferenceTypes(
+    type: Type,
+    decl: Decl,
+    path: SchemaErrorKind.FieldPath?,
+    declarationMap: Map<String, Decl>,
+    tables: Set<String>,
+) = type.references().forEach { ref ->
+    val target =
+        when (ref) {
+            is Type.Primitive.Id -> ref.target
+            is Type.Collection.Table -> (ref.inner as? Type.Ref)?.name
+            else -> null
+        }
+    val kind =
+        when {
+            target == null -> InvalidTarget(ref, decl, path)
+            target !in declarationMap -> null
+            declarationMap.getValue(target) is Alias -> InvalidTarget(ref, decl, path)
+            ref is Type.Primitive.Id && target !in tables -> MissingTable(target, decl, path)
+            else -> null
+        }
+    kind?.let { sink.report(Diagnostic(it, null)) }
+}
+
+/**
  * Validates a list of declarations, reporting any errors found.
  * @param decls The declarations to validate
  * @return A list of errors found within the declarations through [Checked]
@@ -118,17 +186,18 @@ fun validate(decls: List<Decl>): Errors<Diagnostic<SchemaErrorKind>> =
         val declarations = distinct.mapTo(HashSet()) { it.name }
         val declarationMap = distinct.associateBy { it.name }
         val reportedCycles = HashSet<String>()
+        val tables = tableTargets(distinct)
         distinct.forEach { decl ->
             when (decl) {
                 is Record -> {
-                    checkFieldDecls(decl, decl.fields, declarationMap, ::RecordPath)
+                    checkFieldDecls(decl, decl.fields, declarationMap, tables, ::RecordPath)
                 }
 
                 is Variant -> {
                     val memberNames = mutableSetOf<String>()
                     val memberTags = mutableSetOf<Int>()
                     decl.members.forEach { member ->
-                        checkFieldDecls(decl, member.payload, declarationMap) { VariantPath(member, it) }
+                        checkFieldDecls(decl, member.payload, declarationMap, tables) { VariantPath(member, it) }
                         if (!memberNames.add(member.name.generatorDistinct())) {
                             report(DuplicateMemberName(member.name, decl, member))
                         }
@@ -150,6 +219,7 @@ fun validate(decls: List<Decl>): Errors<Diagnostic<SchemaErrorKind>> =
                         .filter { it !in declarations }
                         .forEach { report(UnknownType(it, decl, null)) }
                     checkMapKeys(decl.type, decl, null, declarationMap)
+                    checkReferenceTypes(decl.type, decl, null, declarationMap, tables)
                 }
             }
         }
@@ -185,9 +255,11 @@ private fun List<Decl>.distinctDecls(): List<Decl> {
 fun Type.refs(): Set<String> =
     when (this) {
         is Type.Ref -> setOf(name)
+        is Type.Primitive.Id -> setOf(target)
         is Type.Collection.Option -> inner.refs()
         is Type.Collection.Seq -> inner.refs()
         is Type.Collection.Map -> keys.refs() + values.refs()
+        is Type.Collection.Table -> inner.refs()
         else -> emptySet()
     }
 

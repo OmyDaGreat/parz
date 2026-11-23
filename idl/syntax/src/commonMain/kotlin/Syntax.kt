@@ -13,6 +13,7 @@ import xyz.malefic.parz.idl.model.ShapeErrorKind.NegativeTag
 import xyz.malefic.parz.idl.model.Type
 import xyz.malefic.parz.idl.model.Type.Primitive.Bytes
 import xyz.malefic.parz.idl.model.Type.Primitive.Decimal
+import xyz.malefic.parz.idl.model.Type.Primitive.Id
 import xyz.malefic.parz.idl.model.Type.Primitive.Str
 
 interface PrettySyntax {
@@ -32,9 +33,8 @@ sealed interface TypeSyntax : PrettySyntax {
     ) : TypeSyntax {
         override fun pretty(): String =
             when (type) {
-                // TODO: Write decimal in shortest form
-                is Decimal -> {
-                    "decimal(${type.min}..${type.max}, ${type.scale}, ${type.rounding}, ${type.overflow})"
+                is Id -> {
+                    "id<${type.target}>"
                 }
 
                 is Bytes -> {
@@ -47,6 +47,11 @@ sealed interface TypeSyntax : PrettySyntax {
 
                 is Str -> {
                     if (type.maxLen == Long.MAX_VALUE) "string" else "string(${type.maxLen})"
+                }
+
+                // TODO: Write decimal in shortest form
+                is Decimal -> {
+                    "decimal(${type.min}..${type.max}, ${type.scale}, ${type.rounding}, ${type.overflow})"
                 }
 
                 else -> {
@@ -92,6 +97,15 @@ sealed interface TypeSyntax : PrettySyntax {
         override fun pretty(): String = "map<${key.pretty()}, ${value.pretty()}>"
 
         override fun toType() = Type.Collection.Map(key.toType(), value.toType())
+    }
+
+    data class Table(
+        val inner: TypeSyntax,
+        override val span: SourceSpan,
+    ) : TypeSyntax {
+        override fun pretty(): String = "table<${inner.pretty()}>"
+
+        override fun toType() = Type.Collection.Table(inner.toType())
     }
 }
 

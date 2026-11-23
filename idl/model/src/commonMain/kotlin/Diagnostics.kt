@@ -5,10 +5,134 @@ import com.ionspin.kotlin.bignum.integer.toBigInteger
 import xyz.malefic.parz.core.AnyDiagnostic
 import xyz.malefic.parz.core.Diagnostic
 import xyz.malefic.parz.core.DiagnosticKind
+import xyz.malefic.parz.core.Severity
 import xyz.malefic.parz.core.Sink
 import xyz.malefic.parz.core.SourceSpan
 import xyz.malefic.parz.idl.model.Decl.Record.Field
 import xyz.malefic.parz.idl.model.Decl.Variant.Member
+
+sealed interface SchemaErrorKind : DiagnosticKind {
+    val decl: Decl
+
+    sealed interface FieldPath {
+        val field: Field
+
+        data class RecordPath(
+            override val field: Field,
+        ) : FieldPath {
+            override fun toString() = field.name
+        }
+
+        data class VariantPath(
+            val member: Member,
+            override val field: Field,
+        ) : FieldPath {
+            override fun toString() = "${member.name}.${field.name}"
+        }
+    }
+
+    data class UnknownType(
+        val name: String,
+        override val decl: Decl,
+        val path: FieldPath?,
+    ) : SchemaErrorKind {
+        override val code = "IDL101"
+        override val message = "Unknown type${if (path != null) " in field $path" else ""}: $name"
+    }
+
+    data class DuplicateFieldName(
+        val path: FieldPath,
+        override val decl: Decl,
+    ) : SchemaErrorKind {
+        override val code = "IDL102"
+        override val message = "Duplicate field ${path.field.name} in ${decl.name}"
+    }
+
+    sealed interface MemberError : SchemaErrorKind {
+        val member: Member
+
+        data class DuplicateMemberName(
+            val name: String,
+            override val decl: Decl,
+            override val member: Member,
+        ) : MemberError {
+            override val code = "IDL103"
+            override val message = "Duplicate member name: $name"
+        }
+
+        data class DuplicateMemberTag(
+            val tag: Int,
+            override val decl: Decl,
+            override val member: Member,
+        ) : MemberError {
+            override val code = "IDL104"
+            override val message = "Duplicate member tag: $tag"
+        }
+    }
+
+    data class CyclicType(
+        val path: List<String>,
+        override val decl: Decl,
+    ) : SchemaErrorKind {
+        override val code = "IDL105"
+        override val message = "Cyclic type definition: ${path.joinToString(" -> ")}"
+    }
+
+    data class DuplicateDecl(
+        override val decl: Decl,
+    ) : SchemaErrorKind {
+        override val code = "IDL106"
+        override val message = "Duplicate declaration: ${decl.name}"
+    }
+
+    /**
+     * A map's key type isn't a bool, decimal, string, or variant without payloads (an enum), directly or through aliases.
+     */
+    data class InvalidMapKey(
+        val key: Type,
+        override val decl: Decl,
+        val path: FieldPath?,
+    ) : SchemaErrorKind {
+        override val code = "IDL107"
+        override val message =
+            "Invalid map key${if (path != null) " in field $path" else ""}: ${(key as? Type.Ref)?.name ?: key.kind}" +
+                " (keys must be bool, decimal, string, or an enum)"
+    }
+
+    /**
+     * An `id<[name]>` is used, but no `table<[name]>` appears anywhere in the schema, so no value could ever hold its entries.
+     */
+    data class MissingTable(
+        val name: String,
+        override val decl: Decl,
+        val path: FieldPath?,
+    ) : SchemaErrorKind {
+        override val code = "IDL108"
+        override val message = "No table<$name> for id<$name>${if (path != null) " in field $path" else ""}"
+        override val severity = Severity.WARNING
+    }
+
+    /**
+     * An `id<…>` or `table<…>` ([type]) doesn't name a record or variant directly. Ids index tables of declarations, so aliases
+     * and unnamed types can't be targets.
+     */
+    data class InvalidTarget(
+        val type: Type,
+        override val decl: Decl,
+        val path: FieldPath?,
+    ) : SchemaErrorKind {
+        override val code = "IDL109"
+        override val message =
+            "${if (type is Type.Primitive.Id) "Id" else "Table"} target must be a record or variant" +
+                "${if (path != null) " in field $path" else ""}: ${
+                    when (type) {
+                        is Type.Primitive.Id -> type.target
+                        is Type.Collection.Table -> (type.inner as? Type.Ref)?.name ?: type.inner.kind
+                        else -> type.kind
+                    }
+                }"
+    }
+}
 
 sealed interface ShapeErrorKind : DiagnosticKind {
     data object EmptyRecord : ShapeErrorKind {
@@ -111,92 +235,3 @@ fun requireShape(errors: List<ShapeErrorKind>) =
     require(errors.isEmpty()) {
         "Shape validation failed: ${errors.joinToString { it.message }}"
     }
-
-sealed interface SchemaErrorKind : DiagnosticKind {
-    val decl: Decl
-
-    sealed interface FieldPath {
-        val field: Field
-
-        data class RecordPath(
-            override val field: Field,
-        ) : FieldPath {
-            override fun toString() = field.name
-        }
-
-        data class VariantPath(
-            val member: Member,
-            override val field: Field,
-        ) : FieldPath {
-            override fun toString() = "${member.name}.${field.name}"
-        }
-    }
-
-    data class UnknownType(
-        val name: String,
-        override val decl: Decl,
-        val path: FieldPath?,
-    ) : SchemaErrorKind {
-        override val code = "IDL101"
-        override val message = "Unknown type${if (path != null) " in field $path" else ""}: $name"
-    }
-
-    data class DuplicateFieldName(
-        val path: FieldPath,
-        override val decl: Decl,
-    ) : SchemaErrorKind {
-        override val code = "IDL102"
-        override val message = "Duplicate field ${path.field.name} in ${decl.name}"
-    }
-
-    sealed interface MemberError : SchemaErrorKind {
-        val member: Member
-
-        data class DuplicateMemberName(
-            val name: String,
-            override val decl: Decl,
-            override val member: Member,
-        ) : MemberError {
-            override val code = "IDL103"
-            override val message = "Duplicate member name: $name"
-        }
-
-        data class DuplicateMemberTag(
-            val tag: Int,
-            override val decl: Decl,
-            override val member: Member,
-        ) : MemberError {
-            override val code = "IDL104"
-            override val message = "Duplicate member tag: $tag"
-        }
-    }
-
-    data class CyclicType(
-        val path: List<String>,
-        override val decl: Decl,
-    ) : SchemaErrorKind {
-        override val code = "IDL105"
-        override val message = "Cyclic type definition: ${path.joinToString(" -> ")}"
-    }
-
-    data class DuplicateDecl(
-        override val decl: Decl,
-    ) : SchemaErrorKind {
-        override val code = "IDL106"
-        override val message = "Duplicate declaration: ${decl.name}"
-    }
-
-    /**
-     * A map's key type isn't a bool, decimal, string, or variant without payloads (an enum), directly or through aliases.
-     */
-    data class InvalidMapKey(
-        val key: Type,
-        override val decl: Decl,
-        val path: FieldPath?,
-    ) : SchemaErrorKind {
-        override val code = "IDL107"
-        override val message =
-            "Invalid map key${if (path != null) " in field $path" else ""}: ${(key as? Type.Ref)?.name ?: key.kind}" +
-                " (keys must be bool, decimal, string, or an enum)"
-    }
-}
