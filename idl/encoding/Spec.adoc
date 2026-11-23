@@ -17,7 +17,7 @@
 
 |id
 |atom
-|numeric value
+|a non-negative integer with no leading zeros
 
 |bytes
 |atom
@@ -101,7 +101,7 @@
 |code point comparison
 
 |decimal
-|unscaled after rescaling into type's scale
+|numeric value
 
 |enum
 |member tags
@@ -117,20 +117,27 @@ NOTE: No other types are allowed for keys of maps
 * Map entries in any order
 * Bytes normalize to lowercase
 * Any error existing means no value, though lenient functions are in the docs as an option externally
+* Two keys equal in the type's view (like after decimal scaling) count as duplicates and are rejected
 * Comments (`; Something`) are currently ignored
 
 === Decimals
 * Less decimal places than in type
-* ASCII digits only for decimals
-* Values like 007 and -0 are normalized to 7 and 0
+** Extra trailing zeros are allowed if the value stays exact at the type
+* ASCII digits only
+* Values like 007 and -0 aren't kept, instead normalized to 7 and 0
 
 === References
 * Each root holds at most one table per target
 * IDs start at 0
 * The target must be a record or variant named directly
+* An ID must be less than its table's size
+* A missing table is a schema warning, not an error
 
 == File Header Spec
 [source]
 ----
 (parz <format version> (schema <name> <schema version>) <Root Type>)
 ----
+* Readers reject any format not following the above
+* `decodeFile` requires exactly one value in the body, though that's not true for other decode functions (like `decodeString`)
+* The header is included in the file's hash, being part of the canonical output

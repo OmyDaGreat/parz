@@ -4,10 +4,10 @@ import xyz.malefic.parz.core.Severity
 import xyz.malefic.parz.core.collecting
 import xyz.malefic.parz.idl.model.Decl.Record.Field
 import xyz.malefic.parz.idl.model.Decl.Variant.Member
-import xyz.malefic.parz.idl.model.SchemaErrorKind.FieldPath.RecordPath
-import xyz.malefic.parz.idl.model.SchemaErrorKind.FieldPath.VariantPath
-import xyz.malefic.parz.idl.model.SchemaErrorKind.InvalidTarget
-import xyz.malefic.parz.idl.model.SchemaErrorKind.MissingTable
+import xyz.malefic.parz.idl.model.SchemaIssueKind.FieldPath.RecordPath
+import xyz.malefic.parz.idl.model.SchemaIssueKind.FieldPath.VariantPath
+import xyz.malefic.parz.idl.model.SchemaIssueKind.InvalidTarget
+import xyz.malefic.parz.idl.model.SchemaIssueKind.MissingTable
 import xyz.malefic.parz.idl.model.Type.Collection.Map
 import xyz.malefic.parz.idl.model.Type.Collection.Option
 import xyz.malefic.parz.idl.model.Type.Collection.Seq

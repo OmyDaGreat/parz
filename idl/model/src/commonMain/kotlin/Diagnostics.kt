@@ -11,7 +11,7 @@ import xyz.malefic.parz.core.SourceSpan
 import xyz.malefic.parz.idl.model.Decl.Record.Field
 import xyz.malefic.parz.idl.model.Decl.Variant.Member
 
-sealed interface SchemaErrorKind : DiagnosticKind {
+sealed interface SchemaIssueKind : DiagnosticKind {
     val decl: Decl
 
     sealed interface FieldPath {
@@ -35,7 +35,7 @@ sealed interface SchemaErrorKind : DiagnosticKind {
         val name: String,
         override val decl: Decl,
         val path: FieldPath?,
-    ) : SchemaErrorKind {
+    ) : SchemaIssueKind {
         override val code = "IDL101"
         override val message = "Unknown type${if (path != null) " in field $path" else ""}: $name"
     }
@@ -43,19 +43,19 @@ sealed interface SchemaErrorKind : DiagnosticKind {
     data class DuplicateFieldName(
         val path: FieldPath,
         override val decl: Decl,
-    ) : SchemaErrorKind {
+    ) : SchemaIssueKind {
         override val code = "IDL102"
         override val message = "Duplicate field ${path.field.name} in ${decl.name}"
     }
 
-    sealed interface MemberError : SchemaErrorKind {
+    sealed interface MemberIssue : SchemaIssueKind {
         val member: Member
 
         data class DuplicateMemberName(
             val name: String,
             override val decl: Decl,
             override val member: Member,
-        ) : MemberError {
+        ) : MemberIssue {
             override val code = "IDL103"
             override val message = "Duplicate member name: $name"
         }
@@ -64,7 +64,7 @@ sealed interface SchemaErrorKind : DiagnosticKind {
             val tag: Int,
             override val decl: Decl,
             override val member: Member,
-        ) : MemberError {
+        ) : MemberIssue {
             override val code = "IDL104"
             override val message = "Duplicate member tag: $tag"
         }
@@ -73,14 +73,14 @@ sealed interface SchemaErrorKind : DiagnosticKind {
     data class CyclicType(
         val path: List<String>,
         override val decl: Decl,
-    ) : SchemaErrorKind {
+    ) : SchemaIssueKind {
         override val code = "IDL105"
         override val message = "Cyclic type definition: ${path.joinToString(" -> ")}"
     }
 
     data class DuplicateDecl(
         override val decl: Decl,
-    ) : SchemaErrorKind {
+    ) : SchemaIssueKind {
         override val code = "IDL106"
         override val message = "Duplicate declaration: ${decl.name}"
     }
@@ -92,7 +92,7 @@ sealed interface SchemaErrorKind : DiagnosticKind {
         val key: Type,
         override val decl: Decl,
         val path: FieldPath?,
-    ) : SchemaErrorKind {
+    ) : SchemaIssueKind {
         override val code = "IDL107"
         override val message =
             "Invalid map key${if (path != null) " in field $path" else ""}: ${(key as? Type.Ref)?.name ?: key.kind}" +
@@ -106,7 +106,7 @@ sealed interface SchemaErrorKind : DiagnosticKind {
         val name: String,
         override val decl: Decl,
         val path: FieldPath?,
-    ) : SchemaErrorKind {
+    ) : SchemaIssueKind {
         override val code = "IDL108"
         override val message = "No table<$name> for id<$name>${if (path != null) " in field $path" else ""}"
         override val severity = Severity.WARNING
@@ -120,7 +120,7 @@ sealed interface SchemaErrorKind : DiagnosticKind {
         val type: Type,
         override val decl: Decl,
         val path: FieldPath?,
-    ) : SchemaErrorKind {
+    ) : SchemaIssueKind {
         override val code = "IDL109"
         override val message =
             "${if (type is Type.Primitive.Id) "Id" else "Table"} target must be a record or variant" +

@@ -9,17 +9,17 @@ import xyz.malefic.parz.idl.model.Decl.Alias
 import xyz.malefic.parz.idl.model.Decl.Record
 import xyz.malefic.parz.idl.model.Decl.Record.Field
 import xyz.malefic.parz.idl.model.Decl.Variant
-import xyz.malefic.parz.idl.model.SchemaErrorKind.CyclicType
-import xyz.malefic.parz.idl.model.SchemaErrorKind.DuplicateDecl
-import xyz.malefic.parz.idl.model.SchemaErrorKind.DuplicateFieldName
-import xyz.malefic.parz.idl.model.SchemaErrorKind.FieldPath.RecordPath
-import xyz.malefic.parz.idl.model.SchemaErrorKind.FieldPath.VariantPath
-import xyz.malefic.parz.idl.model.SchemaErrorKind.InvalidMapKey
-import xyz.malefic.parz.idl.model.SchemaErrorKind.InvalidTarget
-import xyz.malefic.parz.idl.model.SchemaErrorKind.MemberError.DuplicateMemberName
-import xyz.malefic.parz.idl.model.SchemaErrorKind.MemberError.DuplicateMemberTag
-import xyz.malefic.parz.idl.model.SchemaErrorKind.MissingTable
-import xyz.malefic.parz.idl.model.SchemaErrorKind.UnknownType
+import xyz.malefic.parz.idl.model.SchemaIssueKind.CyclicType
+import xyz.malefic.parz.idl.model.SchemaIssueKind.DuplicateDecl
+import xyz.malefic.parz.idl.model.SchemaIssueKind.DuplicateFieldName
+import xyz.malefic.parz.idl.model.SchemaIssueKind.FieldPath.RecordPath
+import xyz.malefic.parz.idl.model.SchemaIssueKind.FieldPath.VariantPath
+import xyz.malefic.parz.idl.model.SchemaIssueKind.InvalidMapKey
+import xyz.malefic.parz.idl.model.SchemaIssueKind.InvalidTarget
+import xyz.malefic.parz.idl.model.SchemaIssueKind.MemberIssue.DuplicateMemberName
+import xyz.malefic.parz.idl.model.SchemaIssueKind.MemberIssue.DuplicateMemberTag
+import xyz.malefic.parz.idl.model.SchemaIssueKind.MissingTable
+import xyz.malefic.parz.idl.model.SchemaIssueKind.UnknownType
 
 /**
  * Validates the fields of a record. Also calls [checkMapKeys].
@@ -29,15 +29,15 @@ import xyz.malefic.parz.idl.model.SchemaErrorKind.UnknownType
  * @param declarationMap A map of declaration names to declarations.
  * @param pathOf A function that returns the path of a field.
  */
-context(sink: Sink<Diagnostic<SchemaErrorKind>>)
+context(sink: Sink<Diagnostic<SchemaIssueKind>>)
 private fun checkFieldDecls(
     decl: Decl,
     fields: List<Field>,
     declarationMap: Map<String, Decl>,
     tables: Set<String>,
-    pathOf: (Field) -> SchemaErrorKind.FieldPath,
+    pathOf: (Field) -> SchemaIssueKind.FieldPath,
 ) {
-    fun report(kind: SchemaErrorKind) = sink.report(Diagnostic(kind, null))
+    fun report(kind: SchemaIssueKind) = sink.report(Diagnostic(kind, null))
     val fieldNames = mutableSetOf<String>()
     fields.forEach { field ->
         field.type
@@ -102,11 +102,11 @@ private fun Type.isAllowedKey(
  * @param path The path of the map.
  * @param declarationMap A map of declaration names to declarations.
  */
-context(sink: Sink<Diagnostic<SchemaErrorKind>>)
+context(sink: Sink<Diagnostic<SchemaIssueKind>>)
 private fun checkMapKeys(
     type: Type,
     decl: Decl,
-    path: SchemaErrorKind.FieldPath?,
+    path: SchemaIssueKind.FieldPath?,
     declarationMap: Map<String, Decl>,
 ) = type.mapKeys().filterNot { it.isAllowedKey(declarationMap) }.forEach { sink.report(Diagnostic(InvalidMapKey(it, decl, path), null)) }
 
@@ -148,11 +148,11 @@ private fun tableTargets(decls: List<Decl>): Set<String> =
  * - Its target must name a record or variant directly ([InvalidTarget]); unknown names are left to [UnknownType]
  * - Every `id<T>` needs a `table<T>` somewhere in the schema ([MissingTable])
  */
-context(sink: Sink<Diagnostic<SchemaErrorKind>>)
+context(sink: Sink<Diagnostic<SchemaIssueKind>>)
 private fun checkReferenceTypes(
     type: Type,
     decl: Decl,
-    path: SchemaErrorKind.FieldPath?,
+    path: SchemaIssueKind.FieldPath?,
     declarationMap: Map<String, Decl>,
     tables: Set<String>,
 ) = type.references().forEach { ref ->
@@ -178,9 +178,9 @@ private fun checkReferenceTypes(
  * @param decls The declarations to validate
  * @return A list of errors found within the declarations through [Checked]
  */
-fun validate(decls: List<Decl>): Errors<Diagnostic<SchemaErrorKind>> =
+fun validate(decls: List<Decl>): Errors<Diagnostic<SchemaIssueKind>> =
     collecting {
-        fun report(kind: SchemaErrorKind) = contextOf<Sink<Diagnostic<SchemaErrorKind>>>().report(Diagnostic(kind, null))
+        fun report(kind: SchemaIssueKind) = contextOf<Sink<Diagnostic<SchemaIssueKind>>>().report(Diagnostic(kind, null))
 
         val distinct = decls.distinctDecls()
         val declarations = distinct.mapTo(HashSet()) { it.name }
@@ -241,7 +241,7 @@ fun validate(decls: List<Decl>): Errors<Diagnostic<SchemaErrorKind>> =
         }
     }
 
-context(sink: Sink<Diagnostic<SchemaErrorKind>>)
+context(sink: Sink<Diagnostic<SchemaIssueKind>>)
 private fun List<Decl>.distinctDecls(): List<Decl> {
     val set = HashSet<String>()
     val list = ArrayList<Decl>()

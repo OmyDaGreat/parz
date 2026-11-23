@@ -2,7 +2,7 @@ package xyz.malefic.parz.idl.model
 
 import xyz.malefic.parz.idl.model.Decl.Record.Field
 import xyz.malefic.parz.idl.model.Decl.Variant.Member
-import xyz.malefic.parz.idl.model.SchemaErrorKind.CyclicType
+import xyz.malefic.parz.idl.model.SchemaIssueKind.CyclicType
 import xyz.malefic.parz.idl.model.Type.Collection.Option
 import xyz.malefic.parz.idl.model.Type.Collection.Seq
 import kotlin.test.Test

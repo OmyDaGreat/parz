@@ -2,9 +2,9 @@ package xyz.malefic.parz.idl.model
 
 import xyz.malefic.parz.idl.model.Decl.Record.Field
 import xyz.malefic.parz.idl.model.Decl.Variant.Member
-import xyz.malefic.parz.idl.model.SchemaErrorKind.FieldPath.RecordPath
-import xyz.malefic.parz.idl.model.SchemaErrorKind.FieldPath.VariantPath
-import xyz.malefic.parz.idl.model.SchemaErrorKind.UnknownType
+import xyz.malefic.parz.idl.model.SchemaIssueKind.FieldPath.RecordPath
+import xyz.malefic.parz.idl.model.SchemaIssueKind.FieldPath.VariantPath
+import xyz.malefic.parz.idl.model.SchemaIssueKind.UnknownType
 import xyz.malefic.parz.idl.model.Type.Collection.Option
 import xyz.malefic.parz.idl.model.Type.Collection.Seq
 import xyz.malefic.parz.idl.model.Type.Primitive.Bool

@@ -3,9 +3,9 @@ package xyz.malefic.parz.idl.model
 import com.ionspin.kotlin.bignum.integer.BigInteger
 import xyz.malefic.parz.idl.model.Decl.Record.Field
 import xyz.malefic.parz.idl.model.Decl.Variant.Member
-import xyz.malefic.parz.idl.model.SchemaErrorKind.FieldPath.RecordPath
-import xyz.malefic.parz.idl.model.SchemaErrorKind.FieldPath.VariantPath
-import xyz.malefic.parz.idl.model.SchemaErrorKind.InvalidMapKey
+import xyz.malefic.parz.idl.model.SchemaIssueKind.FieldPath.RecordPath
+import xyz.malefic.parz.idl.model.SchemaIssueKind.FieldPath.VariantPath
+import xyz.malefic.parz.idl.model.SchemaIssueKind.InvalidMapKey
 import xyz.malefic.parz.idl.model.Type.Collection.Map
 import xyz.malefic.parz.idl.model.Type.Collection.Option
 import xyz.malefic.parz.idl.model.Type.Collection.Seq
@@ -35,7 +35,7 @@ class MapKeys {
     private fun keyedBy(
         key: Type,
         vararg others: Decl,
-    ): List<SchemaErrorKind> {
+    ): List<SchemaIssueKind> {
         val field = Field("m", Map(key, Bool))
         val decl = Decl.Record("A", listOf(field))
         return kinds(decl, *others)

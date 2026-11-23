@@ -5,8 +5,8 @@ import xyz.malefic.parz.core.Severity
 import xyz.malefic.parz.core.Sink
 import xyz.malefic.parz.core.SourceSpan
 import xyz.malefic.parz.idl.model.Decl
-import xyz.malefic.parz.idl.model.SchemaErrorKind
-import xyz.malefic.parz.idl.model.SchemaErrorKind.FieldPath.VariantPath
+import xyz.malefic.parz.idl.model.SchemaIssueKind
+import xyz.malefic.parz.idl.model.SchemaIssueKind.FieldPath.VariantPath
 import xyz.malefic.parz.idl.model.Type
 import xyz.malefic.parz.idl.model.validate
 
@@ -30,7 +30,7 @@ fun SchemaSyntax.accept(existing: List<Decl>): List<Pair<DeclSyntax, Decl>> {
             pending.filter { (_, decl) ->
                 problems.diagnostics.any {
                     it.kind.severity == Severity.ERROR &&
-                        (it.kind.decl === decl || (it.kind as? SchemaErrorKind.CyclicType)?.path?.contains(decl.name) == true)
+                        (it.kind.decl === decl || (it.kind as? SchemaIssueKind.CyclicType)?.path?.contains(decl.name) == true)
                 }
             }
         if (rejectedLoop.isEmpty()) {
@@ -51,7 +51,7 @@ fun SchemaSyntax.accept(existing: List<Decl>): List<Pair<DeclSyntax, Decl>> {
  */
 private fun DeclSyntax.typeAt(
     decl: Decl,
-    path: SchemaErrorKind.FieldPath?,
+    path: SchemaIssueKind.FieldPath?,
 ): TypeSyntax? =
     when {
         path == null -> {
@@ -80,18 +80,18 @@ private fun DeclSyntax.typeAt(
 /**
  * The span in the source of the problem a schema error points at, given each declaration paired with its syntax.
  */
-fun List<Pair<DeclSyntax, Decl>>.locate(kind: SchemaErrorKind): SourceSpan? {
+fun List<Pair<DeclSyntax, Decl>>.locate(kind: SchemaIssueKind): SourceSpan? {
     val syntax = firstOrNull { it.second === kind.decl }?.first ?: return null
     return when (kind) {
-        is SchemaErrorKind.UnknownType -> {
+        is SchemaIssueKind.UnknownType -> {
             syntax.typeAt(kind.decl, kind.path)?.find(kind.name)
         }
 
-        is SchemaErrorKind.InvalidMapKey -> {
+        is SchemaIssueKind.InvalidMapKey -> {
             syntax.typeAt(kind.decl, kind.path)?.let { it.findMapKey(kind.key) ?: it.span }
         }
 
-        is SchemaErrorKind.DuplicateFieldName -> {
+        is SchemaIssueKind.DuplicateFieldName -> {
             when (val decl = kind.decl) {
                 is Decl.Record -> {
                     val i = decl.fields.indexOfFirst { it === kind.path.field }
@@ -113,21 +113,21 @@ fun List<Pair<DeclSyntax, Decl>>.locate(kind: SchemaErrorKind): SourceSpan? {
             }
         }
 
-        is SchemaErrorKind.MemberError -> {
+        is SchemaIssueKind.MemberIssue -> {
             val i = (kind.decl as Decl.Variant).members.indexOfFirst { it === kind.member }
             val m = (syntax as DeclSyntax.Variant).members.getOrNull(i) ?: return syntax.span
-            if (kind is SchemaErrorKind.MemberError.DuplicateMemberTag) m.tagSpan ?: m.span else m.span
+            if (kind is SchemaIssueKind.MemberIssue.DuplicateMemberTag) m.tagSpan ?: m.span else m.span
         }
 
-        is SchemaErrorKind.CyclicType, is SchemaErrorKind.DuplicateDecl -> {
+        is SchemaIssueKind.CyclicType, is SchemaIssueKind.DuplicateDecl -> {
             syntax.span
         }
 
-        is SchemaErrorKind.MissingTable -> {
+        is SchemaIssueKind.MissingTable -> {
             syntax.typeAt(kind.decl, kind.path)?.let { it.findType(Type.Primitive.Id(kind.name)) ?: it.span }
         }
 
-        is SchemaErrorKind.InvalidTarget -> {
+        is SchemaIssueKind.InvalidTarget -> {
             syntax.typeAt(kind.decl, kind.path)?.let { it.findType(kind.type) ?: it.span }
         }
     }

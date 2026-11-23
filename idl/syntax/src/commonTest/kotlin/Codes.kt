@@ -4,8 +4,8 @@ import com.ionspin.kotlin.bignum.integer.BigInteger
 import xyz.malefic.parz.idl.model.Decl
 import xyz.malefic.parz.idl.model.Decl.Record.Field
 import xyz.malefic.parz.idl.model.Decl.Variant.Member
-import xyz.malefic.parz.idl.model.SchemaErrorKind
-import xyz.malefic.parz.idl.model.SchemaErrorKind.FieldPath.RecordPath
+import xyz.malefic.parz.idl.model.SchemaIssueKind
+import xyz.malefic.parz.idl.model.SchemaIssueKind.FieldPath.RecordPath
 import xyz.malefic.parz.idl.model.ShapeErrorKind
 import xyz.malefic.parz.idl.model.Type.Primitive.Bool
 import kotlin.test.Test
@@ -48,12 +48,12 @@ class Codes {
 
     private val schema =
         listOf(
-            SchemaErrorKind.UnknownType("X", decl, null),
-            SchemaErrorKind.DuplicateFieldName(RecordPath(Field("f", Bool)), decl),
-            SchemaErrorKind.MemberError.DuplicateMemberName("m", decl, member),
-            SchemaErrorKind.MemberError.DuplicateMemberTag(0, decl, member),
-            SchemaErrorKind.CyclicType(emptyList(), decl),
-            SchemaErrorKind.DuplicateDecl(decl),
+            SchemaIssueKind.UnknownType("X", decl, null),
+            SchemaIssueKind.DuplicateFieldName(RecordPath(Field("f", Bool)), decl),
+            SchemaIssueKind.MemberIssue.DuplicateMemberName("m", decl, member),
+            SchemaIssueKind.MemberIssue.DuplicateMemberTag(0, decl, member),
+            SchemaIssueKind.CyclicType(emptyList(), decl),
+            SchemaIssueKind.DuplicateDecl(decl),
         )
 
     @Test
