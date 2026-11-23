@@ -1,5 +1,6 @@
 package xyz.malefic.parz.idl.syntax
 
+import com.ionspin.kotlin.bignum.integer.BigInteger
 import xyz.malefic.parz.core.AnyDiagnostic
 import xyz.malefic.parz.core.Sink
 import xyz.malefic.parz.core.SourceSpan
@@ -13,6 +14,7 @@ import xyz.malefic.parz.idl.model.ShapeErrorKind.NegativeTag
 import xyz.malefic.parz.idl.model.Type
 import xyz.malefic.parz.idl.model.Type.Primitive.Bytes
 import xyz.malefic.parz.idl.model.Type.Primitive.Decimal
+import xyz.malefic.parz.idl.model.Type.Primitive.Decimal.Rounding
 import xyz.malefic.parz.idl.model.Type.Primitive.Id
 import xyz.malefic.parz.idl.model.Type.Primitive.Str
 
@@ -49,9 +51,20 @@ sealed interface TypeSyntax : PrettySyntax {
                     if (type.maxLen == Long.MAX_VALUE) "string" else "string(${type.maxLen})"
                 }
 
-                // TODO: Write decimal in shortest form
                 is Decimal -> {
-                    "decimal(${type.min}..${type.max}, ${type.scale}, ${type.rounding}, ${type.overflow})"
+                    val options =
+                        listOfNotNull(
+                            type.rounding.takeIf { it != Rounding.TOWARDS_ZERO },
+                            type.overflow.takeIf { it != Decimal.Overflow.ERROR },
+                        ).map { it.name.lowercase() }
+                    val shorthand = shorthandIntegerMap[type.min to type.max].takeIf { type.scale == 0 }
+                    val precision = (0..38).firstOrNull { BigInteger.TEN.pow(it).dec() == type.max }.takeIf { type.min == -type.max }
+                    val trailing = options.joinToString("") { ", $it" }
+                    when {
+                        shorthand != null -> shorthand + if (options.isEmpty()) "" else options.joinToString(", ", "(", ")")
+                        precision != null -> "decimal($precision, ${type.scale}$trailing)"
+                        else -> "decimal(${type.min}..${type.max}, ${type.scale}$trailing)"
+                    }
                 }
 
                 else -> {

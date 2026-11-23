@@ -148,8 +148,10 @@ class Types {
 
     @Test
     fun negativeScale() {
-        val source = "type T = decimal(9, -2)"
-        assertEquals(ExpectedInt(Token.Symbol('-', source.span("-"))), error(source).kind)
+        val bound = BigInteger.TEN.pow(9).dec()
+        assertEquals(Decimal(-bound, bound, -2), typeOf("decimal(9, -2)").toType())
+        assertEquals(Decimal(int(-5), int(10), -1), typeOf("decimal(-5..10, -1)").toType())
+        assertEquals("decimal(9, -2)", typeOf("decimal(9, -2)").pretty())
     }
 
     @Test

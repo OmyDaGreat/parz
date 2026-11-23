@@ -29,6 +29,20 @@ import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.InvalidType
 import xyz.malefic.parz.idl.syntax.SyntaxErrorKind.PrecisionOutOfRange
 import xyz.malefic.parz.idl.syntax.TypeSyntax.Primitive
 
+internal val integerShorthandMap =
+    mapOf(
+        "u8" to (BigInteger.ZERO to BigInteger(2).pow(8).dec()),
+        "u16" to (BigInteger.ZERO to BigInteger(2).pow(16).dec()),
+        "u32" to (BigInteger.ZERO to BigInteger(2).pow(32).dec()),
+        "u64" to (BigInteger.ZERO to BigInteger(2).pow(64).dec()),
+        "i8" to (BigInteger(2).pow(7).negate() to BigInteger(2).pow(7).dec()),
+        "i16" to (BigInteger(2).pow(15).negate() to BigInteger(2).pow(15).dec()),
+        "i32" to (BigInteger(2).pow(31).negate() to BigInteger(2).pow(31).dec()),
+        "i64" to (BigInteger(2).pow(63).negate() to BigInteger(2).pow(63).dec()),
+    )
+
+internal val shorthandIntegerMap = integerShorthandMap.entries.associate { (name, range) -> range to name }
+
 context(sink: Sink<SyntaxDiagnostic>)
 fun parse(tokens: List<Token>) = Parser(tokens, sink).schema()
 
@@ -72,18 +86,6 @@ internal class Parser(
         )
 
     private val declKeywords = listOf("record", "variant", "enum", "type")
-
-    private val integerShorthandMap =
-        mapOf(
-            "u8" to (BigInteger.ZERO to BigInteger(2).pow(8).dec()),
-            "u16" to (BigInteger.ZERO to BigInteger(2).pow(16).dec()),
-            "u32" to (BigInteger.ZERO to BigInteger(2).pow(32).dec()),
-            "u64" to (BigInteger.ZERO to BigInteger(2).pow(64).dec()),
-            "i8" to (BigInteger(2).pow(7).negate() to BigInteger(2).pow(7).dec()),
-            "i16" to (BigInteger(2).pow(15).negate() to BigInteger(2).pow(15).dec()),
-            "i32" to (BigInteger(2).pow(31).negate() to BigInteger(2).pow(31).dec()),
-            "i64" to (BigInteger(2).pow(63).negate() to BigInteger(2).pow(63).dec()),
-        )
 
     private fun skipToNext() {
         while (!done) {
@@ -304,7 +306,7 @@ internal class Parser(
                 fail(ExpectedDecimalBounds(current), current.span)
             }
         expect(',')
-        val scale = int().exactInt()
+        val scale = (if (accept('-')) -1 else 1) * int().exactInt()
         val (rounding, overflow) = if (accept(',')) decimalOptions() else Rounding.TOWARDS_ZERO to Overflow.ERROR
         val endSpan = expect(')').span.end
         return Primitive(Decimal(min, max, scale, rounding, overflow), SourceSpan(keywordSpan.start, endSpan))
