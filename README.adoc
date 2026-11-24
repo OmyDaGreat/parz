@@ -7,6 +7,8 @@ image:https://img.shields.io/scoop/v/parz?bucket=https%3A%2F%2Fgithub.com%2FOmyD
 
 A shared intermediate representation (IR) and interface definition language (IDL) for programming languages.
 
+image::tooling/cli/run.png[Example run]
+
 == Overview
 
 parz aims to let different languages be translated into each other and, more importantly, be run side by side safely.
