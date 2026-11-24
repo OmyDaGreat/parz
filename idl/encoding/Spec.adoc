@@ -1,143 +1,279 @@
-= S Expression Details
+= parz Encoding
 
-== Encoding Spec
-[cols="1,1,1"]
+This spec defines how values of link:../model/Spec.adoc[model] types are written as S-expressions, both as single values and as files.
+
+A _writer_ produces encoded text and a _reader_ consumes it.
+
+The examples use this schema, written in link:../syntax/Spec.adoc[schema syntax]:
+
+[source]
+----
+type Money = decimal(9, 2, round_half_to_even)
+record Payment { number: decimal(18, 0), amount: Money, status: Status }
+enum Status { pending, settled = 5 }
+variant Result { ok(payment: Payment), rejected(reason: string(200)) }
+----
+
+== S-Expressions
+Encoded text is a sequence of S-expressions, each of which is one of:
+
+atom:: a run of one or more characters, none of which are whitespace, `(`, `)`, `"`, or `;`
+string:: text between `"` quotes, with escapes (see <<strings>>)
+list:: zero or more S-expressions between `(` and `)`, separated by whitespace
+
+A `;` outside a string starts a comment that runs to the end of the line. Comments and whitespace may appear between any two S-expressions, and readers ignore them.
+
+== Values
+[cols="1,1,3,3"]
 |===
-|type
-|sexp type
-|sexp value
+|type |form |written as |example
 
 |void
 |list
 |`()`
+|`()`
 
 |bool
 |atom
-|`true`/`false`
+|`true` or `false`
+|`true`
 
 |id
 |atom
-|a non-negative integer with no leading zeros
+|see <<ids>>
+|`42`
 
 |bytes
 |atom
-|`#x` followed by two lowercase hex digits per byte
+|see <<bytes>>
+|`#xc1c2`
 
-|str
-|str
-|quoted string with escaped `\" \\ \n \r \t, \u{…}`
+|string
+|string
+|see <<strings>>
+|`"line one\nline two"`
 
 |decimal
 |atom
-|exact value at type's scale
+|see <<decimals>>
+|`19.99`
 
 |option
-|atom/list
-|`none`/`(some x)`
+|atom or list
+|`none`, or `(some <value>)`
+|`(some 19.99)`
 
 |seq
 |list
-|values
+|each item in order
+|`(1.00 2.50)`
 
 |map
 |list
-|`((key value) ...)`
+|a `(<key> <value>)` list per entry, in key order (see <<ordering>>)
+|`(("a" 1.00) ("b" 2.50))`
 
 |table
 |list
-|values
+|each item in order, so an id of `n` refers to item `n` counting from 0
+|`(pending settled)` for `table<Status>`
 
-|enum
+|record
+|list
+|a `(<field> <value>)` list per field
+|`((number 1042) (amount 19.99) (status settled))`
+
+|variant member without payload
 |atom
-|`member`
+|the member's name
+|`pending`
 
-|variant
-|list(atom + list..)
-|`(member (field value) ...)`
-
-|record
-|list(list..)
-|`((field value) ...)`
-|===
-
-=== Ordering
-[cols="1,1"]
-|===
-|type
-|ordering
-
-|seq
-|keeps given order
-
-|map
-|keys ordered based on types*
-
-|table
-|keeps given order
-
-|record
-|fields in declaration order
-
-|variant
-|fields in declaration order
-|===
-
-==== Map Key Ordering
-[cols="1,1"]
-|===
-|key type
-|ordering
-
-|bool
-|`false`, `true`
-
-|id
-|numeric value
-
-|bytes
-|byte by byte unsigned comparison, with prefixes first
-
-|str
-|code point comparison
-
-|decimal
-|numeric value
-
-|enum
-|member tags
+|variant member with payload
+|list
+|the member's name, then a `(<field> <value>)` list per payload field
+|`(rejected (reason "late"))`
 
 |alias
-|target type's ordering
+|
+|as its target type
+|`19.99` for `Money`
 |===
 
-NOTE: No other types are allowed for keys of maps
+A full value of `Result`:
 
-== Decoding Spec
-* Fields in any order
-* Map entries in any order
-* Bytes normalize to lowercase
-* Any error existing means no value, though lenient functions are in the docs as an option externally
-* Two keys equal in the type's view (like after decimal scaling) count as duplicates and are rejected
-* Comments (`; Something`) are currently ignored
-
-=== Decimals
-* Less decimal places than in type
-** Extra trailing zeros are allowed if the value stays exact at the type
-* ASCII digits only
-* Values like 007 and -0 aren't kept, instead normalized to 7 and 0
-
-=== References
-* Each root holds at most one table per target
-* IDs start at 0
-* The target must be a record or variant named directly
-* An ID must be less than its table's size
-* A missing table is a schema warning, not an error
-
-== File Header Spec
 [source]
 ----
-(parz <format version> (schema <name> <schema version>) <Root Type>)
+(ok (payment ((number 1042) (amount 19.99) (status settled))))
 ----
-* Readers reject any format not following the above
-* `decodeFile` requires exactly one value in the body, though that's not true for other decode functions (like `decodeString`)
-* The header is included in the file's hash, being part of the canonical output
+
+[#ids]
+=== Ids
+An id is written in decimal with no sign and no leading zeros: `0`, `7`, `42`, but not `07`, `-1`, or `+1`.
+Ids must be at most 2^31^ - 1.
+
+[#bytes]
+=== Bytes
+Bytes are written as `#x` followed by two hex digits per byte, so `#x` alone is an empty byte sequence.
+
+* Writers use lowercase hex digits: `#xc1c2`, not `#xC1C2`
+* Readers accept uppercase hex digits, but reject an uppercase `#X` prefix and an odd number of digits
+
+[#strings]
+=== Strings
+[cols="1,3"]
+|===
+|escape |character
+
+|`\"` |`"`
+|`\\` |`\`
+|`\n` |line feed
+|`\r` |carriage return
+|`\t` |tab
+|`\u{h…}` |the code point with hex value `h…`
+|===
+
+Writers escape `"`, `\`, line feeds, carriage returns, and tabs using the short escapes above.
+Writers escape every other control character (U+0000 to U+001F and U+007F to U+009F) as `\u{h…}`, using lowercase hex digits with no leading zeros, like `\u{1b}`.
+Writers write every other character as-is.
+
+Readers accept:
+
+* any character other than `"` and `\` as-is, including raw line breaks
+* `\u{h…}` with 1 to 6 hex digits in either case, as long as the value is at most `10FFFF` and isn't a surrogate (`D800` to `DFFF`)
+
+Readers reject any other escape, and a string with no closing quote.
+
+[#decimals]
+=== Decimals
+Writers write a decimal at its type's scale:
+
+* If the scale is positive, as an optional `-`, at least one integer digit, a `.`, and exactly `scale` fraction digits: `19.99`, `-0.05`, `7.00`
+* If the scale is zero or negative, as an integer with no `.`: `42`, and `1200` for scale -2
+* Writers must not write leading zeros (other than the single `0` before the `.`) or `-0`
+
+Readers accept an optional `-`, then one or more ASCII digits, then optionally a `.` followed by one or more ASCII digits.
+Readers reject other forms, like `.5`, `5.`, `+5`, and `1e3`.
+
+When reading a decimal of scale `s`:
+
+* Fewer than `s` fraction digits are fine: `7` and `7.5` read as `7.00` and `7.50` at scale 2
+* More than `s` fraction digits are fine only if the extra digits are zeros: `7.500` reads as `7.50`, but `7.501` is rejected
+* Leading zeros and `-0` are accepted and normalized: `007.50` reads as `7.50` and `-0` as `0`
+* The value must then be within the type's range
+
+[#ordering]
+== Ordering
+Writers must order things like this, so that each value has exactly one canonical encoding.
+
+[cols="1,5"]
+|===
+|type |order
+
+|seq, table
+|the order the items are in
+
+|map
+|by key, as below
+
+|record
+|fields in declaration order
+
+|variant
+|payload fields in declaration order
+|===
+
+=== Map Key Ordering
+[cols="1,5"]
+|===
+|key type |order
+
+|bool
+|`false`, then `true`
+
+|id
+|by numeric value
+
+|bytes
+|byte by byte, unsigned, with a prefix before anything it's a prefix of
+
+|string
+|by Unicode code point (not by UTF-16 code unit)
+
+|decimal
+|by numeric value
+
+|enum
+|by member tag, so reordering members in a schema doesn't reorder files
+
+|alias
+|as its target type
+|===
+
+Other types can't be map keys (see link:../model/Spec.adoc#map_keys[the model spec]).
+
+== Reading Values
+Readers accept anything writers produce, and are more lenient in a few ways:
+
+* Record and payload fields may appear in any order
+* Map entries may appear in any order
+* Comments and extra whitespace may appear anywhere between S-expressions
+
+Readers must reject:
+
+* a record or payload with an unknown, repeated, or missing field
+* a variant member written as a list when it has no payload (`(pending)`), or as an atom when it has one
+* a map with two keys that are equal once read, like `1.0` and `1.00` for a key at scale 2
+* a value that doesn't conform to its type (see link:../model/Spec.adoc[the model spec])
+
+A reader must not return a value from input that has errors.
+A reader may offer a recovery mode that returns a value despite errors in the S-expressions themselves, such as a missing `)`, as long as it still reports them.
+
+== Files
+A file is a header followed by a body:
+
+[source]
+----
+(parz <format version> (schema <name> <schema version>) <root>)
+<value>
+----
+
+* `<format version>` is `1`
+* `<name>` is an atom naming the schema, and `<schema version>` is a non-negative integer
+* `<root>` is the name of the declaration that the body's value is of
+
+[source]
+----
+(parz 1 (schema payments 3) Result)
+(ok (payment ((number 1042) (amount 19.99) (status settled))))
+----
+
+Readers must reject a file:
+
+* whose first S-expression isn't a header of exactly the form above
+* whose format version they don't support
+* whose schema name and version aren't the ones they expect
+* whose root isn't declared in the schema, or isn't the root they expect (if they expect one)
+* whose body isn't exactly one value
+* whose value breaks the reference rules in link:../model/Spec.adoc#references[the model spec]
+
+=== Canonical Form
+Writers write a file in canonical form, so that equal values produce identical files:
+
+* The header on one line, with single spaces between items
+* A line feed
+* The value laid out with a width of 80 (see below)
+* A line feed
+
+A list is written on one line, with single spaces between items, if it fits in the space left on the line.
+Otherwise, its first item follows the `(` directly and each later item starts a new line, indented two more spaces than the `(`.
+The `)` follows the last item directly.
+
+[source]
+----
+(("alpha" 1.00)
+  ("bravo" 2.50)
+  ("charlie" 3.75)
+  ("delta" 4.00)
+  ("echo" 5.25)
+  ("foxtrot" 6.50))
+----

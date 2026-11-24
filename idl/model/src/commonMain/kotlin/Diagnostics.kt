@@ -86,7 +86,7 @@ sealed interface SchemaIssueKind : DiagnosticKind {
     }
 
     /**
-     * A map's key type isn't a bool, decimal, string, or variant without payloads (an enum), directly or through aliases.
+     * A map's key type isn't a bool, string, id, bytes, decimal, or variant without payloads (an enum), directly or through aliases.
      */
     data class InvalidMapKey(
         val key: Type,
@@ -96,7 +96,7 @@ sealed interface SchemaIssueKind : DiagnosticKind {
         override val code = "IDL107"
         override val message =
             "Invalid map key${if (path != null) " in field $path" else ""}: ${(key as? Type.Ref)?.name ?: key.kind}" +
-                " (keys must be bool, decimal, string, or an enum)"
+                " (keys must be bool, string, id, bytes, decimal, or an enum)"
     }
 
     /**

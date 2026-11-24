@@ -1,0 +1,185 @@
+= parz Model
+
+This spec defines the IDL's types, its declarations, and the rules a schema and its values must follow.
+How a schema is written as text is covered in link:../syntax/Spec.adoc[the syntax spec], and how values are written in link:../encoding/Spec.adoc[the encoding spec].
+
+== Types
+[cols="1,3,4"]
+|===
+|type |parameters |values
+
+|void
+|none
+|exactly one value, carrying no information
+
+|bool
+|none
+|true or false
+
+|id
+|`target`: a record or variant name
+|a non-negative integer indexing the `table<target>` in the same value (see <<references>>)
+
+|bytes
+|`minLen`, `maxLen`: lengths in bytes, with `0 ≤ minLen ≤ maxLen`
+|a byte sequence whose length is in `minLen..maxLen`
+
+|string
+|`maxLen`: a positive length, unbounded by default
+|a Unicode string at most `maxLen` long, counted in UTF-16 code units
+
+|decimal
+|`min`, `max`, `scale`, `rounding`, `overflow` (see <<decimals>>)
+|an exact decimal number `unscaled × 10^-scale^`, with `unscaled` in `min..max`
+
+|option<T>
+|inner type `T`
+|either none or some value of `T`
+
+|seq<T>
+|item type `T`
+|a possibly empty ordered list of values of `T`
+
+|map<K, V>
+|key type `K`, value type `V`
+|a set of `K -> V` entries where no two keys are equal; `K` is restricted (see <<map_keys>>)
+
+|table<T>
+|target `T`: a record or variant name
+|an ordered list of values of `T` that ``id<T>``s point into
+
+|ref
+|a declaration name
+|whatever the named declaration holds
+|===
+
+[#decimals]
+=== Decimals
+`min` and `max` bound the unscaled value, not the number itself.
+For example, `min = -999`, `max = 999`, `scale = 2` holds `-9.99` to `9.99` in steps of `0.01`.
+
+`scale` may be negative, in which case values are multiples of `10^-scale^`; `scale = -2` holds `0`, `100`, `-300`, and so on.
+
+A value is valid only if it is exact at `scale` and its unscaled value is in `min..max`.
+
+When a number is converted into a decimal type, `rounding` decides how to fit it to `scale` and `overflow` decides what happens if the result is still out of range. Validating or decoding a value never applies either; an inexact or out of range value is rejected.
+
+[cols="2,5"]
+|===
+|rounding |result when the value doesn't fit the scale exactly
+
+|`floor` |towards negative infinity
+|`ceiling` |towards positive infinity
+|`away_from_zero` |away from zero
+|`towards_zero` (default) |towards zero
+|`round_half_away_from_zero` |nearest; ties away from zero
+|`round_half_towards_zero` |nearest; ties towards zero
+|`round_half_ceiling` |nearest; ties towards positive infinity
+|`round_half_floor` |nearest; ties towards negative infinity
+|`round_half_to_even` |nearest; ties to an even last digit
+|`round_half_to_odd` |nearest; ties to an odd last digit
+|`prohibited` |the conversion fails
+|===
+
+[cols="1,3"]
+|===
+|overflow |result when the rounded value is outside range
+
+|`error` (default) |the conversion fails
+|`truncate_high` |drops higher-order digits, keeping as many digits as the wider of `min` and `max` has (fails if still out of range)
+|`wrap` |wraps modulo the size of the range, so `-128..127` at scale 0 behaves like a signed byte
+|`saturate` |clamps to `min` or `max`
+|===
+
+== Declarations
+A schema is a list of declarations, each with a name.
+
+[cols="1,5"]
+|===
+|declaration |meaning
+
+|record
+|named fields, all of which are present in every value
+
+|variant
+|named members, each with a non-negative integer tag and an optional payload of named fields; a value holds exactly one member
+
+|enum
+|a variant in which no member has a payload
+
+|alias
+|another name for a type; holds the same values as that type
+|===
+
+=== Shape Rules
+These are checked for every declaration on its own, before the schema as a whole is checked.
+
+* Names of declarations, fields, and members must not be empty
+* A record must have at least one field
+* A variant must have at least one member
+* Member tags must be non-negative
+* An enum's members must not have payloads
+* Decimal ranges must not be empty (`min <= max`), and neither may byte length ranges
+* A string's `maxLen` must be positive, and a byte length must not be negative
+
+=== Naming
+Two names clash if they're equal after removing every `_` and lowercasing.
+`payment_id`, `paymentId`, and `PaymentID` all clash, since code generators might map them to the same identifier.
+
+* Declaration names must not clash within a schema
+* Field names must not clash within a record or a member's payload
+* Member names must not clash within a variant, and member tags must be distinct
+
+== Schema Rules
+* Every name a type refers to must be declared in the schema
+* A declaration must not be impossible to build a finite value of.
+A record that holds itself directly is cyclic, but one holding itself through an `option`, `seq`, `map`, `table`, or a variant with at least one member that doesn't hold itself is fine.
+* An alias must not refer back to itself at all, directly or through other aliases
+
+[#map_keys]
+=== Map Keys
+A map's key type must be one of the following, directly or through aliases:
+
+* `bool`
+* `id`
+* `bytes`
+* `string`
+* `decimal`
+* an enum
+
+`void`, records, variants with payloads, and every collection must not be keys.
+
+[#references]
+=== References
+* The target of an `id<T>` or `table<T>` must name a record or variant directly; aliases and unnamed types aren't allowed
+* Every `id<T>` should have a `table<T>` somewhere in the schema. Without one, no value could hold its entries, but this is only a warning (as opposed to an error).
+
+A value that holds ids must also follow these rules:
+
+* It holds at most one `table<T>` for each target `T`
+* Every `id<T>` in it has a `table<T>` in it
+* An id is an index starting at 0, so it must be less than its table's size
+
+== Diagnostics
+[cols="1,1,5"]
+|===
+|code |severity |problem
+
+|IDL101 |error |a type refers to an undeclared name
+|IDL102 |error |two fields' names clash
+|IDL103 |error |two members' names clash
+|IDL104 |error |two members share a tag
+|IDL105 |error |a declaration is cyclic
+|IDL106 |error |two declarations' names clash
+|IDL107 |error |a map key type isn't allowed
+|IDL108 |warning |an `id<T>` has no `table<T>` in the schema
+|IDL109 |error |an id or table target isn't a record or variant
+|IDL120 |error |a record has no fields
+|IDL121 |error |a variant has no members
+|IDL122 |error |a name is empty
+|IDL123 |error |a member tag is negative
+|IDL124 |error |a range is empty
+|IDL125 |error |a string length isn't positive
+|IDL126 |error |an enum member has a payload
+|IDL127 |error |a byte length is negative
+|===

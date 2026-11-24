@@ -77,7 +77,7 @@ sealed interface Type {
          * A string type. Max length is defined, as the JVM defines it, through UTF-16 length.
          */
         data class Str(
-            val maxLen: Long = Long.MAX_VALUE,
+            val maxLen: Long = Long.MAX_VALUE, // TODO: Explore other length definition options (like code points)
         ) : Primitive {
             override val kind = "string"
 
@@ -149,12 +149,12 @@ sealed interface Type {
                 ROUND_HALF_FLOOR,
 
                 /**
-                 * Rounds towards the nearest even value at the target's scale.
+                 * Rounds towards the nearest value at the target's scale, using towards even as a tiebreaker.
                  */
                 ROUND_HALF_TO_EVEN,
 
                 /**
-                 * Rounds towards the nearest odd value at the target's scale.
+                 * Rounds towards the nearest value at the target's scale, using towards odd as a tiebreaker.
                  */
                 ROUND_HALF_TO_ODD,
 
@@ -166,19 +166,26 @@ sealed interface Type {
 
             /**
              * [Decimal]'s overflow modes.
-             *
-             * [Overflow.ERROR] - Throw an error.
-             *
-             * [Overflow.TRUNCATE_HIGH] - Truncate the higher-order digits.
-             *
-             * [Overflow.WRAP] - Wrap around.
-             *
-             * [Overflow.SATURATE] - Stop at the max/min value.
              */
             enum class Overflow {
+                /**
+                 * Throws an error on overflow.
+                 */
                 ERROR,
+
+                /**
+                 * Truncates the higher-order digits.
+                 */
                 TRUNCATE_HIGH,
+
+                /**
+                 * Wraps around.
+                 */
                 WRAP,
+
+                /**
+                 * Stops at the max/min value.
+                 */
                 SATURATE,
             }
         }

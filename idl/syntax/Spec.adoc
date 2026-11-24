@@ -1,0 +1,149 @@
+= parz Syntax
+
+This spec defines the text format for schemas.
+What each type and declaration means, and the rules a schema must follow, are covered in link:../model/Spec.adoc[the model spec].
+
+[source]
+----
+type Money = decimal(9, 2, round_half_to_even)
+record Payment { number: decimal(18, 0), amount: Money, status: Status }
+enum Status { pending, settled = 5 }
+variant Result { ok(payment: Payment), rejected(reason: string(200)) }
+----
+
+== Lexical Rules
+* Identifiers are a letter or `\_`, followed by any number of letters, digits, or `_`
+* Numbers are ASCII digits only; a `-` before a number is a separate symbol
+* The symbols are `( ) { } < > , ; : = - .`
+* Whitespace separates tokens and is otherwise ignored
+* There are no comments in schema text
+* Any other character is an error
+
+== Declarations
+A schema is a sequence of declarations, separated only by whitespace.
+
+[cols="1,4"]
+|===
+|declaration |form
+
+|record
+|`record name { field: type, ... }`
+
+|variant
+|`variant name { member(field: type, ...), member = 4, member, ... }`
+
+|enum
+|`enum name { member, member = 3, ... }`
+
+|alias
+|`type name = type`
+|===
+
+* A member's payload, if it has parentheses, must contain at least one field
+* A member without `= tag` gets the previous member's tag + 1, and the first member gets 0
+* Lists of fields and members, and the parameters of `map<…>`, may end with a trailing comma; decimal parameters and options may not
+* Declarations can't be written inline inside a type
+
+== Types
+[cols="1,4"]
+|===
+|type |form
+
+|void
+|`void`
+
+|bool
+|`bool`
+
+|id
+|`id<name>`
+
+|bytes
+|`bytes` (any length), `bytes(exact)`, or `bytes(min..max)`
+
+|string
+|`string` (any length) or `string(max)`
+
+|decimal
+|`decimal(precision, scale)`, `decimal(min..max, scale)`, or an <<integer_shorthands,integer shorthand>>, each with optional <<decimal_options,options>>
+
+|ref
+|`name`
+
+|option
+|`option<type>`
+
+|seq
+|`seq<type>`
+
+|map
+|`map<key, value>`
+
+|table
+|`table<name>`
+|===
+
+=== Decimals
+* `precision` must be between 0 and 38, and gives the range `-(10^p^ - 1)..10^p^ - 1`; `decimal(9, 2)` holds `-9999999.99` to `9999999.99`
+* `min`, `max`, and `scale` may be negative: `decimal(-5..5, -2)`
+
+[#decimal_options]
+=== Decimal Options
+Options follow the scale, separated by commas: `decimal(9, 2, round_half_to_even, saturate)`.
+
+* At most one rounding mode and one overflow mode, in either order
+* Case-insensitive
+* Rounding defaults to `towards_zero` and overflow to `error`
+
+[cols="1,4"]
+|===
+|kind |options
+
+|rounding
+|`floor`, `ceiling`, `away_from_zero`, `towards_zero`, `round_half_away_from_zero`, `round_half_towards_zero`, `round_half_ceiling`, `round_half_floor`, `round_half_to_even`, `round_half_to_odd`, `prohibited`
+
+|overflow
+|`error`, `truncate_high`, `wrap`, `saturate`
+|===
+
+What each option does is covered in link:../model/Spec.adoc#decimals[the model spec].
+
+[#integer_shorthands]
+=== Integer Shorthands
+Each shorthand is a decimal with scale 0.
+Options go in parentheses after it: `u8(saturate, ceiling)`.
+
+[cols="2,3"]
+|===
+|keyword |range
+
+|`u8` |`0`..`2^8^ - 1`
+|`u16` |`0`..`2^16^ - 1`
+|`u32` |`0`..`2^32^ - 1`
+|`u64` |`0`..`2^64^ - 1`
+|`i8` |`-2^7^`..`2^7^ - 1`
+|`i16` |`-2^15^`..`2^15^ - 1`
+|`i32` |`-2^31^`..`2^31^ - 1`
+|`i64` |`-2^63^`..`2^63^ - 1`
+|===
+
+== Diagnostics
+Parsing reports these codes.
+Shape errors found while parsing a type, like an empty range, are reported with their model codes (see link:../model/Spec.adoc[the model spec]).
+
+[cols="1,5"]
+|===
+|code |problem
+
+|IDL001 |a character that isn't part of any token
+|IDL002 |a declaration written inline inside a type
+|IDL003 |something other than `record`, `variant`, `enum`, or `type` where a declaration should start
+|IDL004 |a missing symbol, like `:` or `>`
+|IDL005 |a missing name
+|IDL006 |a missing integer
+|IDL007 |an unknown or repeated decimal option
+|IDL008 |a decimal precision outside 0 to 38
+|IDL009 |a decimal type without `,` or `..` after its first number
+|IDL011 |an integer too large for where it's used
+|IDL012 |a member with empty parentheses, like `member()`
+|===

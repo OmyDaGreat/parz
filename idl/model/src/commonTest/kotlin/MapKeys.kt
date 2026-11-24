@@ -18,7 +18,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
- * [InvalidMapKey]: map keys must be bool, decimal, string, or an enum-like variant, directly or through aliases.
+ * [InvalidMapKey]: map keys must be bool, string, id, bytes, decimal, or an enum-like variant, directly or through aliases.
  */
 class MapKeys {
     private fun kinds(vararg decls: Decl) = validate(decls.toList()).diagnostics.map { it.kind }
@@ -146,11 +146,11 @@ class MapKeys {
         val field = Field("m", Map(Type.Ref("Point"), Bool))
         val decl = Decl.Record("A", listOf(field))
         assertEquals(
-            "Invalid map key in field m: Point (keys must be bool, decimal, string, or an enum)",
+            "Invalid map key in field m: Point (keys must be bool, string, id, bytes, decimal, or an enum)",
             InvalidMapKey(Type.Ref("Point"), decl, RecordPath(field)).message,
         )
         assertEquals(
-            "Invalid map key: void (keys must be bool, decimal, string, or an enum)",
+            "Invalid map key: void (keys must be bool, string, id, bytes, decimal, or an enum)",
             InvalidMapKey(Void, Decl.Alias("T", Map(Void, Bool)), null).message,
         )
     }

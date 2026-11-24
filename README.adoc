@@ -20,7 +20,7 @@ A CLI program, serving as a schema checking tool for the IDL system and packaged
 [source]
 ----
 type Money = decimal(9, 2, round_half_to_even)
-record Payment { id: decimal(18, 0), amount: Money, status: Status }
+record Payment { number: decimal(18, 0), amount: Money, status: Status }
 enum Status { pending, settled = 5 }
 variant Result { ok(payment: Payment), rejected(reason: string(200)) }
 ----
@@ -73,30 +73,13 @@ scoop install parz
 NOTE: Make sure you have the package manager installed first! You can install it through https://brew.sh/[Homebrew] or https://scoop.sh/[Scoop].
 If you don't want to use a package manager, you can also install the packages from the https://github.com/OmyDaGreat/parz/releases[Releases] page.
 
-If you run the program with a file, it prints the output of running that file as if it were input.
+See the link:tooling/cli/Spec.adoc[CLI spec] for how to use it.
 
-[source,shell]
-----
-parz < payment.idl
-----
-
-Run it without input to type schemas in directly. End each one with `;;` to parse it:
-
-[source]
-----
-[user@pc ~] parz
-parz> type money = decimal(9, 2)
-  ..> record Payment { amount: money, status: status }
-  ..> enum status { pending, settled = 5 };;
-----
-
-Line editing and history (kept in `~/.parz_history`) are built in.
-
-As you could probably tell, the inspiration for the tooling cli came from OCaml's UTop. However, this implementation only supports types and not values for now (as the IR has not yet been created).
-
-Here's an example run:
-
-image::run.png[Example Run]
+=== Specs
+* link:idl/model/Spec.adoc[Model]: the types, declarations, and the rules schemas and values follow
+* link:idl/syntax/Spec.adoc[Syntax]: the text format for schemas
+* link:idl/encoding/Spec.adoc[Encoding]: how values are written as S-expressions and files
+* link:tooling/cli/Spec.adoc[CLI]: running the CLI, entries, and directives
 
 == License
 

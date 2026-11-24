@@ -8,7 +8,6 @@ import xyz.malefic.parz.core.collecting
 import xyz.malefic.parz.idl.model.ShapeErrorKind
 import xyz.malefic.parz.idl.model.ShapeErrorKind.NegativeLength
 import xyz.malefic.parz.idl.model.ShapeErrorKind.NonPositiveLength
-import xyz.malefic.parz.idl.model.Type
 import xyz.malefic.parz.idl.model.Type.Primitive.Bool
 import xyz.malefic.parz.idl.model.Type.Primitive.Bytes
 import xyz.malefic.parz.idl.model.Type.Primitive.Decimal
@@ -102,7 +101,7 @@ internal class Parser(
             "bool" -> Primitive(Bool, span)
             "id" -> id(span)
             "bytes" -> bytes(span)
-            "string" -> str(span)
+            "string" -> string(span)
             "decimal" -> decimal(span)
             in integerShorthandMap.keys -> integerShorthandMap[text]!!.let { decimalShorthand(span, it.first, it.second) }
             "option" -> angled { type() }.let { TypeSyntax.Option(it.second, SourceSpan(span.start, it.third.span.end)) }
@@ -210,7 +209,7 @@ internal class Parser(
         )
     }
 
-    private fun str(span: SourceSpan): Primitive {
+    private fun string(span: SourceSpan): Primitive {
         var endSpan = span.end
         return Primitive(
             if (accept('(')) {

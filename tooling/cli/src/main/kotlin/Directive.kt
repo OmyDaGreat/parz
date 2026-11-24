@@ -19,7 +19,7 @@ val directives: Map<String, Directive> =
         Directive("list", "#list", "List declarations in the session") {
             decls.keys.forEach { println("  $it") }
         },
-        Directive("show", "#show <name>", "Print a declaration") { args ->
+        Directive("show", "#show <name>", "Show the value of a declaration") { args ->
             val name = args.singleOrNull() ?: return@Directive println("usage: #show <name>")
             decls[name]?.let { println(it.first.pretty()) } ?: println("No declaration named $name")
         },
