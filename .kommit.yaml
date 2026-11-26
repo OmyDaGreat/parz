@@ -18,6 +18,11 @@ scopes:
     - gradle
     - license
     - kommit
+  ci:
+    - docs
+    - gradle
+    - publish
+    - miniml
   docs:
     - readme
     - spec
