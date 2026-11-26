@@ -43,7 +43,8 @@ jobs:
           mkdir -p lang/miniml
           rsync -a --delete --exclude .git _miniml/ lang/miniml/
           rm -rf _miniml
-          git add -A lang/miniml
+          # -f: mirror cs51 exactly, even files parz's .gitignore excludes (e.g. *.md)
+          git add -A -f lang/miniml
           if git diff --cached --quiet; then
             echo "lang/miniml is already up to date; nothing to commit."
             exit 0
