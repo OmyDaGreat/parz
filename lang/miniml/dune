@@ -1,0 +1,13 @@
+(executable
+ (name miniml)
+ (libraries str)
+ (flags
+  (:standard
+   -strict-sequence
+   -w +A-4-33-34-40-41-42-43-44-70
+   -warn-error -a)))
+
+(ocamllex miniml_lex)
+
+(menhir
+ (modules miniml_parse))

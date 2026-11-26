@@ -1,0 +1,4 @@
+(lang dune 3.24)
+(using menhir 2.1)
+
+(name miniml)
