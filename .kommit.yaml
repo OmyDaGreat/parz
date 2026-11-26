@@ -12,10 +12,12 @@ scopes:
     - core
     - idl
     - tooling
+    - lang
   chore:
     - deps
     - gradle
     - license
+    - kommit
   docs:
     - readme
     - spec
