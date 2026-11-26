@@ -1,0 +1,54 @@
+name: Sync MiniML
+
+on:
+  workflow_dispatch:
+    inputs:
+      message:
+        description: 'Commit message for the sync commit'
+        required: true
+        type: string
+      ref:
+        description: 'cs51 repo ref (branch, tag, or SHA) to sync from'
+        required: false
+        default: 'main'
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-miniml
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout parz
+        uses: actions/checkout@v7
+
+      - name: Checkout MiniML
+        uses: actions/checkout@v7
+        with:
+          repository: cs51-2026fall/project-OmyDaGreat
+          ref: ${{ inputs.ref }}
+          token: ${{ secrets.MINIML_TOKEN }}
+          path: _miniml
+
+      - name: Replace lang/miniml and commit
+        env:
+          MSG: ${{ inputs.message }}
+        run: |
+          mkdir -p lang/miniml
+          rsync -a --delete --exclude .git _miniml/ lang/miniml/
+          rm -rf _miniml
+          git add -A lang/miniml
+          if git diff --cached --quiet; then
+            echo "lang/miniml is already up to date; nothing to commit."
+            exit 0
+          fi
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -m "$MSG"
+          git push
