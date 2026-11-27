@@ -8,7 +8,7 @@ dokka = "2.3.0"
 vanniktech = "0.37.0"
 bignum = "0.4.0"
 jetbrainsKotlinJvm = "2.4.21"
-jline = "4.7.0"
+jline = "4.7.1"
 graalvm-native = "1.1.20"
 
 [libraries]
